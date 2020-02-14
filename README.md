@@ -30,7 +30,7 @@ docker run --rm \
     --volume /tmp:/tmp \
     cbinyu/dcm2bidsphysio \
         --infile /tmp/07+epi_MB4_2mm_Physio+00001.dcm \
-        --bidsprefix /tmp/tes    
+        --bidsprefix /tmp/test
 ```
 
 

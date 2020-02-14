@@ -19,13 +19,19 @@ FROM python:${BASE_PYTHON_VERSION}-slim-${DEBIAN_VERSION}
 #  && apt-get clean -y && apt-get autoclean -y && apt-get autoremove -y
 
 ## install required python packages:
-RUN pip install pydicom==1.4.1 numpy==1.18.1
+RUN pip install pydicom==1.4.1 \
+		numpy==1.18.1  \
+		etelemetry==0.1.2
 
 
 ### copy module:
-COPY ["./dcm2bidsphysio.py", "/usr/local/src/"]
-RUN chmod o+rx /usr/local/src/dcm2bidsphysio.py
+COPY [".", "/tmp/dcm2bidsphysio"]
+RUN \
+    cd /tmp/dcm2bidsphysio && \
+    pip install . && \
+    cd / && \
+    rm -rf /tmp/dcm2bidsphysio
 
-ENTRYPOINT ["/usr/local/src/dcm2bidsphysio.py"]
+ENTRYPOINT ["/usr/local/bin/dcm2bidsphysio"]
 
 
