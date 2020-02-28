@@ -10,18 +10,11 @@ ARG BASE_PYTHON_VERSION=3.8
 # Use an official Python runtime as a parent image
 FROM python:${BASE_PYTHON_VERSION}-slim-${DEBIAN_VERSION}
 
-## install:
-# -curl (to get the FSL distribution)
-# -libquadmath0 (needed to run many FSL commands )
-#RUN apt-get update && apt-get upgrade -y && apt-get install -y \
-#    curl \
-#    libquadmath0 \
-#  && apt-get clean -y && apt-get autoclean -y && apt-get autoremove -y
-
 ## install required python packages:
 RUN pip install pydicom==1.4.1 \
 		numpy==1.18.1  \
-		etelemetry==0.1.2
+		etelemetry==0.1.2 && \
+    pip install	bioread>=1.0.4
 
 
 ### copy module:

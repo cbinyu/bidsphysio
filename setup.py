@@ -16,7 +16,7 @@ def main():
     ldict = locals()
 
     # Get version and release info, which is all stored in info.py
-    info_file = op.join(thispath, 'dcm2bidsphysio', 'info.py')
+    info_file = op.join(thispath, 'bidsphysio', 'info.py')
     with open(info_file) as infofile:
         # exec(infofile.read(), globals(), ldict)
         # Workaround for python 2.7 prior 2.7.8
@@ -33,9 +33,9 @@ def main():
             if op.splitext(f)[-1].lstrip('.') in extensions
         ]
     # Only recentish versions of find_packages support include
-    # dcm2bidsphysio_pkgs = find_packages('.', include=['dcm2bidsphysio*'])
+    # bidsphysio_pkgs = find_packages('.', include=['bidsphysio*'])
     # so we will filter manually for maximal compatibility
-    dcm2bidsphysio_pkgs = [pkg for pkg in find_packages('.') if pkg.startswith('dcm2bidsphysio')]
+    bidsphysio_pkgs = [pkg for pkg in find_packages('.') if pkg.startswith('bidsphysio')]
 
 
     setup(
@@ -47,9 +47,10 @@ def main():
         long_description=ldict['__longdesc__'],
         license=ldict['__license__'],
         classifiers=ldict['CLASSIFIERS'],
-        packages=dcm2bidsphysio_pkgs,
+        packages=bidsphysio_pkgs,
         entry_points={'console_scripts': [
-            'dcm2bidsphysio=dcm2bidsphysio.dcm2bidsphysio:main',
+            'dcm2bidsphysio=bidsphysio.dcm2bidsphysio:main',
+            'acq2bidsphysio=bidsphysio.acq2bidsphysio:main',
         ]},
         python_requires=ldict['PYTHON_REQUIRES'],
         install_requires=ldict['REQUIRES'],

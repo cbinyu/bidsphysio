@@ -24,6 +24,7 @@ Dates
 2020-02-07 PJV Save PULSE and RESPIRATION to separated files
 2020-02-13 PJV Save just the signal and the corresponding scanner triggers in the .tsv.gz file
                Save the timing info in the .json sidecar
+2020-02-28 PJV It uses the classes defined in bidsphysio
 
 References
 ----
@@ -57,7 +58,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-__version__ = '1.0.0'
+__version__ = '2.0.0'
 
 
 import os
@@ -66,6 +67,7 @@ import argparse
 import numpy as np
 import pydicom
 import json
+import bidsphysio.bidsphysio as bp
 
 
 def dcm2bids( physio_dcm, bids_prefix ):
@@ -93,8 +95,9 @@ def dcm2bids( physio_dcm, bids_prefix ):
     n_waves = int(n_cols / 1024)
     wave_len = int(n_points / n_waves)
 
-    # Init list to hold physio signals
-    physio = []
+    # Init physiodata object to hold physio signals and time of first trigger:
+    physio = bp.physiodata()
+    t_first_trigger = None
 
     for wc in range(n_waves):
         physio_label = ''
@@ -130,65 +133,39 @@ def dcm2bids( physio_dcm, bids_prefix ):
             t, s = plug_missing_data(t,s,dt)
 
         elif "ACQUISITION_INFO" in waveform_name:
+            physio_label = 'trigger'
             # We only care about the trigger for each volume, so keep only
             #   the timepoints for which the trigger signal is 1:
-            t_volumes = t[np.where(s==1)]
+            t = t[np.where(s==1)]
+            s = np.full( len(t), True )
+            # time for the first trigger:
+            t_first_trigger = t[0]
 
         if physio_label:
-            physio.append( {
-                    'physio_label' : physio_label,
-                    'dt'           : dt/1000,          # BIDS units are in seconds; in physio, they are ms.
-                    't'            : t,
-                    'signal'       : s
-                } )
+            physio.append_signal(
+                bp.physiosignal(
+                    label=physio_label,
+                    samples_per_second=1000/dt,         # dt is in ms.
+                    sampling_times=t,
+                    signal=s
+                )
+            )
+
 
     # BIDS "StartTime" is defined (https://bids-specification.readthedocs.io/en/v1.2.1/04-modality-specific-files/06-physiological-and-other-continuous-recordings.html) as:
     #  Start time in seconds in relation to the start of acquisition of the first
     #  data sample in the corresponding neural dataset (negative values are allowed).
-    for item in physio :
-        item['t_start'] = ( item['t'][0] - t_volumes[0])/1000
+    for p_signal in physio.signals :
+        p_signal.t_start = ( p_signal.sampling_times[0] - t_first_trigger)/1000 if t_first_trigger == None else 0
         
-    print('')
-    print('Saving pulse and respiratory waveforms')
-
     # remove '_bold.nii(.gz)' or '_physio' if present **at the end of the bids_prefix**
     # (This is a little convoluted, but we make sure we don't delete it if
     #  it happens in the middle of the string)
     for mystr in ['.gz', '.nii', '_bold', '_physio']:
         bids_prefix = bids_prefix[:-len(mystr)] if bids_prefix.endswith(mystr) else bids_prefix
-    
+
     # Save files:
-    for item in physio :
-        fBasename = '{0}_recording-{1}_physio'.format(bids_prefix, item['physio_label'])
-
-        # Save json:
-        with open('{0}.json'.format(fBasename), 'w') as f:
-            json.dump({
-                "SamplingFrequency": 1/item['dt'],
-                "StartTime": item['t_start'],
-                "Columns": [
-                    item['physio_label'],
-                    'trigger'
-                ],
-                item['physio_label']: {
-                    "Units": "mV"
-                }
-            }, f, sort_keys = True, indent = 4, ensure_ascii = False)
-            f.write('\n')
-
-        # Calculate scanner triggers corresponding to this physio signal:
-        triggers = calculate_trigger_events(item['t'] ,t_volumes)
-        np.savetxt(
-            '{0}.tsv.gz'.format(fBasename),
-            np.transpose(
-                np.stack(
-                    (item['signal'], triggers)
-                )
-            ),
-            fmt='%.3f',
-            delimiter='\t'
-        )
-                                        
+    physio.save_to_bids_with_trigger( bids_prefix )
 
     return
     
@@ -286,16 +263,6 @@ def plug_missing_data(t,s,dt,missing_value=np.nan):
     return t,s
 
 
-def calculate_trigger_events(t_signal,t_trig):
-    # Function to calculate the trigger events in a given timeseries (t_signal), given
-    #   the timing of the scanner triggers
-
-    trig_signal = np.zeros( np.shape(t_signal), dtype=bool )
-    for t in t_trig:
-        trig_signal[ np.argmax( t_signal > t ) ] = True
-    return trig_signal
-    
-
 def main():
 
     # Parse command line arguments
@@ -303,6 +270,11 @@ def main():
     parser.add_argument('-i', '--infile', required=True, help='CMRR physio DICOM file')
     parser.add_argument('-b', '--bidsprefix', required=True, help='Prefix of the BIDS file. It should match the _bold.nii.gz')
     args = parser.parse_args()
+
+    # make sure output directory exists:
+    odir = os.path.dirname(args.bidsprefix)
+    if not os.path.exists(odir):
+        os.makedirs(odir)
 
     dcm2bids( args.infile, args.bidsprefix )
 

@@ -1,10 +1,10 @@
-__version__ = "1.1"
+__version__ = "1.2"
 __author__ = "Pablo Velasco, Mike Tyszka"
 __url__ = "https://github.com/cbinyu/dcm2bidsphysio"
 __packagename__ = 'dcm2bidsphysio'
-__description__ = "CMRR Physio DICOM-to-BIDS Converter"
+__description__ = "Physio-to-BIDS Converter"
 __license__ = "MIT"
-__longdesc__ = """Converts physio data from a CMRR DICOM file to BIDS physiological recording."""
+__longdesc__ = """Converts physio data from either CMRR DICOM or AcqKnowledge file to BIDS physiological recording."""
 
 CLASSIFIERS = [
     'Environment :: Console',
