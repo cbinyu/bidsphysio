@@ -51,10 +51,11 @@ docker run --rm \
         --bidsprefix /tmp/test
 ```
 
+
 ## How to use in your own Python program
-After installing the module using `pip` (see above), you can use it in
+After installing the module using `pip` (see [above](https://github.com/cbinyu/dcm2bidsphysio#installation "Installation") ), you can use it in
 your own Python program this way:
 ```
-from dcm2bidsphysio import dcm2bidsphysio
-dcm2bidsphysio.dcm2bids( dicom_file, prefix )
+from dcm2bidsphysio import bidsphysio
+bidsphysio.dcm2bids( dicom_file, prefix )
 ```
