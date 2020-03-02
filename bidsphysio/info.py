@@ -1,7 +1,7 @@
-__version__ = "1.2"
-__author__ = "Pablo Velasco, Mike Tyszka"
-__url__ = "https://github.com/cbinyu/dcm2bidsphysio"
-__packagename__ = 'dcm2bidsphysio'
+__version__ = "2.0"
+__author__ = "Pablo Velasco"
+__url__ = "https://github.com/cbinyu/bidsphysio"
+__packagename__ = 'bidsphysio'
 __description__ = "Physio-to-BIDS Converter"
 __license__ = "MIT"
 __longdesc__ = """Converts physio data from either CMRR DICOM or AcqKnowledge file to BIDS physiological recording."""
@@ -18,8 +18,9 @@ CLASSIFIERS = [
 PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
-    'numpy >=1.17.1',
+    'numpy >= 1.17.1',
     'pydicom >= 1.4.1',
+    'bioread >= 1.0.4',
     'etelemetry',
 ]
 
