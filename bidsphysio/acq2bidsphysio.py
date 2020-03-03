@@ -73,7 +73,7 @@ def acq2bids( physio_acq, bids_prefix ):
     for item in physio_data.channels:
         physio_label = ''
         
-        # specify suffix:
+        # specify label:
         if 'PULS' in item.name:
             physio_label = 'cardiac'
 

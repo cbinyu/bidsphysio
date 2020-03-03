@@ -1,7 +1,8 @@
-#######################################################
-# This is the Dockerfile for an app to extract physio #
-# data from a CMRR DICOM file to BIDS physio          #
-#######################################################
+###########################################################
+# This is the Dockerfile for an app to extract raw physio #
+# data (from a CMRR DICOM file, '.puls' and '.resp'       #
+# Siemens files or '.acq' file) to BIDS physio            #
+###########################################################
 
 ARG DEBIAN_VERSION=buster
 ARG BASE_PYTHON_VERSION=3.8
@@ -18,12 +19,12 @@ RUN pip install pydicom==1.4.1 \
 
 
 ### copy module:
-COPY [".", "/tmp/dcm2bidsphysio"]
+COPY [".", "/tmp/bidsphysio"]
 RUN \
-    cd /tmp/dcm2bidsphysio && \
+    cd /tmp/bidsphysio && \
     pip install . && \
     cd / && \
-    rm -rf /tmp/dcm2bidsphysio
+    rm -rf /tmp/bidsphysio
 
 ENTRYPOINT ["/usr/local/bin/dcm2bidsphysio"]
 

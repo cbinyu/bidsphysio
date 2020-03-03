@@ -51,6 +51,7 @@ def main():
         entry_points={'console_scripts': [
             'dcm2bidsphysio=bidsphysio.dcm2bidsphysio:main',
             'acq2bidsphysio=bidsphysio.acq2bidsphysio:main',
+            'pmu2bidsphysio=bidsphysio.pmu2bidsphysio:main',
         ]},
         python_requires=ldict['PYTHON_REQUIRES'],
         install_requires=ldict['REQUIRES'],
