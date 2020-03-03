@@ -8,7 +8,7 @@ Current CMRR MB sequence version : VE11C R016a
 
 Usage
 ----
-dcm2physio.py -i <CMRR DICOM Physio> -b <BIDS file prefix>
+dcm2bidsphysio -i <CMRR DICOM Physio> -b <BIDS file prefix>
 
 
 Authors
