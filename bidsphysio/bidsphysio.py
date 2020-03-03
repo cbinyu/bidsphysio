@@ -53,7 +53,7 @@ class physiosignal(object):
     def __init__(
             self,
             label=None,
-            units="V",
+            units="",
             samples_per_second=None,
             sampling_times=None,
             t_start=None,
@@ -168,7 +168,7 @@ class physiodata(object):
                     item.label: {
                         "Units": item.units
                     }
-                    for item in self.signals
+                    for item in self.signals if item.units is not ""
                 }
             }, f, sort_keys = True, indent = 4, ensure_ascii = False)
             f.write('\n')
@@ -218,11 +218,12 @@ class physiodata(object):
                                    return_index=True
                                )
 
+        print('')
+
         if len(unique_sr_ts) == 1:
             # All the physio signals have the same sampling rate and t_start, so
             #   there will be just one _physio file and we don't need to add "_recording-"
-            
-            print('')
+
             print('Saving physio data')
             self.save_bids_json(bids_fName)
             self.save_bids_data(bids_fName)
@@ -239,11 +240,11 @@ class physiodata(object):
                                                               item.t_start == ts ]
                        )
 
-                print('')
                 print('Saving {0} waveform'.format(rec_label))
-
                 hola.save_bids_json(rec_fName)
                 hola.save_bids_data(rec_fName)
+
+        print('')
 
 
     def get_trigger_timing(self):
@@ -269,6 +270,9 @@ class physiodata(object):
         triggers for each list of signals sharing the same timing:
         """
 
+        # Sanity check: make sure we have a "trigger" signal
+        assert ( "trigger" in self.labels() ),"We cannot save with trigger because we found no trigger."
+
         t_trig = self.get_trigger_timing()
 
         # find the unique pairs of sampling rate and t_start (and indices):
@@ -277,12 +281,12 @@ class physiodata(object):
                                    axis=0,
                                    return_index=True
                                )
+        print('')
 
         if len(unique_sr_ts) == 1:
             # All the physio signals have the same sampling rate and t_start, so
             #   there will be just one _physio file and we don't need to add "_recording-"
             
-            print('')
             print('Saving physio data')
             self.save_bids_json(bids_fName)
             self.save_bids_data(bids_fName)
@@ -315,9 +319,8 @@ class physiodata(object):
                 #   only save "hola" if it has more than one signal:
                 if len(hola.labels()) > 1:
 
-                    print('')
                     print('Saving {0} waveform'.format(rec_label))
-
                     hola.save_bids_json(rec_fName)
                     hola.save_bids_data(rec_fName)
 
+        print('')
