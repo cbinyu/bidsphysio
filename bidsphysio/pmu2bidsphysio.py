@@ -87,7 +87,7 @@ def pmu2bids( physio_files, bids_prefix ):
     # Read the files from the list, extract the relevant information and
     #   add a new physiosignal to the list:
     for f in physio_files:
-        physio_type, MDHTime, sampling_rate, physio_signal = pmuread( f )
+        physio_type, MDHTime, sampling_rate, physio_signal = readpmu( f )
 
         # specify label:
         if 'PULS' in physio_type:
@@ -127,15 +127,72 @@ def pmu2bids( physio_files, bids_prefix ):
     return
 
 
-def pmuread( physio_file ):
+def readpmu( physio_file, softwareVersion=None ):
     """
     Function to read the physiological signal from a Siemens PMU physio file
-    It has been tested on files generated on a VE11C scanner
+    It would try to open the knew formats (currently, VE11C)
 
     Parameters
     ----------
     physio_file : str
         path to a file with a Siemens PMU recording
+    softwareVersion : str or None (default)
+        Siemens scanner software version
+        If None (default behavior), it will try all known versions
+
+    Returns
+    -------
+    physio_type : str
+        type of physiological recording
+    MDHTime : list
+        list of two integers indicating the time in ms since last midnight.
+        MDHTime[0] gives the start of the recording
+        MDHTime[0] gives the end   of the recording
+    sampling_rate : int
+        number of samples per second
+    physio_signal : list of int
+        signal proper. NaN indicate points for which there was no recording
+        (the scanner found a trigger in the signal)
+    """
+
+    # Check for known software versions:
+    knownVersions = [ 'VE11C' ]
+
+    if not (
+            softwareVersion in knownVersions or
+            softwareVersion == None
+           ):
+        raise "{sv} is not a known software version."
+
+    # Define what versions we need to test:
+    versionsToTest = [softwareVersion] if softwareVersion else knownVersions
+
+    # Try to read as each of the versions to test, until we find one:
+    for sv in versionsToTest:
+        # try to read, if successful, it will return (the results of the call)
+        # if unsuccessful, it will try the next versionToTest
+        if sv == 'VE11C':
+            try:
+                return readVE11Cpmu( physio_file )
+            except:
+                print('File {f} does not seem to be a {v} file'.format(f=physio_file,v=sv))
+                continue
+
+    # if we made it this far, there was a problem:
+    print('File {f} does not seem to be a Siemens PMU file'.format(f=physio_file))
+    raise
+
+
+def readVE11Cpmu( physio_file, forceRead=False ):
+    """
+    Function to read the physiological signal from a VE11C Siemens PMU physio file
+
+    Parameters
+    ----------
+    physio_file : str
+        path to a file with a Siemens PMU recording
+    forceRead : bool
+        flag indicating to read the file whether the format seems correct or not
 
     Returns
     -------
