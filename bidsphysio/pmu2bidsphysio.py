@@ -60,6 +60,35 @@ import re
 import bidsphysio.bidsphysio as bp
 
 
+def errmsg(msg, pmuFile, expStr, gotStr):
+    msg = msg.replace('%r', repr(pmuFile))
+    if expStr and gotStr:
+        formattedMsg = '{msg}: Expected: {expStr}; got: {gotStr}'
+        return formattedMsg.format(msg=msg, expStr=repr(expStr), gotStr=repr(gotStr))
+    else:
+        return msg
+
+
+class PMUFormatError(ValueError):
+    """
+    Subclass of ValueError with the following additional properties:
+    msg    : The unformatted error message
+    pmuFile: The PMU file being parsed
+    expStr : The string we expected
+    gotStr : The string that didn't match what we expected
+    """
+    def __init__(self, msg, pmuFile, expStr=None, gotStr=None):
+        ValueError.__init__(self, errmsg(msg, pmuFile, expStr, gotStr))
+        self.msg = msg
+        self.pmuFile = pmuFile
+        self.mystr = expStr
+        self.gotStr = gotStr
+
+    def __reduce__(self):
+        return self.__class__, (self.msg, self.pmuFile, self.expStr, self.gotStr)
+
+
+
 def pmu2bids( physio_files, bids_prefix ):
     """
     Function to read a list of Siemens PMU physio files and
@@ -174,13 +203,16 @@ def readpmu( physio_file, softwareVersion=None ):
         if sv == 'VE11C':
             try:
                 return readVE11Cpmu( physio_file )
-            except:
-                print('File {f} does not seem to be a {v} file'.format(f=physio_file,v=sv))
+            except PMUFormatError as e:
+                print(str(e))
                 continue
 
     # if we made it this far, there was a problem:
-    print('File {f} does not seem to be a Siemens PMU file'.format(f=physio_file))
-    raise
+    raise PMUFormatError(
+          'File %r does not seem to be a valid Siemens PMU file',
+          physio_file
+      )
+
 
 
 def readVE11Cpmu( physio_file, forceRead=False ):
@@ -216,19 +248,38 @@ def readVE11Cpmu( physio_file, forceRead=False ):
     # According to Siemens (IDEA documentation), the sampling rate is 2.5ms for all signals:
     sampling_rate = int(400)    # 1000/2.5
 
-
     # For that first line, different information regions are bound by "5002 and "6002".
     #   Find them:
     s = re.split('5002(.*?)6002', lines[0])
+    if len(s) == 1:
+        # we failed to find even one "5002 ... 6002" group.
+        raise PMUFormatError(
+                  'File %r does not seem to be a valid Siemens PMU file',
+                  physio_file,
+                  '5002(.*?)6002',
+                  s[0]
+              )
+
+
 
     # The first group contains the triggering method, gate open and close times, etc. Ignore.
     # The second group tells us the type of signal ('RESP', 'PULS', etc.)
     try:
         physio_type = re.search('LOGVERSION_([A-Z]*)', s[1]).group(1)
     except AttributeError:
-        print( 'Could not find type of recording for {fName}. '
-               'Setting type to "Unknown"'.format(fName=physio_file) )
-        physio_type = "Unknown"
+        print( 'Could not find type of recording for ' + physio_file )
+        if not forceRead:
+            raise PMUFormatError(
+                      'File %r does not seem to be a valid VE11C PMU file',
+                      physio_file,
+                      'LOGVERSION_([A-Z]*)',
+                      s[1]
+                  )
+        else:
+            print( 'Setting recording type to "Unknown"' )
+            physio_type = "Unknown"
+            # (continue reading the file)
+
 
     # The third and fouth groups we ignore, and the fifth gives us the physio signal itself.
     #   (up to the entry "5003")
