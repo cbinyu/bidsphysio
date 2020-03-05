@@ -204,13 +204,13 @@ def readpmu( physio_file, softwareVersion=None ):
             try:
                 return readVE11Cpmu( physio_file )
             except PMUFormatError as e:
-                print(str(e))
+                print( 'Warning: ' + str(e))
                 continue
         elif sv == 'VB15A':
             try:
                 return readVB15Apmu( physio_file )
             except PMUFormatError as e:
-                print(str(e))
+                print( 'Warning: ' + str(e))
                 continue
 
     # if we made it this far, there was a problem:
@@ -266,9 +266,8 @@ def readVE11Cpmu( physio_file, forceRead=False ):
                   s[0]
               )
 
-
-
-    # The first group contains the triggering method, gate open and close times, etc. Ignore.
+    # The first group contains the triggering method, gate open and close times, etc for
+    #   compatibility with previous versions. Ignore it.
     # The second group tells us the type of signal ('RESP', 'PULS', etc.)
     try:
         physio_type = re.search('LOGVERSION_([A-Z]*)', s[1]).group(1)
@@ -288,47 +287,13 @@ def readVE11Cpmu( physio_file, forceRead=False ):
 
 
     # The third and fouth groups we ignore, and the fifth gives us the physio signal itself.
-    #   (up to the entry "5003")
     raw_signal = s[4].split(' ')
     
-    # Sometimes, there is an empty string ('') at the beginning of the string. Remove it:
-    if raw_signal[0] == '':
-        raw_signal = raw_signal[1:]
-
-    # Convert to integers:
-    raw_signal = [ int(v) for v in raw_signal ]
-
-    # only keep up to "5003" (indicates end of signal recording):
-    try:
-        raw_signal = raw_signal[:raw_signal.index(5003)]
-    except ValueError:
-        print( "End of physio recording not found. Keeping whole data" )
-
-    # Values "5000" and "6000" indicate "trigger on" and "trigger off", respectively, so they
-    #   are not a real physio_signal value. So replace them with NaN:
-    physio_signal = raw_signal
-    for idx,v in enumerate(raw_signal):
-        if v == 5000 or v == 6000:
-            physio_signal[idx] = float('NaN')           
-
+    physio_signal = parserawPMUsignal(raw_signal)
 
     # The rest of the lines have statistics about the signals, plus start and finish times.
     # Get timing:
-    MPCUTime = [0,0]
-    MDHTime = [0,0]
-    for l in lines[1:]:     #  (don't check the first line)
-        if 'MPCUTime' in l:
-            ls = l.split()
-            if 'LogStart' in l:
-                MPCUTime[0]= int(ls[1])
-            elif 'LogStop' in l:
-                MPCUTime[1]= int(ls[1])
-        if 'MDHTime' in l:
-            ls = l.split()
-            if 'LogStart' in l:
-                MDHTime[0]= int(ls[1])
-            elif 'LogStop' in l:
-                MDHTime[1]= int(ls[1])
+    MPCUTime, MDHTime = getPMUtiming( lines[1:] )
 
     return physio_type, MDHTime, sampling_rate, physio_signal
 
@@ -369,7 +334,16 @@ def readVB15Apmu( physio_file, forceRead=False ):
     # The first line starts with four integers with info about the recording, followed
     #   by the data. So split by spaces:
     line0 = lines[0].split(' ')
-    recInfo = [ int(v) for v in line0[:4] ]
+    try:
+        recInfo = [ int(v) for v in line0[:4] ]
+    except:
+        raise PMUFormatError(
+                  'File %r does not seem to be a valid VB15A PMU file',
+                  physio_file,
+                  '"1 2 40 280" or "1 2 20 2"',
+                  str(line0[:4])
+              )
+
     raw_signal = line0[4:]     # we'll transform the signal to int later
 
     # According to XXXXXXXXXXXXX, the third element gives the sampling time (in ms):
@@ -389,6 +363,81 @@ def readVB15Apmu( physio_file, forceRead=False ):
                       '"1 2 40 280" or "1 2 20 2"',
                       str(recInfo)
                   )
+
+    # VB files continue with physio data right away. VE files continue with some more
+    #   information, starting with the code "5002":
+    if raw_signal[0] == '5002':
+        raise PMUFormatError(
+                  'File %r does not seem to be a valid VB15A PMU file',
+                  physio_file,
+                  'not 5002',
+                  '5002 [...]'
+              )
+
+    physio_signal = parserawPMUsignal(raw_signal)
+
+    # The rest of the lines have statistics about the signals, plus start and finish times.
+    # Get timing:
+    MPCUTime, MDHTime = getPMUtiming( lines[1:] )
+
+    return physio_type, MDHTime, sampling_rate, physio_signal
+
+
+def getPMUtiming( lines ):
+    """
+    Function to get the timing for the PMU recording.
+
+    Parameters
+    ----------
+    lines : list of str
+        list with PMU file lines
+        To improve speed, don't pass the first line, which contains the raw data.
+
+    Returns
+    -------
+    MPCUTime : list of two int
+        MARS timestamp (in ms, since the previous midnight) for the start and finish
+        of the signal logging
+    MDHTime : list of two int
+        Mdh timestamp (in ms, since the previous midnight) for the start and finish
+        of the signal logging
+
+    """
+
+    MPCUTime = [0,0]
+    MDHTime = [0,0]
+    for l in lines:
+        if 'MPCUTime' in l:
+            ls = l.split()
+            if 'LogStart' in l:
+                MPCUTime[0]= int(ls[1])
+            elif 'LogStop' in l:
+                MPCUTime[1]= int(ls[1])
+        if 'MDHTime' in l:
+            ls = l.split()
+            if 'LogStart' in l:
+                MDHTime[0]= int(ls[1])
+            elif 'LogStop' in l:
+                MDHTime[1]= int(ls[1])
+
+    return MPCUTime, MDHTime
+
+
+def parserawPMUsignal( raw_signal ):
+    """
+    Function to parse raw physio signal.
+
+    Parameters
+    ----------
+    raw_signal : list of str
+        list with raw PMU signal
+
+    Returns
+    -------
+    physio_signal : list of int
+        signal proper. NaN indicate points for which there was no recording
+        (the scanner found a trigger in the signal)
+    """
 
     # Sometimes, there is an empty string ('') at the beginning of the string. Remove it:
     if raw_signal[0] == '':
@@ -410,26 +459,7 @@ def readVB15Apmu( physio_file, forceRead=False ):
         if v == 5000 or v == 6000:
             physio_signal[idx] = float('NaN')
 
-
-    # The rest of the lines have statistics about the signals, plus start and finish times.
-    # Get timing:
-    MPCUTime = [0,0]
-    MDHTime = [0,0]
-    for l in lines[1:]:     #  (don't check the first line)
-        if 'MPCUTime' in l:
-            ls = l.split()
-            if 'LogStart' in l:
-                MPCUTime[0]= int(ls[1])
-            elif 'LogStop' in l:
-                MPCUTime[1]= int(ls[1])
-        if 'MDHTime' in l:
-            ls = l.split()
-            if 'LogStart' in l:
-                MDHTime[0]= int(ls[1])
-            elif 'LogStop' in l:
-                MDHTime[1]= int(ls[1])
-
-    return physio_type, MDHTime, sampling_rate, physio_signal
+    return physio_signal
 
 
 def main():
