@@ -176,7 +176,7 @@ def readpmu( physio_file, softwareVersion=None ):
     MDHTime : list
         list of two integers indicating the time in ms since last midnight.
         MDHTime[0] gives the start of the recording
-        MDHTime[0] gives the end   of the recording
+        MDHTime[1] gives the end   of the recording
     sampling_rate : int
         number of samples per second
     physio_signal : list of int
@@ -189,6 +189,7 @@ def readpmu( physio_file, softwareVersion=None ):
 
     if not (
             softwareVersion in knownVersions or
+            # (if None, we'll try all knownVersions)
             softwareVersion == None
            ):
         raise "{sv} is not a known software version."
@@ -198,20 +199,16 @@ def readpmu( physio_file, softwareVersion=None ):
 
     # Try to read as each of the versions to test, until we find one:
     for sv in versionsToTest:
-        # try to read, if successful, it will return (the results of the call)
-        # if unsuccessful, it will try the next versionToTest
-        if sv == 'VE11C':
-            try:
+        # try to read all new versions, if successful, return the results.
+        # If unsuccessful, it will print a warning and try the next versionToTest
+        try:
+            if sv == 'VE11C':
                 return readVE11Cpmu( physio_file )
-            except PMUFormatError as e:
-                print( 'Warning: ' + str(e))
-                continue
-        elif sv == 'VB15A':
-            try:
+            elif sv == 'VB15A':
                 return readVB15Apmu( physio_file )
-            except PMUFormatError as e:
-                print( 'Warning: ' + str(e))
-                continue
+        except PMUFormatError as e:
+            print( 'Warning: ' + str(e))
+            continue
 
     # if we made it this far, there was a problem:
     raise PMUFormatError(
@@ -239,7 +236,7 @@ def readVE11Cpmu( physio_file, forceRead=False ):
     MDHTime : list
         list of two integers indicating the time in ms since last midnight.
         MDHTime[0] gives the start of the recording
-        MDHTime[0] gives the end   of the recording
+        MDHTime[1] gives the end   of the recording
     sampling_rate : int
         number of samples per second
     physio_signal : list of int
@@ -260,7 +257,7 @@ def readVE11Cpmu( physio_file, forceRead=False ):
     if len(s) == 1:
         # we failed to find even one "5002 ... 6002" group.
         raise PMUFormatError(
-                  'File %r does not seem to be a valid Siemens PMU file',
+                  'File %r does not seem to be a valid VE11C PMU file',
                   physio_file,
                   '5002(.*?)6002',
                   s[0]
@@ -319,7 +316,7 @@ def readVB15Apmu( physio_file, forceRead=False ):
     MDHTime : list
         list of two integers indicating the time in ms since last midnight.
         MDHTime[0] gives the start of the recording
-        MDHTime[0] gives the end   of the recording
+        MDHTime[1] gives the end   of the recording
     sampling_rate : int
         number of samples per second
     physio_signal : list of int
@@ -397,10 +394,10 @@ def getPMUtiming( lines ):
     -------
     MPCUTime : list of two int
         MARS timestamp (in ms, since the previous midnight) for the start and finish
-        of the signal logging
+        of the signal logging, respectively
     MDHTime : list of two int
         Mdh timestamp (in ms, since the previous midnight) for the start and finish
-        of the signal logging
+        of the signal logging, respectively
 
     """
 
@@ -450,7 +447,7 @@ def parserawPMUsignal( raw_signal ):
     try:
         raw_signal = raw_signal[:raw_signal.index(5003)]
     except ValueError:
-        print( "End of physio recording not found. Keeping whole data" )
+        print( "Warning: End of physio recording not found. Keeping whole data" )
 
     # Values "5000" and "6000" indicate "trigger on" and "trigger off", respectively, so they
     #   are not a real physio_signal value. So replace them with NaN:
