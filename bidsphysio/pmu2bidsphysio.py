@@ -57,8 +57,8 @@ __version__ = '1.0.0'
 import os
 import sys
 import argparse
-import numpy as np
 import re
+import math
 import bidsphysio.bidsphysio as bp
 
 
@@ -119,6 +119,12 @@ def pmu2bids( physio_files, bids_prefix ):
     #   add a new physiosignal to the list:
     for f in physio_files:
         physio_type, MDHTime, sampling_rate, physio_signal = readpmu( f )
+
+        testSamplingRate(
+                            sampling_rate = sampling_rate,
+                            Nsamples = len(physio_signal),
+                            logTimes=MDHTime
+        )
 
         # specify label:
         if 'PULS' in physio_type:
@@ -549,6 +555,45 @@ def parserawPMUsignal( raw_signal ):
             physio_signal[idx] = float('NaN')
 
     return physio_signal
+
+
+def testSamplingRate(
+        sampling_rate=0,
+        Nsamples=0,
+        logTimes=[0,0],
+        tolerance=0.05
+        ):
+    """
+    Function to test if the sampling rate is correct.
+    If it is incorrect, it will raise a ValueError
+
+    Parameters
+    ----------
+    sampling_rate : int
+        Sampling rate (samples per second) we want to test
+    Nsamples : int
+        Number of samples in the data
+    logTimes : list of two int
+        Start and Stop logging times (in ms)
+    tolerance : float (> 0 and < 1)
+        relative tolerance in the error
+
+    Returns
+    -------
+    """
+
+    if not (tolerance < 1 and tolerance > 0):
+        raise ValueError('tolerance has to be between 0 and 1. Got ' + tolerance)
+
+    loggingTime_sec = (logTimes[1] - logTimes[0])/1000
+    expected_samples = int(loggingTime_sec * sampling_rate)
+    if not math.isclose( Nsamples, expected_samples, rel_tol=tolerance):
+        raise ValueError(
+            'Expected sampling rate: {expected}. Got: {got}'.format(
+                expected=int(Nsamples/loggingTime_sec),
+                got=sampling_rate
+            )
+        )
 
 
 def main():
