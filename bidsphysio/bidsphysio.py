@@ -48,6 +48,27 @@ import json
 class physiosignal(object):
     """
     Individual physiology signal (e.g., pulse, respiration, etc.)
+
+    Members:
+    --------
+    label : str
+        physiological recording label (e.g., 'cardiac', 'respiratory', 'pulse', etc.)
+    units : str
+    samples_per_second : number
+    sampling_times : list of numbers
+        times (in seconds) at which the samples were acquired
+    physiostarttime : number
+        Start time in seconds of the physiological recording.
+        Uses the same clock as 'neuralstarttime'
+    neuralstarttime : number
+        Start time in seconds of the corresponding recording
+        Uses the same clock as 'physiostarttime'
+    signal : list of numbers
+        The physiological signal proper
+    t_start : number
+        BIDS definition: Start time in seconds in relation to the start
+        of acquisition of the first data sample in the corresponding neural
+        dataset (negative values are allowed). It is calculated when needed
     """
 
     def __init__(
@@ -56,20 +77,27 @@ class physiosignal(object):
             units="",
             samples_per_second=None,
             sampling_times=None,
-            t_start=None,
+            physiostarttime=0,
+            neuralstarttime=0,
             signal=None
             ):
         self.label = label
         self.units = units
         self.samples_per_second = samples_per_second
         self.sampling_times = sampling_times
-        # t_start is the time (in seconds) of the first sample with respect to
-        #   the first neural sample (MR image, EEG recording, etc.).
-        #   A negative number means the physio signal started recording before
-        #   the first neural sample.
-        self.t_start = t_start
+        self.physiostarttime = physiostarttime
+        self.neuralstarttime = neuralstarttime
         self.signal = signal
         self.samples_count = len( signal ) if signal is not None else None
+
+
+    def t_start( self ):
+        try:
+            t_start_ms = 1000*(self.physiostarttime - self.neuralstarttime)
+            # round to the ms:
+            return int(t_start_ms) / 1000
+        except ValueError:
+            pass
 
 
     def calculate_trigger_events(self, t_trig):
@@ -100,10 +128,11 @@ class physiosignal(object):
                    signal=trigger_s,
                    samples_per_second=mysignal.samples_per_second,
                    sampling_times=mysignal.sampling_times,
-                   t_start=mysignal.t_start
+                   physiostarttime=mysignal.physiostarttime,
+                   neuralstarttime=mysignal.neuralstarttime
                )
 
-        
+
         
 ####################
 
@@ -150,7 +179,7 @@ class physiodata(object):
 
         assert (
             len( np.unique([item.samples_per_second for item in self.signals]) ) == 1 and
-            len( np.unique([item.t_start            for item in self.signals]) ) == 1
+            len( np.unique([item.t_start()          for item in self.signals]) ) == 1
         ),"The different signals have different sampling rates. You can't save them in a single file!"
 
         # make sure the file name ends with "_physio.json":
@@ -162,7 +191,7 @@ class physiodata(object):
         with open( json_fName, 'w') as f:
             json.dump({
                 "SamplingFrequency": self.signals[0].samples_per_second,
-                "StartTime": self.signals[0].t_start,
+                "StartTime": self.signals[0].t_start(),
                 "Columns": [item.label for item in self.signals],
                 **{            # this syntax allows us to add the elements of this dictionary to the one we are creating
                     item.label: {
@@ -213,7 +242,7 @@ class physiodata(object):
 
         # find the unique pairs of sampling rate and t_start (and indices):
         unique_sr_ts, idx_un = np.unique(
-                                   [ [item.samples_per_second,item.t_start] for item in self.signals ],
+                                   [ [item.samples_per_second,item.t_start()] for item in self.signals ],
                                    axis=0,
                                    return_index=True
                                )
@@ -237,7 +266,7 @@ class physiodata(object):
                 # create a new physiodata object with just the signals with matching sampling rate and t_start:
                 hola = physiodata(
                            [ item for item in self.signals if item.samples_per_second == sr and
-                                                              item.t_start == ts ]
+                                                              item.t_start() == ts ]
                        )
 
                 print('Saving {0} waveform'.format(rec_label))
@@ -277,7 +306,7 @@ class physiodata(object):
 
         # find the unique pairs of sampling rate and t_start (and indices):
         unique_sr_ts, idx_un = np.unique(
-                                   [ [item.samples_per_second,item.t_start] for item in self.signals ],
+                                   [ [item.samples_per_second,item.t_start()] for item in self.signals ],
                                    axis=0,
                                    return_index=True
                                )
@@ -301,7 +330,7 @@ class physiodata(object):
                 #   (but not if the signal is trigger: we'll add it later).
                 hola = physiodata(
                            [ item for item in self.signals if item.samples_per_second == sr and
-                                                              item.t_start == ts ]
+                                                              item.t_start() == ts ]
                        )
 
                 if not 'trigger' in hola.labels():

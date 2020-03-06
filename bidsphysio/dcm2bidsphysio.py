@@ -139,24 +139,23 @@ def dcm2bids( physio_dcm, bids_prefix ):
             t = t[np.where(s==1)]
             s = np.full( len(t), True )
             # time for the first trigger:
-            t_first_trigger = t[0]
+            t_first_trigger = t[0]/1000
 
         if physio_label:
             physio.append_signal(
                 bp.physiosignal(
                     label=physio_label,
                     samples_per_second=1000/dt,         # dt is in ms.
-                    sampling_times=t,
+                    sampling_times=t/1000,
+                    physiostarttime=t[0]/1000,
                     signal=s
                 )
             )
 
-
-    # BIDS "StartTime" is defined (https://bids-specification.readthedocs.io/en/v1.2.1/04-modality-specific-files/06-physiological-and-other-continuous-recordings.html) as:
-    #  Start time in seconds in relation to the start of acquisition of the first
-    #  data sample in the corresponding neural dataset (negative values are allowed).
+    # We do this after we have read all signals to make sure we have read the trigger
+    #   (if present in the file)
     for p_signal in physio.signals :
-        p_signal.t_start = ( p_signal.sampling_times[0] - t_first_trigger)/1000 if t_first_trigger == None else 0
+        p_signal.neuralstarttime = t_first_trigger if t_first_trigger is not None else p_signal.physiostarttime
         
     # remove '_bold.nii(.gz)' or '_physio' if present **at the end of the bids_prefix**
     # (This is a little convoluted, but we make sure we don't delete it if

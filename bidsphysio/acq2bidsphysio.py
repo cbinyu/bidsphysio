@@ -90,15 +90,14 @@ def acq2bids( physio_acq, bids_prefix ):
             physio.append_signal(
                 # Note: Because the channel name is user-defined, the 'TRIGGER' channel might not
                 #   correspond to the scanner trigger, but to the stimulus onset, or something
-                #   else. So, I'm going to set the BIDS "StartTime" to 0, and let the user
-                #   figure out the offset.
+                #   else. So, I'm going to set the BIDS "StartTime" to 0 (by not passing the
+                #   physiostarttime and neuralstarttime), and let the user figure out the offset.
                 bp.physiosignal(
                     label=physio_label,
                     samples_per_second=item.samples_per_second,
                     sampling_times=item.time_index,
                     signal=item.data,
-                    units=item.units,
-                    t_start=0
+                    units=item.units
                 )
             )
 

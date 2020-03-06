@@ -144,7 +144,7 @@ def pmu2bids( physio_files, bids_prefix ):
                 label=physio_label,
                 units='',
                 samples_per_second=sampling_rate,
-                t_start=MDHTime[0],
+                physiostarttime=MDHTime[0],
                 signal=physio_signal
             )
         )
