@@ -23,6 +23,8 @@ References
 ----
 BIDS specification for physio signal:
 https://bids-specification.readthedocs.io/en/stable/04-modality-specific-files/06-physiological-and-other-continuous-recordings.html
+Notes on the HPC physio timing (you should use MDHTime, not MPCUTime):
+https://wiki.humanconnectome.org/display/PublicData/Understanding+Timing+Information+in+HCP+Physiological+Monitoring+Files
 
 License
 ----
@@ -185,7 +187,7 @@ def readpmu( physio_file, softwareVersion=None ):
     """
 
     # Check for known software versions:
-    knownVersions = [ 'VB15A', 'VE11C' ]
+    knownVersions = [ 'VB15A', 'VE11C', 'VBX' ]
 
     if not (
             softwareVersion in knownVersions or
@@ -206,6 +208,8 @@ def readpmu( physio_file, softwareVersion=None ):
                 return readVE11Cpmu( physio_file )
             elif sv == 'VB15A':
                 return readVB15Apmu( physio_file )
+            elif sv == 'VBX':
+                return readVBXpmu( physio_file )
         except PMUFormatError as e:
             print( 'Warning: ' + str(e))
             continue
@@ -343,8 +347,8 @@ def readVB15Apmu( physio_file, forceRead=False ):
 
     raw_signal = line0[4:]     # we'll transform the signal to int later
 
-    # According to XXXXXXXXXXXXX, the third element gives the sampling time (in ms):
-    sampling_rate = 1000/recInfo[2]
+    # According to Siemens (IDEA documentation), the sampling rate is 50 samples/s for all signals:
+    sampling_rate = int(50)
 
     # Check the recording. These are fixed:
     if recInfo == [1, 2, 40, 280]:
@@ -370,6 +374,94 @@ def readVB15Apmu( physio_file, forceRead=False ):
                   'not 5002',
                   '5002 [...]'
               )
+
+    physio_signal = parserawPMUsignal(raw_signal)
+
+    # The rest of the lines have statistics about the signals, plus start and finish times.
+    # Get timing:
+    MPCUTime, MDHTime = getPMUtiming( lines[1:] )
+
+    return physio_type, MDHTime, sampling_rate, physio_signal
+
+
+def readVBXpmu( physio_file, forceRead=False ):
+    """
+    Function to read the physiological signal from some VB Siemens PMU physio file
+    (Possibly VB17? or VB19?)
+    See:
+    https://gitlab.ethz.ch/physio/physio-doc/-/wikis/MANUAL_PART_READIN#siemens
+
+    Parameters
+    ----------
+    physio_file : str
+        path to a file with a Siemens PMU recording
+    forceRead : bool
+        flag indicating to read the file whether the format seems correct or not
+
+    Returns
+    -------
+    physio_type : str
+        type of physiological recording
+    MDHTime : list
+        list of two integers indicating the time in ms since last midnight.
+        MDHTime[0] gives the start of the recording
+        MDHTime[1] gives the end   of the recording
+    sampling_rate : int
+        number of samples per second
+    physio_signal : list of int
+        signal proper. NaN indicate points for which there was no recording
+        (the scanner found a trigger in the signal)
+    """
+
+    # Read the file, splitting by lines and removing the "newline" (and any blank space)
+    #   at the end of the line:
+    lines = [line.rstrip() for line in open( physio_file )]
+
+    # For that first line, different information regions are bound by "5002 and "6002".
+    #   Find them:
+    s = re.split('5002(.*?)6002', lines[0])
+    if len(s) == 1:
+        # we failed to find even one "5002 ... 6002" group.
+        raise PMUFormatError(
+                  'File %r does not seem to be a valid VBX PMU file',
+                  physio_file,
+                  '5002(.*?)6002',
+                  s[0]
+              )
+
+    # The first group contains the triggering method, gate open and close times, etc for
+    #   compatibility with previous versions. Ignore it.
+    # The second group tells us the type of signal ('RESP', 'PULS', etc.)
+    try:
+        physio_type = re.search('Logging ([A-Z]*) signal', s[1]).group(1)
+    except AttributeError:
+        print( 'Could not find type of recording for ' + physio_file )
+        if not forceRead:
+            raise PMUFormatError(
+                      'File %r does not seem to be a valid VE11C PMU file',
+                      physio_file,
+                      'Logging ([A-Z]*) signal',
+                      s[1]
+                  )
+        else:
+            print( 'Setting recording type to "Unknown"' )
+            physio_type = "Unknown"
+            # (continue reading the file)
+
+    # Also, the sampling rate:
+    try:
+        sampling_rate = int(re.search('_SAMPLES_PER_SECOND = ([0-9]*)', s[1]).group(1))
+    except AttributeError:
+        print( 'Could not find the sampling rate for ' + physio_file )
+        raise PMUFormatError(
+                  'File %r does not seem to be a valid VE11C PMU file',
+                  physio_file,
+                  '_SAMPLES_PER_SECOND = ([0-9]*)',
+                  s[1]
+              )
+
+    # The third group gives us the physio signal itself.
+    raw_signal = s[2].split(' ')
 
     physio_signal = parserawPMUsignal(raw_signal)
 
