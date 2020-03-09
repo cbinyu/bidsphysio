@@ -1,10 +1,11 @@
 # bidsphysio
-Converts physio data (CMRR, AcqKnowledge) to BIDS physiological recording
+Converts physio data (CMRR, AcqKnowledge, Siemens PMU) to BIDS physiological recording
 
 ## Usage
 ```
 dcm2bidsphysio --infile <DCMfile> --bidsprefix <Prefix>
 acq2bidsphysio --infile <acqfile> --bidsprefix <Prefix>
+pmu2bidsphysio --infile <acqfiles> --bidsprefix <Prefix>
 ```
 
 Example:
@@ -58,6 +59,7 @@ docker run --rm \
 After installing the module using `pip` (see [above](https://github.com/cbinyu/bidsphysio#installation "Installation") ), you can use it in your own Python program this way:
 ```
 from bidsphysio import bidsphysio
-bidsphysio.dcm2bids( dicom_file, prefix )
-bidsphysio.acq2bids( acq_file, prefix )
+bidsphysio.dcm2bids( dicom_file,  prefix )
+bidsphysio.acq2bids( acq_file,    prefix )
+bidsphysio.pmu2bids( [acq_files], prefix )
 ```
