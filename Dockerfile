@@ -12,6 +12,8 @@ ARG BASE_PYTHON_VERSION=3.8
 FROM python:${BASE_PYTHON_VERSION}-slim-${DEBIAN_VERSION}
 
 ## install required python packages:
+#  Not sure why, but I have to install bioread in
+#  a separated pip install command.
 RUN pip install pydicom==1.4.1 \
 		numpy==1.18.1  \
 		etelemetry==0.1.2 && \

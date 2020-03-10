@@ -92,6 +92,11 @@ class physiosignal(object):
 
 
     def t_start( self ):
+        """
+        Computes the BIDS t_start (offset between the beginning of the neural signal and the beginning
+        of the physiological recording), in seconds
+        I round it to the ms
+        """
         try:
             t_start_ms = 1000*(self.physiostarttime - self.neuralstarttime)
             # round to the ms:
@@ -100,15 +105,35 @@ class physiosignal(object):
             pass
 
 
+    def calculate_timing( self ):
+        """
+        Calculate the recording timing, based on the physiostarttime
+        and the sampling rate
+        """
+        if self.samples_per_second == None or self.physiostarttime == None:
+            raise "Unable to calculate the recording timing"
+        else:
+            self.sampling_times = [self.physiostarttime + i/self.samples_per_second for i in range(len(self.signal))]
+
+
     def calculate_trigger_events(self, t_trig):
         """
         Function to calculate the trigger events for a given physiosignal, given
         the timing of the scanner triggers (t_trig)
         """
 
-        trig_signal = np.full( np.shape(self.signal), False )
+        if self.sampling_times == None:
+            try:
+                self.calculate_timing()
+            except Error as e:
+                print( e.msg )
+                return None
+
+        sampling_times = np.array(self.sampling_times)
+        trig_signal = np.full( np.shape(self.signal), False )    # initialize to "False"
         for t in t_trig:
-            trig_signal[ np.argmax( self.sampling_times >= t ) ] = True
+            if t >= self.sampling_times[0] and t <= self.sampling_times[-1]:
+                trig_signal[np.argmax( sampling_times >= t )] = True
         return trig_signal
 
 
