@@ -25,6 +25,7 @@ REQUIRES = [
 ]
 
 TESTS_REQUIRES = [
+    'pytest'
 ]
 
 EXTRA_REQUIRES = {

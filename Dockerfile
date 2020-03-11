@@ -17,16 +17,16 @@ FROM python:${BASE_PYTHON_VERSION}-slim-${DEBIAN_VERSION}
 RUN pip install pydicom==1.4.1 \
 		numpy==1.18.1  \
 		etelemetry==0.1.2 && \
-    pip install	bioread>=1.0.4
-
+    pip install	bioread>=1.0.4 && \
+    pip install	pytest
 
 ### copy module:
-COPY [".", "/tmp/bidsphysio"]
+COPY [".", "/src/bidsphysio"]
 RUN \
-    cd /tmp/bidsphysio && \
-    pip install . && \
-    cd / && \
-    rm -rf /tmp/bidsphysio
+    pip install \
+        /src/bidsphysio[all] && \
+	rm -rf ~/.cache/pip/*
+
 
 ENTRYPOINT ["/usr/local/bin/dcm2bidsphysio"]
 
