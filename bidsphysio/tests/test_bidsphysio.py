@@ -1,18 +1,16 @@
+import pytest
 import numpy as np
 from bidsphysio import bidsphysio
 
 
-def simulate_signal_and_trigger(
-        samples_per_second=1,
-        physiostarttime=0,
-        samples_count=1
-        ):
-    """
-    Simulate a physiosignal object and the timing for the scanner triggers.
-    It's used by some of the tests below.
-    """
+@pytest.fixture
+def mySignal(
+        samples_per_second=5,
+        physiostarttime=1000,
+        samples_count=100
+):
+    """    Simulate a physiosignal object    """
 
-    # simulate signal:
     mySignal=bidsphysio.physiosignal(
                  label='simulated',
                  samples_per_second=samples_per_second,
@@ -20,86 +18,111 @@ def simulate_signal_and_trigger(
                  signal= samples_count * [0]     # fill with zeros
              )
 
-    # simulate scanner trigger (times at which the triggers were sent, according
-    #   to the reference clock).
-    # Let's assume the first sample is collected 2 sec after physio recording started:
-    t_first_trigger = physiostarttime + 2
-    TR = 0.75   # in s
+    return mySignal
+
+
+@pytest.fixture
+def trigger_timing(
+        physiostarttime=1000,
+        scannerdelay=2,
+        TR=0.75,
+        samples_count=100
+):
+    """   Simulate trigger timing (times at which the triggers were sent   """
+    t_first_trigger = physiostarttime + scannerdelay
     trigger_timing = [t_first_trigger + TR * i for i in range(samples_count)]
 
-    return mySignal, trigger_timing
+    return trigger_timing
 
 
-def test_calculate_trigger_events():
+def test_calculate_trigger_events(
+        mySignal, trigger_timing
+):
     """
     Make sure you get as many triggers in the trigger signal
     as elements there are in the trigger timing (between the
     beginning of the recording and the end)
     """
 
-    # simulate signal at 5 Hz, starting at time 1000 sec (according to some
-    #   clock)
-    mysignal, trigger_timing =simulate_signal_and_trigger(
-                 samples_per_second=5,
-                 physiostarttime=1000,
-                 samples_count=100
-             )
-
     # calculate trigger events:
-    trig_signal = mysignal.calculate_trigger_events( trigger_timing )
+    trig_signal = mySignal.calculate_trigger_events( trigger_timing )
 
     assert isinstance(trig_signal, np.ndarray)
 
     # calculate how many triggers there are between the first and last sampling_times:
     num_trig_within_physio_samples = np.bitwise_and(
-                np.array(trigger_timing) >= mysignal.sampling_times[0],
-                np.array(trigger_timing) <= mysignal.sampling_times[-1]
+                np.array(trigger_timing) >= mySignal.sampling_times[0],
+                np.array(trigger_timing) <= mySignal.sampling_times[-1]
     )
     
     assert ( sum(trig_signal) == sum(num_trig_within_physio_samples) )
 
 
-def test_matching_trigger_signal():
+def test_matching_trigger_signal(
+        mySignal,
+        trigger_timing
+):
     """
     Test that both physiosignals (the original signal and the derived one with the trigger)
     have the same fields.
+    It requires the result of "test_calculate_trigger_events"
     """
 
-    # simulate signal at 5 Hz, starting at time 1000 sec (according to some
-    #   clock)
-    mysignal, trigger_timing =simulate_signal_and_trigger(
-                 samples_per_second=5,
-                 physiostarttime=1000,
-                 samples_count=10
-             )
-
     # calculate trigger events:
-    trig_signal = mysignal.calculate_trigger_events( trigger_timing )
+    trig_signal = mySignal.calculate_trigger_events( trigger_timing )
 
-    trigger_physiosignal = bidsphysio.physiosignal.matching_trigger_signal(mysignal, trig_signal)
+    trigger_physiosignal = bidsphysio.physiosignal.matching_trigger_signal(mySignal, trig_signal)
 
     assert isinstance(trigger_physiosignal, bidsphysio.physiosignal)
     assert trigger_physiosignal.label == 'trigger'
-    assert trigger_physiosignal.samples_per_second == mysignal.samples_per_second
-    assert trigger_physiosignal.physiostarttime == mysignal.physiostarttime
-    assert trigger_physiosignal.neuralstarttime == mysignal.neuralstarttime
-    assert trigger_physiosignal.sampling_times == mysignal.sampling_times
+    assert trigger_physiosignal.samples_per_second == mySignal.samples_per_second
+    assert trigger_physiosignal.physiostarttime == mySignal.physiostarttime
+    assert trigger_physiosignal.neuralstarttime == mySignal.neuralstarttime
+    assert trigger_physiosignal.sampling_times == mySignal.sampling_times
     assert all(trigger_physiosignal.signal == trig_signal)
 
 
-def test_physiodata_labels():
-    """
-    Test that physiodata.labels() returns the labels of the physiosignals
-    """
+@pytest.fixture
+def mylabels():
+    labels=['signal1', 'signal2', 'signal3']
+
+    return labels
+
+@pytest.fixture
+def myphysiodata(
+        mylabels
+):
+    """   Create a "physiodata" object   """
 
     myphysiodata = bidsphysio.physiodata(
-        [
-            bidsphysio.physiosignal( label = 'signal1' ),
-            bidsphysio.physiosignal( label = 'signal2' ),
-            bidsphysio.physiosignal( label = 'signal3' )
-        ]
+                [ bidsphysio.physiosignal( label = l ) for l in mylabels ]
+            )
+    return myphysiodata
+
+
+def test_physiodata_labels(
+        mylabels,
+        myphysiodata
+):
+    """
+    Test both the physiodata constructor and that
+    physiodata.labels() returns the labels of the physiosignals
+    """
+
+    assert myphysiodata.labels() == mylabels
+
+
+def test_append_signal(
+        mylabels,
+        myphysiodata
+):
+    """
+    Tests that "append_signal" does what it is supposed to do
+    """
+
+    myphysiodata.append_signal(
+        bidsphysio.physiosignal( label = 'extra_signal' )
     )
 
-    assert myphysiodata.labels() == ['signal1','signal2','signal3']
-
-
+    mylabels.append('extra_signal')
+    assert myphysiodata.labels() == mylabels
