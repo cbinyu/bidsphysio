@@ -1,5 +1,6 @@
 import pytest
-import numpy as np
+from os.path import join as pjoin
+from glob import glob
 from bidsphysio import bidsphysio
 
 
@@ -43,6 +44,8 @@ def test_calculate_trigger_events(
     as elements there are in the trigger timing (between the
     beginning of the recording and the end)
     """
+
+    import numpy as np
 
     # calculate trigger events:
     trig_signal = mySignal.calculate_trigger_events( trigger_timing )
@@ -92,10 +95,15 @@ def mylabels():
 def myphysiodata(
         mylabels
 ):
-    """   Create a "physiodata" object   """
+    """   Create a "physiodata" object with barebones content  """
 
     myphysiodata = bidsphysio.physiodata(
-                [ bidsphysio.physiosignal( label = l ) for l in mylabels ]
+                [ bidsphysio.physiosignal(
+                    label = l,
+                    samples_per_second = 1,
+                    physiostarttime = 0,
+                    signal = [i for i in range(10)]
+                ) for l in mylabels ]
             )
     return myphysiodata
 
@@ -126,3 +134,112 @@ def test_append_signal(
 
     mylabels.append('extra_signal')
     assert myphysiodata.labels() == mylabels
+
+
+def test_save_bids_json(
+            tmpdir,
+            mylabels,
+            myphysiodata
+    ):
+    """
+    Tests  "save_bids_json"
+    """
+
+    import json
+
+    json_file_name = pjoin(tmpdir.strpath,'foo.json')
+
+    # make sure it gives an error if sampling or t_start are not the same for all physiosignals
+    # samples_per_second:
+    myphysiodata.signals[0].samples_per_second = 2
+    with pytest.raises(Exception) as e_info:
+        myphysiodata.save_bids_json(json_file_name)
+
+    # now, set the sampling rate back like the rest and test the t_start:
+    myphysiodata.signals[0].samples_per_second = myphysiodata.signals[1].samples_per_second
+    myphysiodata.signals[0].physiostarttime = 1
+    with pytest.raises(Exception) as e_info:
+        myphysiodata.save_bids_json(json_file_name)
+
+    # set all t_start to the same (by fixing the physiostarttime:
+    myphysiodata.signals[0].physiostarttime = myphysiodata.signals[1].physiostarttime
+
+    # make sure the filename ends with "_physio.json"
+    myphysiodata.save_bids_json(json_file_name)
+    json_files = glob(pjoin(tmpdir,'*.json'))
+    assert len(json_files)==1
+    json_file = json_files[0]
+    assert json_file.endswith('_physio.json')
+
+    # read the json file and check the content vs. the physiodata:
+    with open(json_file) as f:
+        d = json.load(f)
+    assert d['Columns'] == mylabels
+    assert d['SamplingFrequency'] == myphysiodata.signals[0].samples_per_second
+    assert d['StartTime'] == myphysiodata.signals[0].physiostarttime
+
+
+def test_save_bids_data(
+        tmpdir,
+        myphysiodata
+):
+    """
+    Tests  "save_bids_data"
+    """
+    import gzip
+
+    data_file_name = pjoin(tmpdir.strpath,'foo.tsv')
+
+    # make sure the filename ends with "_physio.tsv.gz"
+    myphysiodata.save_bids_data(data_file_name)
+    data_files = glob(pjoin(tmpdir,'*.tsv*'))
+    assert len(data_files)==1
+    data_file = data_files[0]
+    assert data_file.endswith('_physio.tsv.gz')
+
+    # read the data file and check the content vs. the physiodata:
+    with gzip.open(data_file,'rt') as f:
+        for idx,line in enumerate(f):
+            assert [float(s) for s in line.split('\t')] == [s.signal[idx] for s in myphysiodata.signals]
+
+
+def test_save_to_bids(
+        tmpdir,
+        mylabels,
+        myphysiodata
+):
+    """
+    Test "save_to_bids"
+    """
+    from os import remove
+
+    output_file_name = pjoin(tmpdir.strpath,'foo')
+
+    # when all sample rates and t_starts are the same, there should be only one
+    #   (.sjon/.tsv.gz) pair:
+    myphysiodata.save_to_bids(output_file_name)
+    json_files = glob(pjoin(tmpdir,'*.json'))
+    assert len(json_files)==1
+    json_file = json_files[0]
+    assert json_file.endswith('_physio.json')
+    data_files = glob(pjoin(tmpdir,'*.tsv*'))
+    assert len(data_files)==1
+    data_file = data_files[0]
+    assert data_file.endswith('_physio.tsv.gz')
+    remove(json_file)
+    remove(data_file)
+
+    # make the last signal different from the rest, so that it is saved
+    #   in a separate file:
+    myphysiodata.signals[-1].samples_per_second *= 2
+    myphysiodata.save_to_bids(output_file_name)
+    json_files = glob(pjoin(tmpdir,'*.json'))
+    assert len(json_files)==2
+    # make sure one of them ends with "_recording-" plus the label of the last signal, etc:
+    assert [jf for jf in json_files if jf.endswith('_recording-{s3}_physio.json'.format(s3=mylabels[-1]))]
+    data_files = glob(pjoin(tmpdir,'*.tsv*'))
+    assert len(data_files)==2
+    # make sure one of them ends with "_recording-" plus the label of the last signal, etc:
+    assert [df for df in data_files if df.endswith('_recording-{s3}_physio.tsv.gz'.format(s3=mylabels[-1]))]
+
+
