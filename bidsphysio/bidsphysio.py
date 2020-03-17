@@ -314,8 +314,22 @@ class physiodata(object):
         # physiosignal object corresponding to the trigger:
         trig_physiosignal = self.signals[ signal_labels.index('trigger') ]
 
-        # return timing of the triggers:
-        return trig_physiosignal.sampling_times[np.where(trig_physiosignal.signal>0)]
+        # make sure we have the timing of the trigger samples; otherwise, calculate:
+        if trig_physiosignal.sampling_times == None:
+            try:
+                trig_physiosignal.calculate_timing()
+            except Error as e:
+                print( e.msg )
+                return None
+
+        # get indices for which the trigger was on (>0):
+        trig_indices = np.where(np.array(trig_physiosignal.signal)>0)
+
+        # to extract more than one element from the list of sampling times,
+        #   we convert it to a numpy array and pass the trig_indices:
+        trigger_timing = np.array(trig_physiosignal.sampling_times)[trig_indices]
+        # return timing of the triggers as a list:
+        return list(trigger_timing)
 
 
     def save_to_bids_with_trigger(self, bids_fName):
