@@ -243,3 +243,29 @@ def test_save_to_bids(
     assert [df for df in data_files if df.endswith('_recording-{s3}_physio.tsv.gz'.format(s3=mylabels[-1]))]
 
 
+def test_get_trigger_timing(
+        mylabels,
+        myphysiodata
+):
+    # try it on a physiodata without trigger signal:
+    with pytest.raises(ValueError) as e_info:
+        myphysiodata.get_trigger_timing()
+        assert str(e_info.value) == "'trigger' is not in list"
+
+    # add a trigger signal to the physiodata:
+    simulated_trigger_signal = [0 if i%5 else 1 for i in range(10)]
+    trigger_start_time = 0
+    trigger_sampling_rate = 5
+    myphysiodata.append_signal(
+        bidsphysio.physiosignal(
+            label = 'trigger',
+            samples_per_second = trigger_sampling_rate,
+            physiostarttime = trigger_start_time,
+            signal = simulated_trigger_signal
+        )
+    )
+    assert myphysiodata.get_trigger_timing() == [
+                                trigger_start_time + idx / trigger_sampling_rate
+                                   for idx, trig in enumerate(simulated_trigger_signal) if trig == 1
+                         ]
+
