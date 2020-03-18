@@ -3,20 +3,25 @@ from os.path import join as pjoin
 from glob import glob
 from bidsphysio import bidsphysio
 
+###  Globals   ###
+
+SAMPLES_PER_SECOND = 5
+PHYSIO_START_TIME = 10
+SAMPLES_COUNT = 100
+LABELS = ['signal1', 'signal2', 'signal3']
+
+
+###   TESTS FOR CLASS "physiosignal"   ###
 
 @pytest.fixture
-def mySignal(
-        samples_per_second=5,
-        physiostarttime=1000,
-        samples_count=100
-):
+def mySignal():
     """    Simulate a physiosignal object    """
 
     mySignal=bidsphysio.physiosignal(
                  label='simulated',
-                 samples_per_second=samples_per_second,
-                 physiostarttime=physiostarttime,
-                 signal= samples_count * [0]     # fill with zeros
+                 samples_per_second=SAMPLES_PER_SECOND,
+                 physiostarttime=PHYSIO_START_TIME,
+                 signal= SAMPLES_COUNT * [0]     # fill with zeros
              )
 
     return mySignal
@@ -24,14 +29,12 @@ def mySignal(
 
 @pytest.fixture
 def trigger_timing(
-        physiostarttime=1000,
         scannerdelay=2,
-        TR=0.75,
-        samples_count=100
+        TR=0.75
 ):
     """   Simulate trigger timing (times at which the triggers were sent   """
-    t_first_trigger = physiostarttime + scannerdelay
-    trigger_timing = [t_first_trigger + TR * i for i in range(samples_count)]
+    t_first_trigger = PHYSIO_START_TIME + scannerdelay
+    trigger_timing = [t_first_trigger + TR * i for i in range(SAMPLES_COUNT)]
 
     return trigger_timing
 
@@ -85,16 +88,10 @@ def test_matching_trigger_signal(
     assert all(trigger_physiosignal.signal == trig_signal)
 
 
-@pytest.fixture
-def mylabels():
-    labels=['signal1', 'signal2', 'signal3']
-
-    return labels
+###   TESTS FOR CLASS "physiodata"   ###
 
 @pytest.fixture
-def myphysiodata(
-        mylabels
-):
+def myphysiodata():
     """   Create a "physiodata" object with barebones content  """
 
     myphysiodata = bidsphysio.physiodata(
@@ -103,13 +100,12 @@ def myphysiodata(
                     samples_per_second = 1,
                     physiostarttime = 0,
                     signal = [i for i in range(10)]
-                ) for l in mylabels ]
+                ) for l in LABELS ]
             )
     return myphysiodata
 
 
 def test_physiodata_labels(
-        mylabels,
         myphysiodata
 ):
     """
@@ -117,11 +113,10 @@ def test_physiodata_labels(
     physiodata.labels() returns the labels of the physiosignals
     """
 
-    assert myphysiodata.labels() == mylabels
+    assert myphysiodata.labels() == LABELS
 
 
 def test_append_signal(
-        mylabels,
         myphysiodata
 ):
     """
@@ -132,13 +127,13 @@ def test_append_signal(
         bidsphysio.physiosignal( label = 'extra_signal' )
     )
 
+    mylabels = LABELS
     mylabels.append('extra_signal')
     assert myphysiodata.labels() == mylabels
 
 
 def test_save_bids_json(
             tmpdir,
-            mylabels,
             myphysiodata
     ):
     """
@@ -174,7 +169,7 @@ def test_save_bids_json(
     # read the json file and check the content vs. the physiodata:
     with open(json_file) as f:
         d = json.load(f)
-    assert d['Columns'] == mylabels
+    assert d['Columns'] == LABELS
     assert d['SamplingFrequency'] == myphysiodata.signals[0].samples_per_second
     assert d['StartTime'] == myphysiodata.signals[0].physiostarttime
 
@@ -205,7 +200,6 @@ def test_save_bids_data(
 
 def test_save_to_bids(
         tmpdir,
-        mylabels,
         myphysiodata
 ):
     """
@@ -236,15 +230,14 @@ def test_save_to_bids(
     json_files = glob(pjoin(tmpdir,'*.json'))
     assert len(json_files)==2
     # make sure one of them ends with "_recording-" plus the label of the last signal, etc:
-    assert [jf for jf in json_files if jf.endswith('_recording-{s3}_physio.json'.format(s3=mylabels[-1]))]
+    assert [jf for jf in json_files if jf.endswith('_recording-{s3}_physio.json'.format(s3=LABELS[-1]))]
     data_files = glob(pjoin(tmpdir,'*.tsv*'))
     assert len(data_files)==2
     # make sure one of them ends with "_recording-" plus the label of the last signal, etc:
-    assert [df for df in data_files if df.endswith('_recording-{s3}_physio.tsv.gz'.format(s3=mylabels[-1]))]
+    assert [df for df in data_files if df.endswith('_recording-{s3}_physio.tsv.gz'.format(s3=LABELS[-1]))]
 
 
 def test_get_trigger_timing(
-        mylabels,
         myphysiodata
 ):
     # try it on a physiodata without trigger signal:
