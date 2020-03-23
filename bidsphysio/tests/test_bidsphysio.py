@@ -124,7 +124,22 @@ def simulated_trigger_signal(scope="module"):
     """
     Simulates the recordings for the scanner trigger
     """
-    return [0 if i%5 else 1 for i in range(10)]
+
+    trigger_samples_per_tr = TRIGGER_SAMPLES_PER_SECOND * SCANNER_TR
+    physio_recoding_delay = PHYSIO_START_TIME - TRIGGER_START_TIME
+    first_trigger_delay = physio_recoding_delay + SCANNER_DELAY   # w.r.t. beginning of trigger recording
+    first_trigger_delay_in_samples = first_trigger_delay * TRIGGER_SAMPLES_PER_SECOND
+    # supposing the trigger recording ends at the same time as the physio recording:
+    trigger_recording_duration = physio_recoding_delay + PHYSIO_DURATION
+    trigger_samples_count = trigger_recording_duration * TRIGGER_SAMPLES_PER_SECOND
+
+    trigger_signal= trigger_samples_count * [0]     # initialize to zeros
+    for i in range(trigger_samples_count):
+        sample_offset = i - first_trigger_delay_in_samples
+        if (sample_offset >= 0) and (sample_offset % trigger_samples_per_tr < 1):
+            trigger_signal[i] = 1
+
+    return trigger_signal
 
 
 @pytest.fixture
