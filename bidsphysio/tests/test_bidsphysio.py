@@ -1,5 +1,8 @@
 import pytest
+import json
+import gzip
 import copy
+from os import remove
 from os.path import join as pjoin
 from glob import glob
 from bidsphysio import bidsphysio
@@ -29,7 +32,7 @@ def mySignal(scope="module"):
                  physiostarttime=PHYSIO_START_TIME,
                  neuralstarttime=PHYSIO_START_TIME+SCANNER_DELAY,
                  signal= PHYSIO_SAMPLES_COUNT * [0]     # fill with zeros
-    )
+             )
 
     return mySignal
 
@@ -122,7 +125,7 @@ def myphysiodata(scope="module"):
 @pytest.fixture
 def simulated_trigger_signal(scope="module"):
     """
-    Simulates the recordings for the scanner trigger
+    Simulates some recordings for the scanner trigger
     """
 
     trigger_samples_per_tr = TRIGGER_SAMPLES_PER_SECOND * SCANNER_TR
@@ -201,8 +204,6 @@ def test_save_bids_json(
     Tests  "save_bids_json"
     """
 
-    import json
-
     json_file_name = pjoin(tmpdir.strpath,'foo.json')
 
     # make sure it gives an error if sampling or t_start are not the same for all physiosignals
@@ -242,8 +243,6 @@ def test_save_bids_data(
     """
     Tests  "save_bids_data"
     """
-    import gzip
-
     data_file_name = pjoin(tmpdir.strpath,'foo.tsv')
 
     # make sure the filename ends with "_physio.tsv.gz"
@@ -266,8 +265,6 @@ def test_save_to_bids(
     """
     Test "save_to_bids"
     """
-    from os import remove
-
     output_file_name = pjoin(tmpdir.strpath,'foo')
 
     # when all sample rates and t_starts are the same, there should be only one
@@ -316,3 +313,88 @@ def test_get_trigger_timing(
                                    for idx, trig in enumerate(simulated_trigger_signal) if trig == 1
                          ]
 
+
+def test_save_to_bids_with_trigger(
+        tmpdir,
+        myphysiodata,
+        myphysiodata_with_trigger
+):
+    """   Tests for 'save_to_bids_with_trigger'   """
+
+    output_file_name = pjoin(tmpdir.strpath,'foo')
+
+    ###   A) test on a physiodata without trigger signal   ###
+    with pytest.raises(AssertionError) as e_info:
+        myphysiodata.save_to_bids_with_trigger(output_file_name)
+        assert str(e_info.value) == "We cannot save with trigger because we found no trigger."
+
+
+    ###   B)test the case of all signals (except the trigger) have the same     ###
+    ###     sampling rate and t_start. We expect one "_physio" json/tsv pair:   ###
+    myphysiodata_with_trigger.save_to_bids_with_trigger(output_file_name)
+
+    json_files = glob(pjoin(tmpdir,'*.json'))
+    assert len(json_files)==1
+    json_file = json_files[0]
+    assert '_recording-' not in json_file
+
+    # read the json file and check the content vs. the physiodata_with_trigger:
+    with open(json_file) as f:
+        d = json.load(f)
+    expected_labels = list(LABELS)
+    expected_labels.append('trigger')
+    assert d['Columns'] == expected_labels
+    assert d['SamplingFrequency'] == myphysiodata_with_trigger.signals[0].samples_per_second
+    assert d['StartTime'] == myphysiodata_with_trigger.signals[0].t_start()
+
+    # make sure the filename ends with "_physio.tsv.gz"
+    data_files = glob(pjoin(tmpdir,'*.tsv*'))
+    assert len(data_files)==1
+    data_file = data_files[0]
+    assert '_recording-' not in data_file
+
+    # read the data file and check the content vs. the physiodata:
+    with gzip.open(data_file,'rt') as f:
+        for idx,line in enumerate(f):
+            s = [float(s) for s in line.split('\t')]
+            # check that the signals (except for the last, that has the tirgger)
+            #   are what we expect:
+            assert s[:-1] == [s.signal[idx] for s in myphysiodata_with_trigger.signals[:-1]]
+    remove(json_file)
+    remove(data_file)
+
+
+    ###   C) test the case of two different types of sampling rates   ###
+
+    # make the first signal twice as fast:
+    myphysiodata_with_trigger.signals[0].samples_per_second *= 2
+    myphysiodata_with_trigger.save_to_bids_with_trigger(output_file_name)
+
+    # Check that there are two sets of files, one corresponding to signal[0] and
+    #   the other to signal[1]:
+    json_files = glob(pjoin(tmpdir,'*.json'))
+    assert len(json_files)==2
+    for idx,s in enumerate(myphysiodata_with_trigger.labels()[0:1]):
+        json_file = json_files[
+            json_files.index(
+                '{0}_recording-{1}_physio.json'.format(output_file_name,s)
+            )
+        ]
+        assert json_file in json_files
+
+        # read the json file and check the content vs. the physiodata_with_trigger:
+        with open(json_file) as f:
+            d = json.load(f)
+        assert d['Columns'][0] == s
+        assert d['SamplingFrequency'] == myphysiodata_with_trigger.signals[idx].samples_per_second
+        assert d['StartTime'] == myphysiodata_with_trigger.signals[idx].t_start()
+
+    # For the data itself, because case B) worked, and the json files contained the
+    #   right info, we just make sure that there are two of them:
+    data_files = glob(pjoin(tmpdir,'*.tsv*'))
+    assert len(data_files)==2
+
+
+    # reset the sampling rate for the first signal, in case we need to use
+    #   the variable again:
+    myphysiodata_with_trigger.signals[0].samples_per_second /= 2
