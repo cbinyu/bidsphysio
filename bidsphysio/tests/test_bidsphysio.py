@@ -105,6 +105,41 @@ def myphysiodata():
     return myphysiodata
 
 
+@pytest.fixture
+def simulated_trigger_signal():
+    """
+    Simulates the recordings for the scanner trigger
+    """
+    return [0 if i%5 else 1 for i in range(10)]
+
+
+@pytest.fixture
+def myphysiodata_with_trigger(
+        simulated_trigger_signal
+):
+    myphysiodata_with_trigger = bidsphysio.physiodata(
+                [ bidsphysio.physiosignal(
+                    label = l,
+                    samples_per_second = 1,
+                    physiostarttime = 0,
+                    signal = [i for i in range(10)]
+                ) for l in LABELS ]
+            )
+
+    # add a trigger signal to the physiodata_with_trigger:
+    trigger_start_time = 0
+    trigger_sampling_rate = 5
+    myphysiodata_with_trigger.append_signal(
+        bidsphysio.physiosignal(
+            label = 'trigger',
+            samples_per_second = trigger_sampling_rate,
+            physiostarttime = trigger_start_time,
+            signal = simulated_trigger_signal
+        )
+    )
+    return myphysiodata_with_trigger
+
+
 def test_physiodata_labels(
         myphysiodata
 ):
@@ -238,26 +273,19 @@ def test_save_to_bids(
 
 
 def test_get_trigger_timing(
-        myphysiodata
+        myphysiodata,
+        simulated_trigger_signal,
+        myphysiodata_with_trigger
 ):
     # try it on a physiodata without trigger signal:
     with pytest.raises(ValueError) as e_info:
         myphysiodata.get_trigger_timing()
         assert str(e_info.value) == "'trigger' is not in list"
 
-    # add a trigger signal to the physiodata:
-    simulated_trigger_signal = [0 if i%5 else 1 for i in range(10)]
+    # try with physiodata_with_trigger
     trigger_start_time = 0
     trigger_sampling_rate = 5
-    myphysiodata.append_signal(
-        bidsphysio.physiosignal(
-            label = 'trigger',
-            samples_per_second = trigger_sampling_rate,
-            physiostarttime = trigger_start_time,
-            signal = simulated_trigger_signal
-        )
-    )
-    assert myphysiodata.get_trigger_timing() == [
+    assert myphysiodata_with_trigger.get_trigger_timing() == [
                                 trigger_start_time + idx / trigger_sampling_rate
                                    for idx, trig in enumerate(simulated_trigger_signal) if trig == 1
                          ]

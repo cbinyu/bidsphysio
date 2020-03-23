@@ -309,7 +309,7 @@ class physiodata(object):
         """
 
         # list all the signal labels:
-        signal_labels = self.labels()
+        signal_labels = [l.lower() for l in self.labels()]
 
         # physiosignal object corresponding to the trigger:
         trig_physiosignal = self.signals[ signal_labels.index('trigger') ]
@@ -338,9 +338,14 @@ class physiodata(object):
         triggers for each list of signals sharing the same timing:
         """
 
+        # list all the signal labels:
+        signal_labels = [l.lower() for l in self.labels()]
+
         # Sanity check: make sure we have a "trigger" signal
         assert ( "trigger" in self.labels() ),"We cannot save with trigger because we found no trigger."
 
+        # physiosignal object corresponding to the trigger:
+        trig_physiosignal = self.signals[ signal_labels.index('trigger') ]
         t_trig = self.get_trigger_timing()
 
         # find the unique pairs of sampling rate and t_start (and indices):
