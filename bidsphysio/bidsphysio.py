@@ -348,52 +348,63 @@ class physiodata(object):
         trig_physiosignal = self.signals[ signal_labels.index('trigger') ]
         t_trig = self.get_trigger_timing()
 
-        # find the unique pairs of sampling rate and t_start (and indices):
+        # find the unique pairs of sampling rate and t_start (and indices),
+        #   excluding the "trigger" signal (since we'll be interpolating the
+        #   trigger to the other signals, if it has different sampling):
         unique_sr_ts, idx_un = np.unique(
-                                   [ [item.samples_per_second,item.t_start()] for item in self.signals ],
-                                   axis=0,
-                                   return_index=True
-                               )
+            [[s.samples_per_second,s.t_start()] for s in self.signals if not s.label.lower() == 'trigger'],
+            axis=0,
+            return_index=True
+        )
         print('')
 
-        if len(unique_sr_ts) == 1:
-            # All the physio signals have the same sampling rate and t_start, so
-            #   there will be just one _physio file and we don't need to add "_recording-"
-            
-            print('Saving physio data')
-            self.save_bids_json(bids_fName)
-            self.save_bids_data(bids_fName)
+        for idx, [sr,ts] in enumerate( unique_sr_ts ):
 
-        else:
+            ###   Get filename   ###
 
-            for idx, [sr,ts] in enumerate( unique_sr_ts ):
+            if len(unique_sr_ts) == 1:
+                # All the physio signals (except, potentially, the "trigger") have the
+                #   same sampling rate and t_start, there will be just one _physio file
+                #   and we don't need to add "_recording-":
+                rec_fName = bids_fName
+                print('Saving physio data')
+
+            else:
                 rec_label = self.signals[idx_un[idx]].label
-
                 rec_fName = '{0}_recording-{1}_physio'.format(bids_fName, rec_label)
-                # create a new physiodata object with just the signals with matching sampling rate and t_start
-                #   (but not if the signal is trigger: we'll add it later).
-                hola = physiodata(
-                           [ item for item in self.signals if item.samples_per_second == sr and
-                                                              item.t_start() == ts ]
-                       )
+                print('Saving {0} waveform'.format(rec_label))
 
-                if not 'trigger' in hola.labels():
-                    # Find the trigger events for any of them (the timing for all of them is the same)
-                    #   and create a new signal with that timing.
-                    trigger_signal = physiosignal.matching_trigger_signal(
-                                         hola.signals[0],
-                                         hola.signals[0].calculate_trigger_events(t_trig)
-                                     )
-                    # Append this new signal to "hola":
-                    hola.append_signal( trigger_signal )
+            ###   Create group of signals to save   ###
 
-                # At this point, we have at least one signal: 'trigger'. If we only have that one, don't
-                #   save it (it will be attached to signals with other sampling rates and t_start). So,
-                #   only save "hola" if it has more than one signal:
-                if len(hola.labels()) > 1:
+            # Now, create a new physiodata object with the signals for this sampling
+            #   rate and t_start as the rest of the signals:
+            physiodata_group = physiodata(
+                [ s for s in self.signals if (
+                    s.samples_per_second == sr and
+                    s.t_start() == ts
+                  )
+                ]
+            )
 
-                    print('Saving {0} waveform'.format(rec_label))
-                    hola.save_bids_json(rec_fName)
-                    hola.save_bids_data(rec_fName)
+            # Now, because we excluded the "trigger" from the unique_sr_ts calculation,
+            #   we need to check whether it has the same sampling rate and t_start or not.
+            #   If it does, the "trigger" signal has been already included in physiodata_group.
+            #   If not, we need to create a new trigger signal interpolated to the sampling
+            #   rate and t_start of this group:
+            if not (trig_physiosignal.samples_per_second == sr and
+                    trig_physiosignal.t_start()          == ts):
+
+                trigger_for_this_group = physiosignal.matching_trigger_signal(
+                    physiodata_group.signals[0],
+                    physiodata_group.signals[0].calculate_trigger_events(t_trig)
+                )
+
+                # Append this new signal to "hola":
+                physiodata_group.append_signal( trigger_for_this_group )
+
+            ###   Save the data   ###
+
+            physiodata_group.save_bids_json(rec_fName)
+            physiodata_group.save_bids_data(rec_fName)
 
         print('')
