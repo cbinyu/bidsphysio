@@ -1,46 +1,59 @@
 import pytest
+import copy
 from os.path import join as pjoin
 from glob import glob
 from bidsphysio import bidsphysio
 
 ###  Globals   ###
 
-SAMPLES_PER_SECOND = 5
-PHYSIO_START_TIME = 10
-SAMPLES_COUNT = 100
+PHYSIO_SAMPLES_PER_SECOND = 5
+PHYSIO_START_TIME = 101     # (in sec) with respect to some reference clock
+PHYSIO_DURATION = 20
+PHYSIO_SAMPLES_COUNT = PHYSIO_SAMPLES_PER_SECOND * PHYSIO_DURATION
 LABELS = ['signal1', 'signal2', 'signal3']
+TRIGGER_SAMPLES_PER_SECOND = 10
+TRIGGER_START_TIME = 100    # (in sec) beginning of the trigger recording (same ref clock)
+SCANNER_DELAY = 2   # From the beginning of the physio recording to the first volume
+SCANNER_TR = 0.75   # (in sec)
 
 
 ###   TESTS FOR CLASS "physiosignal"   ###
 
 @pytest.fixture
-def mySignal():
+def mySignal(scope="module"):
     """    Simulate a physiosignal object    """
 
     mySignal=bidsphysio.physiosignal(
                  label='simulated',
-                 samples_per_second=SAMPLES_PER_SECOND,
+                 samples_per_second=PHYSIO_SAMPLES_PER_SECOND,
                  physiostarttime=PHYSIO_START_TIME,
-                 signal= SAMPLES_COUNT * [0]     # fill with zeros
-             )
+                 neuralstarttime=PHYSIO_START_TIME+SCANNER_DELAY,
+                 signal= PHYSIO_SAMPLES_COUNT * [0]     # fill with zeros
+    )
 
     return mySignal
 
 
 @pytest.fixture
-def trigger_timing(
-        scannerdelay=2,
-        TR=0.75
-):
-    """   Simulate trigger timing (times at which the triggers were sent   """
-    t_first_trigger = PHYSIO_START_TIME + scannerdelay
-    trigger_timing = [t_first_trigger + TR * i for i in range(SAMPLES_COUNT)]
+def trigger_timing(scope="module"):
+    """
+    Simulate trigger timing (times at which the triggers were sent)
+    With respect to the reference clock
+    """
+
+    t_first_trigger = PHYSIO_START_TIME + SCANNER_DELAY     # w.r.t. reference clock
+    scanner_duration_seconds = PHYSIO_DURATION - SCANNER_DELAY
+    number_of_scanner_triggers = int(scanner_duration_seconds/SCANNER_TR)
+    # (note: both scanner_duration_seconds and TR can be floats, so "//" is not enough)
+
+    trigger_timing = [t_first_trigger + SCANNER_TR * i for i in range(number_of_scanner_triggers)]
 
     return trigger_timing
 
 
 def test_calculate_trigger_events(
-        mySignal, trigger_timing
+        mySignal,
+        trigger_timing
 ):
     """
     Make sure you get as many triggers in the trigger signal
@@ -91,22 +104,23 @@ def test_matching_trigger_signal(
 ###   TESTS FOR CLASS "physiodata"   ###
 
 @pytest.fixture
-def myphysiodata():
+def myphysiodata(scope="module"):
     """   Create a "physiodata" object with barebones content  """
 
     myphysiodata = bidsphysio.physiodata(
                 [ bidsphysio.physiosignal(
                     label = l,
-                    samples_per_second = 1,
-                    physiostarttime = 0,
-                    signal = [i for i in range(10)]
+                    samples_per_second = PHYSIO_SAMPLES_PER_SECOND,
+                    physiostarttime = PHYSIO_START_TIME,
+                    neuralstarttime=PHYSIO_START_TIME+SCANNER_DELAY,
+                    signal = [i for i in range(PHYSIO_SAMPLES_COUNT)]
                 ) for l in LABELS ]
             )
     return myphysiodata
 
 
 @pytest.fixture
-def simulated_trigger_signal():
+def simulated_trigger_signal(scope="module"):
     """
     Simulates the recordings for the scanner trigger
     """
@@ -115,25 +129,19 @@ def simulated_trigger_signal():
 
 @pytest.fixture
 def myphysiodata_with_trigger(
-        simulated_trigger_signal
+        myphysiodata,
+        simulated_trigger_signal,
+        scope="module"
 ):
-    myphysiodata_with_trigger = bidsphysio.physiodata(
-                [ bidsphysio.physiosignal(
-                    label = l,
-                    samples_per_second = 1,
-                    physiostarttime = 0,
-                    signal = [i for i in range(10)]
-                ) for l in LABELS ]
-            )
+    myphysiodata_with_trigger = copy.deepcopy(myphysiodata)
 
     # add a trigger signal to the physiodata_with_trigger:
-    trigger_start_time = 0
-    trigger_sampling_rate = 5
     myphysiodata_with_trigger.append_signal(
         bidsphysio.physiosignal(
             label = 'trigger',
-            samples_per_second = trigger_sampling_rate,
-            physiostarttime = trigger_start_time,
+            samples_per_second = TRIGGER_SAMPLES_PER_SECOND,
+            physiostarttime = TRIGGER_START_TIME,
+            neuralstarttime = TRIGGER_START_TIME,
             signal = simulated_trigger_signal
         )
     )
@@ -158,13 +166,16 @@ def test_append_signal(
     Tests that "append_signal" does what it is supposed to do
     """
 
-    myphysiodata.append_signal(
+    # Make a copy of myphysiodata to make sure we don't modify it,
+    #  so that it is later available unmodified to other tests:
+    physdata = copy.deepcopy(myphysiodata)
+    physdata.append_signal(
         bidsphysio.physiosignal( label = 'extra_signal' )
     )
 
-    mylabels = LABELS
+    mylabels = LABELS.copy()
     mylabels.append('extra_signal')
-    assert myphysiodata.labels() == mylabels
+    assert physdata.labels() == mylabels
 
 
 def test_save_bids_json(
@@ -181,13 +192,13 @@ def test_save_bids_json(
 
     # make sure it gives an error if sampling or t_start are not the same for all physiosignals
     # samples_per_second:
-    myphysiodata.signals[0].samples_per_second = 2
+    myphysiodata.signals[0].samples_per_second *= 2
     with pytest.raises(Exception) as e_info:
         myphysiodata.save_bids_json(json_file_name)
 
     # now, set the sampling rate back like the rest and test the t_start:
     myphysiodata.signals[0].samples_per_second = myphysiodata.signals[1].samples_per_second
-    myphysiodata.signals[0].physiostarttime = 1
+    myphysiodata.signals[0].physiostarttime += 1
     with pytest.raises(Exception) as e_info:
         myphysiodata.save_bids_json(json_file_name)
 
@@ -206,7 +217,7 @@ def test_save_bids_json(
         d = json.load(f)
     assert d['Columns'] == LABELS
     assert d['SamplingFrequency'] == myphysiodata.signals[0].samples_per_second
-    assert d['StartTime'] == myphysiodata.signals[0].physiostarttime
+    assert d['StartTime'] == myphysiodata.signals[0].t_start()
 
 
 def test_save_bids_data(
@@ -277,16 +288,16 @@ def test_get_trigger_timing(
         simulated_trigger_signal,
         myphysiodata_with_trigger
 ):
+    """   Tests for 'get_trigger_timing'   """
+
     # try it on a physiodata without trigger signal:
     with pytest.raises(ValueError) as e_info:
         myphysiodata.get_trigger_timing()
         assert str(e_info.value) == "'trigger' is not in list"
 
     # try with physiodata_with_trigger
-    trigger_start_time = 0
-    trigger_sampling_rate = 5
     assert myphysiodata_with_trigger.get_trigger_timing() == [
-                                trigger_start_time + idx / trigger_sampling_rate
+                                TRIGGER_START_TIME + idx / TRIGGER_SAMPLES_PER_SECOND
                                    for idx, trig in enumerate(simulated_trigger_signal) if trig == 1
                          ]
 
