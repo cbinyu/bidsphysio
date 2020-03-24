@@ -10,13 +10,14 @@ CLASSIFIERS = [
     'Environment :: Console',
     'Intended Audience :: Science/Research',
     'License :: OSI Approved :: Apache Software License',
+    'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Topic :: Scientific/Engineering'
 ]
 
-PYTHON_REQUIRES = ">=3.6"
+PYTHON_REQUIRES = ">=3.5"
 
 REQUIRES = [
     'numpy >= 1.17.1',
