@@ -9,10 +9,14 @@ cache:
 
 before_install:
   - python -m pip install --upgrade pip
+  - pip install codecov pytest pytest-cov
 
 install:
   - pip install -r dev-requirements.txt
 
 # command to run tests
 script:
-  - pytest bidsphysio
+  - pytest --cov=bidsphysio
+
+after_success:
+  - codecov
