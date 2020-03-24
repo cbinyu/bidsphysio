@@ -4,12 +4,13 @@ __url__ = "https://github.com/cbinyu/bidsphysio"
 __packagename__ = 'bidsphysio'
 __description__ = "Physio-to-BIDS Converter"
 __license__ = "MIT"
-__longdesc__ = """Converts physio data from either CMRR DICOM or AcqKnowledge file to BIDS physiological recording."""
+__longdesc__ = """Converts physio data from either CMRR DICOM, Siemens PMU or AcqKnowledge file to BIDS physiological recording."""
 
 CLASSIFIERS = [
     'Environment :: Console',
     'Intended Audience :: Science/Research',
     'License :: OSI Approved :: Apache Software License',
+    'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Topic :: Scientific/Engineering'
