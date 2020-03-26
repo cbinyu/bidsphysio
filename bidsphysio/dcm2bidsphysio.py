@@ -64,7 +64,8 @@ import argparse
 import numpy as np
 import pydicom
 import json
-import bidsphysio.bidsphysio as bp
+from bidsphysio.bidsphysio import (physiosignal,
+                                   physiodata)
 
 
 def dcm2bids( physio_dcm, bids_prefix ):
@@ -93,7 +94,7 @@ def dcm2bids( physio_dcm, bids_prefix ):
     wave_len = int(n_points / n_waves)
 
     # Init physiodata object to hold physio signals and time of first trigger:
-    physio = bp.physiodata()
+    physio = physiodata()
     t_first_trigger = None
 
     for wc in range(n_waves):
@@ -140,7 +141,7 @@ def dcm2bids( physio_dcm, bids_prefix ):
 
         if physio_label:
             physio.append_signal(
-                bp.physiosignal(
+                physiosignal(
                     label=physio_label,
                     samples_per_second=1000/dt,         # dt is in ms.
                     sampling_times=t/1000,

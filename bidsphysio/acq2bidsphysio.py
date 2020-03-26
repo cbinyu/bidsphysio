@@ -57,7 +57,8 @@ import argparse
 import numpy as np
 import bioread
 import json
-import bidsphysio.bidsphysio as bp
+from bidsphysio.bidsphysio import (physiosignal,
+                                   physiodata)
 
 
 def acq2bids( physio_acq, bids_prefix ):
@@ -65,7 +66,7 @@ def acq2bids( physio_acq, bids_prefix ):
     physio_data = bioread.read( physio_acq )
 
     # Init physiodata object to hold physio signals
-    physio = bp.physiodata()
+    physio = physiodata()
 
     for item in physio_data.channels:
         physio_label = ''
@@ -89,7 +90,7 @@ def acq2bids( physio_acq, bids_prefix ):
                 #   correspond to the scanner trigger, but to the stimulus onset, or something
                 #   else. So, I'm going to set the BIDS "StartTime" to 0 (by not passing the
                 #   physiostarttime and neuralstarttime), and let the user figure out the offset.
-                bp.physiosignal(
+                physiosignal(
                     label=physio_label,
                     samples_per_second=item.samples_per_second,
                     sampling_times=item.time_index,

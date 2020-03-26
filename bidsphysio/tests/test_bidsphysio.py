@@ -5,7 +5,8 @@ import copy
 from os import remove
 from os.path import join as pjoin
 from glob import glob
-from bidsphysio import bidsphysio
+from bidsphysio.bidsphysio import (physiosignal,
+                                   physiodata)
 
 ###  Globals   ###
 
@@ -26,7 +27,7 @@ SCANNER_TR = 0.75   # (in sec)
 def mySignal(scope="module"):
     """    Simulate a physiosignal object    """
 
-    mySignal=bidsphysio.physiosignal(
+    mySignal=physiosignal(
                  label='simulated',
                  samples_per_second=PHYSIO_SAMPLES_PER_SECOND,
                  physiostarttime=PHYSIO_START_TIME,
@@ -93,9 +94,9 @@ def test_matching_trigger_signal(
     # calculate trigger events:
     trig_signal = mySignal.calculate_trigger_events( trigger_timing )
 
-    trigger_physiosignal = bidsphysio.physiosignal.matching_trigger_signal(mySignal, trig_signal)
+    trigger_physiosignal = physiosignal.matching_trigger_signal(mySignal, trig_signal)
 
-    assert isinstance(trigger_physiosignal, bidsphysio.physiosignal)
+    assert isinstance(trigger_physiosignal, physiosignal)
     assert trigger_physiosignal.label == 'trigger'
     assert trigger_physiosignal.samples_per_second == mySignal.samples_per_second
     assert trigger_physiosignal.physiostarttime == mySignal.physiostarttime
@@ -110,8 +111,8 @@ def test_matching_trigger_signal(
 def myphysiodata(scope="module"):
     """   Create a "physiodata" object with barebones content  """
 
-    myphysiodata = bidsphysio.physiodata(
-                [ bidsphysio.physiosignal(
+    myphysiodata = physiodata(
+                [ physiosignal(
                     label = l,
                     samples_per_second = PHYSIO_SAMPLES_PER_SECOND,
                     physiostarttime = PHYSIO_START_TIME,
@@ -155,7 +156,7 @@ def myphysiodata_with_trigger(
 
     # add a trigger signal to the physiodata_with_trigger:
     myphysiodata_with_trigger.append_signal(
-        bidsphysio.physiosignal(
+        physiosignal(
             label = 'trigger',
             samples_per_second = TRIGGER_SAMPLES_PER_SECOND,
             physiostarttime = TRIGGER_START_TIME,
@@ -188,7 +189,7 @@ def test_append_signal(
     #  so that it is later available unmodified to other tests:
     physdata = copy.deepcopy(myphysiodata)
     physdata.append_signal(
-        bidsphysio.physiosignal( label = 'extra_signal' )
+        physiosignal( label = 'extra_signal' )
     )
 
     mylabels = LABELS.copy()
