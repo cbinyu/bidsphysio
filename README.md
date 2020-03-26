@@ -1,6 +1,10 @@
 # bidsphysio
 Converts physio data (CMRR, AcqKnowledge, Siemens PMU) to BIDS physiological recording
 
+[![Docker image](https://img.shields.io/badge/docker-cbinyu/bidsphysio:latest-brightgreen.svg?logo=docker&style=flat)](https://hub.docker.com/r/cbinyu/bidsphysio/tags/)
+[![TravisCI](https://travis-ci.org/cbinyu/bidsphysio.svg?branch=master)](https://travis-ci.org/cbinyu/bidsphysio)
+[![CodeCoverage](https://codecov.io/gh/cbinyu/bidsphysio/branch/master/graph/badge.svg)](https://codecov.io/gh/cbinyu/bidsphysio)
+
 ## Usage
 ```
 dcm2bidsphysio --infile <DCMfile> --bidsprefix <Prefix>
