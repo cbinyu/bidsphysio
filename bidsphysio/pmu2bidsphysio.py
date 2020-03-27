@@ -602,6 +602,11 @@ def main():
     parser.add_argument('-b', '--bidsprefix', required=True, help='Prefix of the BIDS file. It should match the _bold.nii.gz')
     args = parser.parse_args()
 
+    # make sure input files exist:
+    for infile in args.infiles:
+        if not os.path.exists(infile):
+            raise FileNotFoundError( '{i} file not found'.format(i=infile))
+
     # make sure output directory exists:
     odir = os.path.dirname(args.bidsprefix)
     if not os.path.exists(odir):
