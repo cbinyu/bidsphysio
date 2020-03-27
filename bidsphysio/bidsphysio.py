@@ -222,7 +222,7 @@ class physiodata(object):
                     item.label: {
                         "Units": item.units
                     }
-                    for item in self.signals if item.units is not ""
+                    for item in self.signals if item.units != ""
                 }
             }, f, sort_keys = True, indent = 4, ensure_ascii = False)
             f.write('\n')
