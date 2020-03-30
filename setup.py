@@ -18,9 +18,7 @@ def main():
     # Get version and release info, which is all stored in info.py
     info_file = op.join(thispath, 'bidsphysio', 'info.py')
     with open(info_file) as infofile:
-        # exec(infofile.read(), globals(), ldict)
-        # Workaround for python 2.7 prior 2.7.8
-        eval(compile(infofile.read(), '<string>', 'exec'), globals(), ldict)
+        exec(infofile.read(), globals(), ldict)
 
 
     def findsome(subdir, extensions):
@@ -56,8 +54,14 @@ def main():
         python_requires=ldict['PYTHON_REQUIRES'],
         install_requires=ldict['REQUIRES'],
         extras_require=ldict['EXTRA_REQUIRES'],
-        package_data={
-        }
+#        package_data={
+#            'bidsphysio.tests': [
+#                        op.join('data', '*.acq'),
+#                        op.join('data', '*.dcm'),
+#                        op.join('data', '*.puls'),
+#                        op.join('data', '*.resp')
+#            ],
+#        }
     )
 
 
