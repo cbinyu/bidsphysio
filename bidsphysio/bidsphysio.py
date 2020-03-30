@@ -76,10 +76,10 @@ class physiosignal(object):
             label=None,
             units="",
             samples_per_second=None,
-            sampling_times=None,
+            sampling_times=[],
             physiostarttime=0,
             neuralstarttime=0,
-            signal=None
+            signal=[]
             ):
         self.label = label
         self.units = units
@@ -88,7 +88,7 @@ class physiosignal(object):
         self.physiostarttime = physiostarttime
         self.neuralstarttime = neuralstarttime
         self.signal = signal
-        self.samples_count = len( signal ) if signal is not None else None
+        self.samples_count = len( signal ) if signal is not [] else None
 
 
     def t_start( self ):
@@ -122,7 +122,7 @@ class physiosignal(object):
         the timing of the scanner triggers (t_trig)
         """
 
-        if self.sampling_times == None:
+        if self.sampling_times is not []:
             try:
                 self.calculate_timing()
             except Error as e:
@@ -315,7 +315,7 @@ class physiodata(object):
         trig_physiosignal = self.signals[ signal_labels.index('trigger') ]
 
         # make sure we have the timing of the trigger samples; otherwise, calculate:
-        if trig_physiosignal.sampling_times is None:
+        if trig_physiosignal.sampling_times is not []:
             try:
                 trig_physiosignal.calculate_timing()
             except Error as e:
