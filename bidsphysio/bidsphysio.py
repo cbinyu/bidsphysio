@@ -315,7 +315,7 @@ class physiodata(object):
         trig_physiosignal = self.signals[ signal_labels.index('trigger') ]
 
         # make sure we have the timing of the trigger samples; otherwise, calculate:
-        if trig_physiosignal.sampling_times == None:
+        if trig_physiosignal.sampling_times is None:
             try:
                 trig_physiosignal.calculate_timing()
             except Error as e:
