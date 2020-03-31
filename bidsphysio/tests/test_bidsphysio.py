@@ -1,3 +1,5 @@
+'''   Tests for the module "bidsphysio.py"   '''
+
 import pytest
 import json
 import gzip

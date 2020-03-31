@@ -1,8 +1,6 @@
 '''   Tests for the module "dcm2bidsphysio.py"   '''
 
 import bidsphysio.dcm2bidsphysio as d2bp
-from bidsphysio.bidsphysio import (physiosignal,
-                                   physiodata)
 from .utils import TESTS_DATA_PATH
 
 import pytest
@@ -17,16 +15,6 @@ TO-DO:
   functions will read. That way, if we change the tests datasets,
   we will change the expected values right there, rather than
   changing the tests in this file
-
-- Tests for "plug_missing_data"
-  Create my own t, s, etc.
-    * check the output
-
-- Test "parse_log":
-   * we need to get the input somehow
-   * check the returns of the function
-   * Maybe check the errors?
-   * 
 '''
 
 ###   Fixtures   ###
@@ -81,6 +69,7 @@ def test_main_args(
     d2bp.main()
     assert (tmpdir / 'mydir').exists()
     assert capfd.readouterr().out == 'mock_dcm2bids called\n'
+
 
 def test_dcm2bids(
         monkeypatch,
@@ -153,3 +142,63 @@ def test_plug_missing_data():
     expected_t, expected_s = d2bp.plug_missing_data(t,s,dt)
     assert all(np.ediff1d(expected_t)) == dt
     assert all(np.isnan(expected_s[[i for i in range(len(expected_s)) if not (i+1)%10]]))
+
+
+def test_parse_log():
+    '''   Test for parse_log   '''
+
+    expected_uuid = 'uuid'
+    expected_ScanDate = 20000101
+    expected_ScanTime = 120000
+    expected_LogDataType = 'waveform_name'
+    expected_SampleTime = 1
+    expected_times = [1234, 5678]
+    expected_signals = [0.1234, 0.5678]
+
+    common_string = 'UUID = {0}\n'.format(expected_uuid)
+    common_string += 'ScanDate = {d}_{t}\n'.format(d=expected_ScanDate, t=expected_ScanTime)
+    common_string += 'SampleTime = {0}\n'.format(expected_SampleTime)
+
+    ###   Test PULS or RESP signals   ###
+    simulated_string = common_string + 'LogDataType = {0}\n'.format(expected_LogDataType)
+    simulated_string += '{t} PULS {s}\n'.format(t=expected_times[0], s=expected_signals[0])
+    simulated_string += '{t} RESP {s}\n'.format(t=expected_times[1], s=expected_signals[1])
+
+    # generate a binary string, and parse it:
+    log_bytes = bytearray()
+    log_bytes.extend(simulated_string.encode())
+    waveform_name, t, s, dt = d2bp.parse_log(log_bytes)
+
+    assert waveform_name == expected_LogDataType
+    assert all(t == expected_times)
+    assert all(s == expected_signals)
+    assert dt == expected_SampleTime
+
+    ###   Test trigger signal   ###
+    expected_LogDataType = 'ACQUISITION_INFO'
+    expected_times = [123, 456, 789]
+    expected_signals = [1, 0, 1]
+
+    simulated_string = common_string + 'LogDataType = {0}\n'.format(expected_LogDataType)
+    # format for trigger lines:
+    simulated_string += 'VOLUME   SLICE   ACQ_START_TICS  ACQ_FINISH_TICS  ECHO\n'
+    simulated_string += '0     0       {t}      foo    0\n'.format(t=expected_times[0])
+    # to make sure we don't save this time, for ECHO=1:
+    simulated_string += '0     0       {t}      foo    1\n'.format(t="don't_log_this:_repeated_echo")
+    # this is another slice, for the same volume:
+    simulated_string += '0     1       {t}      foo    0\n'.format(t=expected_times[1])
+    # a new volume:
+    simulated_string += '1     0       {t}      foo    0\n'.format(t=expected_times[2])
+
+    # generate a binary string, and parse it:
+    log_bytes = bytearray()
+    log_bytes.extend(simulated_string.encode())
+    waveform_name, t, s, dt = d2bp.parse_log(log_bytes)
+
+    assert waveform_name == expected_LogDataType
+    assert all(t == expected_times)
+    assert all(s == expected_signals)
+    assert dt == expected_SampleTime
+
+    # Note: if parse_log tried to incorrectly add the "don't log this: repeated echo"
+    #       as time, it would give a "ValueError: invalid literal for int() with base 10"
