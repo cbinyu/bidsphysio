@@ -1,5 +1,5 @@
-#from bidsphysio.dcm2bidsphysio import (main as runner,
-#                                       plug_missing_data)
+'''   Tests for the module "dcm2bidsphysio.py"   '''
+
 import bidsphysio.dcm2bidsphysio as d2bp
 from bidsphysio.bidsphysio import (physiosignal,
                                    physiodata)
@@ -17,11 +17,6 @@ TO-DO:
   functions will read. That way, if we change the tests datasets,
   we will change the expected values right there, rather than
   changing the tests in this file
-
-- Tests "dcm2bids":
-  Using the real file, check the output matches what we expect:
-    * check that the file names are what we expect
-    * check the content of the files
 
 - Tests for "plug_missing_data"
   Create my own t, s, etc.
@@ -98,6 +93,7 @@ def test_dcm2bids(
     is created, etc.
     '''
     import json
+    import gzip
 
     infile = str(TESTS_DATA_PATH / 'samplePhysio+02+physio_test+00001.dcm')
     outbids = str(tmpdir / 'mydir' / 'bids')
@@ -116,16 +112,19 @@ def test_dcm2bids(
     # make sure we are not calling the mock_dcm2bidds, but the real one:
     assert capfd.readouterr().out != 'mock_dcm2bids called\n'
 
-    # Check that we have as many signals as expected
+    # Check that we have as many signals as expected (2, for this file):
     json_files = sorted(Path(tmpdir / 'mydir').glob('*.json'))
-    assert len(json_files)==2
-    for s in ['respiratory', 'cardiac']:
-        expectedFileName = Path(outbids).name + '_recording-' + s + '_physio.json'
-        jsonFile = tmpdir / 'mydir' / expectedFileName
-        assert jsonFile in json_files
+    data_files = sorted(Path(tmpdir / 'mydir').glob('*.tsv*'))
+    assert len(json_files)==len(data_files)==2
+
+    for s in ['respiratory','cardiac']:
+        expectedFileBaseName = Path(outbids).name + '_recording-' + s + '_physio'
+        expectedFileName = tmpdir / 'mydir' / expectedFileBaseName
+        assert (expectedFileName + '.json') in json_files
+        assert (expectedFileName + '.tsv.gz') in data_files
 
         # check content of the json file:
-        with open(jsonFile) as f:
+        with open(expectedFileName + '.json') as f:
             d = json.load(f)
             assert d['Columns'] == [ s, 'trigger']
             assert d['StartTime'] == -1.632
@@ -133,3 +132,9 @@ def test_dcm2bids(
                 assert d['SamplingFrequency'] == 125
             elif s == 'cardiac':
                 assert d['SamplingFrequency'] == 500
+
+        # check content of the tsv file:
+        with open( TESTS_DATA_PATH / ('dcm_' + s + '.tsv'),'rt' ) as expected, \
+            gzip.open(expectedFileName + '.tsv.gz','rt') as f:
+                for expected_line, written_line in zip (expected, f):
+                    assert expected_line == written_line
