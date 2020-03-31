@@ -138,3 +138,18 @@ def test_dcm2bids(
             gzip.open(expectedFileName + '.tsv.gz','rt') as f:
                 for expected_line, written_line in zip (expected, f):
                     assert expected_line == written_line
+
+
+def test_plug_missing_data():
+    '''   Test for plug_missing_data   '''
+    import numpy as np
+
+    # generate a temporal series and corresponding fake signal with
+    #   missing timepoints:
+    dt = 1
+    t = [i/1 for i in range(35) if i%10]
+    s = [i for i in range(len(t))]
+
+    expected_t, expected_s = d2bp.plug_missing_data(t,s,dt)
+    assert all(np.ediff1d(expected_t)) == dt
+    assert all(np.isnan(expected_s[[i for i in range(len(expected_s)) if not (i+1)%10]]))
