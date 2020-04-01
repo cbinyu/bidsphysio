@@ -131,16 +131,6 @@ def plug_missing_data(t,s,dt,missing_value=np.nan):
     return t,s
 
 
-def calculate_trigger_events(t_signal,t_trig):
-    # Function to calculate the trigger events in a given timeseries (t_signal), given
-    #   the timing of the scanner triggers
-
-    trig_signal = np.zeros( np.shape(t_signal), dtype=bool )
-    for t in t_trig:
-        trig_signal[ np.argmax( t_signal > t ) ] = True
-    return trig_signal
-    
-
 def main():
 
     # Parse command line arguments
