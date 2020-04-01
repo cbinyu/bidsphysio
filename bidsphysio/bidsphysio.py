@@ -111,7 +111,7 @@ class physiosignal(object):
         and the sampling rate
         """
         if self.samples_per_second == None or self.physiostarttime == None:
-            raise "Unable to calculate the recording timing"
+            raise ValueError('Unable to calculate the recording timing')
         else:
             self.sampling_times = [self.physiostarttime + i/self.samples_per_second for i in range(len(self.signal))]
 
@@ -125,8 +125,8 @@ class physiosignal(object):
         if self.sampling_times is not []:
             try:
                 self.calculate_timing()
-            except Error as e:
-                print( e.msg )
+            except Exception as e:
+                print(e)
                 return None
 
         sampling_times = np.array(self.sampling_times)
@@ -318,8 +318,8 @@ class physiodata(object):
         if trig_physiosignal.sampling_times is not []:
             try:
                 trig_physiosignal.calculate_timing()
-            except Error as e:
-                print( e.msg )
+            except Exception as e:
+                print(e)
                 return None
 
         # get indices for which the trigger was on (>0):
