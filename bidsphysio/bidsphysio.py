@@ -342,8 +342,12 @@ class physiodata(object):
         signal_labels = [l.lower() for l in self.labels()]
 
         # Sanity check: make sure we have a "trigger" signal
-        assert ( "trigger" in self.labels() ),"We cannot save with trigger because we found no trigger."
+        if 'trigger' not in self.labels():
+            print("We cannot save with trigger because we found no trigger.")
+            self.save_to_bids(bids_fName)
+            return
 
+        # From now on, we do have a trigger
         # physiosignal object corresponding to the trigger:
         trig_physiosignal = self.signals[ signal_labels.index('trigger') ]
         t_trig = self.get_trigger_timing()

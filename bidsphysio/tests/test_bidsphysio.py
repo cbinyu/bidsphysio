@@ -319,6 +319,7 @@ def test_get_trigger_timing(
 
 def test_save_to_bids_with_trigger(
         tmpdir,
+        capfd,
         myphysiodata,
         myphysiodata_with_trigger
 ):
@@ -327,9 +328,11 @@ def test_save_to_bids_with_trigger(
     output_file_name = pjoin(tmpdir.strpath,'foo')
 
     ###   A) test on a physiodata without trigger signal   ###
-    with pytest.raises(AssertionError) as e_info:
-        myphysiodata.save_to_bids_with_trigger(output_file_name)
-        assert str(e_info.value) == "We cannot save with trigger because we found no trigger."
+    myphysiodata.save_to_bids_with_trigger(output_file_name)
+    # we should get a warning, and then a print out indicating save_to_bids was called:
+    out = capfd.readouterr().out
+    assert 'We cannot save with trigger because we found no trigger.' in out
+    assert 'Saving physio data' in out
 
 
     ###   B)test the case of all signals (except the trigger) have the same     ###
