@@ -4,6 +4,7 @@ import pytest
 import json
 import gzip
 import copy
+import numpy as np
 from os import remove
 from os.path import join as pjoin
 from glob import glob
@@ -57,6 +58,35 @@ def trigger_timing(scope="module"):
     return trigger_timing
 
 
+def test_calculate_timing(
+        mySignal
+):
+    """
+    Test for calculate_timing
+    It checks that it gives an error when it is supposed to, and it returns the
+    correct timing when the neccessary parameters are present
+    """
+
+    with pytest.raises(Exception) as e_info:
+        # 1) Try with a physiosignal without sampling rate:
+        physiosignal(
+            label='simulated',
+            physiostarttime=PHYSIO_START_TIME
+        ).calculate_timing()
+
+        # 2) Try with a physiosignal without physiostarttime:
+        physiosignal(
+            label='simulated',
+            samples_per_second=PHYSIO_SAMPLES_PER_SECOND
+        ).calculate_timing()
+
+    # 3) With a correct signal:
+    mySignal.calculate_timing()
+    assert len(mySignal.sampling_times) == PHYSIO_SAMPLES_COUNT
+    assert mySignal.sampling_times[0] == mySignal.physiostarttime
+    np.testing.assert_allclose(np.ediff1d(mySignal.sampling_times), 1/mySignal.samples_per_second, 1e-10)
+
+
 def test_calculate_trigger_events(
         mySignal,
         trigger_timing
@@ -66,8 +96,6 @@ def test_calculate_trigger_events(
     as elements there are in the trigger timing (between the
     beginning of the recording and the end)
     """
-
-    import numpy as np
 
     # calculate trigger events:
     trig_signal = mySignal.calculate_trigger_events( trigger_timing )
