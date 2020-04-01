@@ -72,13 +72,13 @@ def acq2bids( physio_acq, bids_prefix ):
         physio_label = ''
         
         # specify label:
-        if 'PULS' in item.name:
+        if 'puls' in item.name.lower():
             physio_label = 'cardiac'
 
-        elif 'RESP' in item.name:
+        elif 'resp' in item.name.lower():
             physio_label = 'respiratory'
 
-        elif "TRIGGER" in item.name:
+        elif "trigger" in item.name.lower():
             physio_label = 'trigger'
 
         else:
