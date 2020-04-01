@@ -71,79 +71,6 @@ def test_main_args(
     assert capfd.readouterr().out == 'mock_dcm2bids called\n'
 
 
-def test_dcm2bids(
-        monkeypatch,
-        tmpdir,
-        capfd
-):
-    '''
-    Tests for the call to "dcm2bids"
-    We will call it by calling "main" to make sure the output directory
-    is created, etc.
-    '''
-    import json
-    import gzip
-
-    infile = str(TESTS_DATA_PATH / 'samplePhysio+02+physio_test+00001.dcm')
-    outbids = str(tmpdir / 'mydir' / 'bids')
-
-    args = (
-        'dcm2bidsphysio -i {infile} -b {bp}'.format(
-            infile=str(infile),
-            bp=outbids
-        )
-    ).split(' ')
-    monkeypatch.setattr(sys, 'argv',args)
-
-    # call "main" (which will create the output dir and call "dcm2bids"):
-    d2bp.main()
-
-    # make sure we are not calling the mock_dcm2bidds, but the real one:
-    assert capfd.readouterr().out != 'mock_dcm2bids called\n'
-
-    # Check that we have as many signals as expected (2, for this file):
-    json_files = sorted(Path(tmpdir / 'mydir').glob('*.json'))
-    data_files = sorted(Path(tmpdir / 'mydir').glob('*.tsv*'))
-    assert len(json_files)==len(data_files)==2
-
-    for s in ['respiratory','cardiac']:
-        expectedFileBaseName = Path(outbids).name + '_recording-' + s + '_physio'
-        expectedFileName = tmpdir / 'mydir' / expectedFileBaseName
-        assert (expectedFileName + '.json') in json_files
-        assert (expectedFileName + '.tsv.gz') in data_files
-
-        # check content of the json file:
-        with open(expectedFileName + '.json') as f:
-            d = json.load(f)
-            assert d['Columns'] == [ s, 'trigger']
-            assert d['StartTime'] == -1.632
-            if s == 'respiratory':
-                assert d['SamplingFrequency'] == 125
-            elif s == 'cardiac':
-                assert d['SamplingFrequency'] == 500
-
-        # check content of the tsv file:
-        with open( TESTS_DATA_PATH / ('dcm_' + s + '.tsv'),'rt' ) as expected, \
-            gzip.open(expectedFileName + '.tsv.gz','rt') as f:
-                for expected_line, written_line in zip (expected, f):
-                    assert expected_line == written_line
-
-
-def test_plug_missing_data():
-    '''   Test for plug_missing_data   '''
-    import numpy as np
-
-    # generate a temporal series and corresponding fake signal with
-    #   missing timepoints:
-    dt = 1
-    t = [i/1 for i in range(35) if i%10]
-    s = [i for i in range(len(t))]
-
-    expected_t, expected_s = d2bp.plug_missing_data(t,s,dt)
-    assert all(np.ediff1d(expected_t)) == dt
-    assert all(np.isnan(expected_s[[i for i in range(len(expected_s)) if not (i+1)%10]]))
-
-
 def test_parse_log():
     '''   Test for parse_log   '''
 
@@ -202,3 +129,77 @@ def test_parse_log():
 
     # Note: if parse_log tried to incorrectly add the "don't log this: repeated echo"
     #       as time, it would give a "ValueError: invalid literal for int() with base 10"
+
+
+def test_plug_missing_data():
+    '''   Test for plug_missing_data   '''
+    import numpy as np
+
+    # generate a temporal series and corresponding fake signal with
+    #   missing timepoints:
+    dt = 1
+    t = [i/1 for i in range(35) if i%10]
+    s = [i for i in range(len(t))]
+
+    expected_t, expected_s = d2bp.plug_missing_data(t,s,dt)
+    assert all(np.ediff1d(expected_t)) == dt
+    assert all(np.isnan(expected_s[[i for i in range(len(expected_s)) if not (i+1)%10]]))
+
+
+def test_dcm2bids(
+        monkeypatch,
+        tmpdir,
+        capfd
+):
+    '''
+    Tests for the call to "dcm2bids"
+    We will call it by calling "main" to make sure the output directory
+    is created, etc.
+    '''
+    import json
+    import gzip
+
+    infile = str(TESTS_DATA_PATH / 'samplePhysio+02+physio_test+00001.dcm')
+    outbids = str(tmpdir / 'mydir' / 'bids')
+
+    args = (
+        'dcm2bidsphysio -i {infile} -b {bp}'.format(
+            infile=str(infile),
+            bp=outbids
+        )
+    ).split(' ')
+    monkeypatch.setattr(sys, 'argv',args)
+
+    # call "main" (which will create the output dir and call "dcm2bids"):
+    d2bp.main()
+
+    # make sure we are not calling the mock_dcm2bidds, but the real one:
+    assert capfd.readouterr().out != 'mock_dcm2bids called\n'
+
+    # Check that we have as many signals as expected (2, for this file):
+    json_files = sorted(Path(tmpdir / 'mydir').glob('*.json'))
+    data_files = sorted(Path(tmpdir / 'mydir').glob('*.tsv*'))
+    assert len(json_files)==len(data_files)==2
+
+    for s in ['respiratory','cardiac']:
+        expectedFileBaseName = Path(outbids).name + '_recording-' + s + '_physio'
+        expectedFileName = tmpdir / 'mydir' / expectedFileBaseName
+        assert (expectedFileName + '.json') in json_files
+        assert (expectedFileName + '.tsv.gz') in data_files
+
+        # check content of the json file:
+        with open(expectedFileName + '.json') as f:
+            d = json.load(f)
+            assert d['Columns'] == [ s, 'trigger']
+            assert d['StartTime'] == -1.632
+            if s == 'respiratory':
+                assert d['SamplingFrequency'] == 125
+            elif s == 'cardiac':
+                assert d['SamplingFrequency'] == 500
+
+        # check content of the tsv file:
+        with open( TESTS_DATA_PATH / ('dcm_' + s + '.tsv'),'rt' ) as expected, \
+            gzip.open(expectedFileName + '.tsv.gz','rt') as f:
+                for expected_line, written_line in zip (expected, f):
+                    assert expected_line == written_line
+
