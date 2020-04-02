@@ -559,7 +559,7 @@ def testSamplingRate(
         sampling_rate=0,
         Nsamples=0,
         logTimes=[0,0],
-        tolerance=0.05
+        tolerance=0.1
         ):
     """
     Function to test if the sampling rate is correct.
