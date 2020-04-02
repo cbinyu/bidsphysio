@@ -1,6 +1,6 @@
 '''   Tests for the module "acq2bidsphysio.py"   '''
 
-import bidsphysio.acq2bidsphysio as d2bp
+import bidsphysio.acq2bidsphysio as a2bp
 from .utils import TESTS_DATA_PATH
 
 import pytest
@@ -9,8 +9,6 @@ from pathlib import Path
 
 '''
 TO-DO:
-
-- Write test for calculate_trigger_events
 
 - Set the expected signals (and maybe file contents) from the
   tests data in a separate file , with the data, which the test
@@ -33,7 +31,7 @@ def mock_acq2bidsphysio(monkeypatch):
         print('mock_acq2bids called')
         return
 
-    monkeypatch.setattr(d2bp, "acq2bids", mock_acq2bids)
+    monkeypatch.setattr(a2bp, "acq2bids", mock_acq2bids)
 
 
 
@@ -60,7 +58,7 @@ def test_main_args(
     ).split(' ')
     monkeypatch.setattr(sys, 'argv',args)
     with pytest.raises(FileNotFoundError) as e_info:
-        d2bp.main()
+        a2bp.main()
         assert str(e_info.value).endswith(' file not found')
         assert str(e_info.value).split(' file not found')[0] == infile
 
@@ -68,7 +66,7 @@ def test_main_args(
     #    The output directory should be created and the "acq2bids" function should be called
     args[ args.index('-i')+1 ] = str(TESTS_DATA_PATH / 'sample.acq')
     monkeypatch.setattr(sys, 'argv',args)
-    d2bp.main()
+    a2bp.main()
     assert (tmpdir / 'mydir').exists()
     assert capfd.readouterr().out == 'mock_acq2bids called\n'
 
@@ -83,7 +81,7 @@ def test_plug_missing_data():
     t = [i/1 for i in range(35) if i%10]
     s = [i for i in range(len(t))]
 
-    expected_t, expected_s = d2bp.plug_missing_data(t,s,dt)
+    expected_t, expected_s = a2bp.plug_missing_data(t,s,dt)
     assert all(np.ediff1d(expected_t)) == dt
     assert all(np.isnan(expected_s[[i for i in range(len(expected_s)) if not (i+1)%10]]))
 
@@ -113,7 +111,7 @@ def test_acq2bids(
     monkeypatch.setattr(sys, 'argv',args)
 
     # call "main" (which will create the output dir and call "acq2bids"):
-    d2bp.main()
+    a2bp.main()
 
     # make sure we are not calling the mock_dcm2bidds, but the real one:
     assert capfd.readouterr().out != 'mock_acq2bids called\n'
