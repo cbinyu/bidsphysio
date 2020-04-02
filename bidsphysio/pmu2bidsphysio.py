@@ -60,7 +60,7 @@ from bidsphysio.bidsphysio import (physiosignal,
                                    physiodata)
 
 
-def errmsg(msg, pmuFile, expStr, gotStr):
+def errmsg(msg, pmuFile, expStr=None, gotStr=None):
     msg = msg.replace('%r', repr(pmuFile))
     if expStr and gotStr:
         formattedMsg = '{msg}: Expected: {expStr}; got: {gotStr}'
