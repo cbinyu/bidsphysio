@@ -442,7 +442,7 @@ def readVBXpmu( physio_file, forceRead=False ):
         print( 'Could not find type of recording for ' + physio_file )
         if not forceRead:
             raise PMUFormatError(
-                      'File %r does not seem to be a valid VE11C PMU file',
+                      'File %r does not seem to be a valid VBX PMU file',
                       physio_file,
                       'Logging ([A-Z]*) signal',
                       s[1]
@@ -458,7 +458,7 @@ def readVBXpmu( physio_file, forceRead=False ):
     except AttributeError:
         print( 'Could not find the sampling rate for ' + physio_file )
         raise PMUFormatError(
-                  'File %r does not seem to be a valid VE11C PMU file',
+                  'File %r does not seem to be a valid VBX PMU file',
                   physio_file,
                   '_SAMPLES_PER_SECOND = ([0-9]*)',
                   s[1]
