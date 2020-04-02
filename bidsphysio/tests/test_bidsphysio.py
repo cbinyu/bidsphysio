@@ -88,6 +88,7 @@ def test_calculate_timing(
 
 
 def test_calculate_trigger_events(
+        capfd,
         mySignal,
         trigger_timing
 ):
@@ -97,6 +98,15 @@ def test_calculate_trigger_events(
     beginning of the recording and the end)
     """
 
+    # 1) If you try to calculate it for a signal for which we cannot calculate
+    #    the timing, it should print an error and return None:
+    assert physiosignal(
+            label='simulated',
+            physiostarttime=PHYSIO_START_TIME
+        ).calculate_trigger_events(trigger_timing) == None
+    assert capfd.readouterr().out == "Unable to calculate the recording timing\n"
+
+    # 2) Run it succesfully:
     # calculate trigger events:
     trig_signal = mySignal.calculate_trigger_events( trigger_timing )
 
