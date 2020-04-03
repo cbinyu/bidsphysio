@@ -198,7 +198,7 @@ def readpmu( physio_file, softwareVersion=None ):
             # (if None, we'll try all knownVersions)
             softwareVersion == None
            ):
-        raise "{sv} is not a known software version."
+        raise Exception("{sv} is not a known software version.".format(sv=softwareVersion))
 
     # Define what versions we need to test:
     versionsToTest = [softwareVersion] if softwareVersion else knownVersions
@@ -214,16 +214,28 @@ def readpmu( physio_file, softwareVersion=None ):
                 return readVB15Apmu( physio_file )
             elif sv == 'VBX':
                 return readVBXpmu( physio_file )
+        except UnicodeDecodeError as e:
+            # not an ascii file, so it's not a valid PMU file:
+            raise PMUFormatError(
+                'File %r does not seem to be a valid Siemens PMU file',
+                physio_file
+            )
         except PMUFormatError as e:
             print( 'Warning: ' + str(e))
             continue
 
     # if we made it this far, there was a problem:
-    raise PMUFormatError(
-          'File %r does not seem to be a valid Siemens PMU file',
-          physio_file
-      )
-
+    if softwareVersion is None:
+        # because we have tested all known version:
+        raise PMUFormatError(
+            'File %r does not seem to be a valid Siemens PMU file',
+            physio_file
+        )
+    else:
+        raise PMUFormatError(
+            'File %r does not seem to be a valid Siemens {sv} PMU file'.format(sv=softwareVersion),
+            physio_file
+        )
 
 
 def readVE11Cpmu( physio_file, forceRead=False ):
