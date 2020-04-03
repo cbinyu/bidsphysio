@@ -219,9 +219,10 @@ def test_main_args(
     separated function
     '''
     # 1) "infile" doesn't exist:
+    # Note: we enter "-i" last because in 3), we'll be adding a second file
     infile = str(tmpdir / 'boo.dcm')
     args = (
-        'pmu2bidsphysio -i {infile} -b {bp}'.format(
+        'pmu2bidsphysio -b {bp} -i {infile}'.format(
             infile=infile,
             bp=tmpdir / 'mydir' / 'foo'
         )
@@ -234,10 +235,17 @@ def test_main_args(
 
     # 2) "infile" does exist, but output directory doesn't exist:
     #    The output directory should be created and the "pmu2bids" function should be called
-    args[ args.index('-i')+1 ] = str(TESTS_DATA_PATH / 'sample.acq')
+    args[ args.index('-i')+1 ] = str(TESTS_DATA_PATH / PMUVE11CFILE)
     monkeypatch.setattr(sys, 'argv',args)
     p2bp.main()
     assert (tmpdir / 'mydir').exists()
     assert capfd.readouterr().out == 'mock_pmu2bids called\n'
 
-
+    # 3) "infile" contains more than one file:
+    args.append(
+        str(TESTS_DATA_PATH / PMUVBXFILE)
+    )
+    monkeypatch.setattr(sys, 'argv',args)
+    # Make sure 'main' runs without errors:
+    assert p2bp.main() is None
+    
