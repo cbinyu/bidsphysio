@@ -61,6 +61,18 @@ def mock_pmu2bidsphysio(monkeypatch):
     monkeypatch.setattr(p2bp, "pmu2bids", mock_pmu2bids)
 
 
+@pytest.fixture
+def mock_readXXXXpmu_caller(monkeypatch):
+    """
+    Pretend we run readVE11Cpmu, readVB15Apmu or readVBXpmu, but do nothing
+    """
+    def mock_readXXXXpmu(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(p2bp, 'readVE11Cpmu', mock_readXXXXpmu)
+    monkeypatch.setattr(p2bp, 'readVB15Apmu', mock_readXXXXpmu)
+    monkeypatch.setattr(p2bp, 'readVBXpmu', mock_readXXXXpmu)
+
 
 ###   Tests   ###
 
@@ -277,3 +289,56 @@ def test_testSamplingRate():
         Nsamples = 99,
         logTimes = [0, 10000]
     ) is None
+
+
+def test_readpmu_with_incorrect_file():
+    '''
+    Tests for readpmu when called with an incorrect file
+    Given an input file from any PMU software version, check that it is saved to bids
+    '''
+
+    physio_file = str(TESTS_DATA_PATH / PMUVBXFILE)
+
+    # 1) If you call it with an unknown PMU software version, raise an error:
+    with pytest.raises(Exception) as err_info:
+        p2bp.readpmu(physio_file, 'Vfoo')
+        assert str(err_info.value) == "Vfoo is not a known software version."
+
+    # 2) If you test with a file with the wrong format, you should get a PMUFormatError
+    softwareVersionToRead = 'VE11C'
+    with pytest.raises(p2bp.PMUFormatError) as err_info:
+        p2bp.readpmu(physio_file, softwareVersionToRead)
+    assert str(err_info.value) == p2bp.errmsg(
+        'File %r does not seem to be a valid Siemens {sv} PMU file'.format(sv=softwareVersionToRead),
+        physio_file
+    )
+
+    # 3) If you test with an ASCII file that is not a PMU file at all, or
+    #    with a binaryfile, you should get a PMUFormatError
+    ascii_file = str(TESTS_DATA_PATH / 'pmu_VBX_pulse_sample.tsv')
+    binary_file = str(TESTS_DATA_PATH / 'sample.acq')
+    for f in [ascii_file, binary_file]:
+        with pytest.raises(p2bp.PMUFormatError) as err_info:
+            p2bp.readpmu(f)
+        assert str(err_info.value) == p2bp.errmsg(
+            'File %r does not seem to be a valid Siemens PMU file',
+            f
+        )
+
+
+def test_readpmu(
+        monkeypatch,
+        mock_readXXXXpmu_caller
+):
+    '''
+    Tests for readpmu with the right file
+    Given an input file from any PMU software version, check that it does not give an error
+    We don't need to check the results because those are checked
+    in the corresponding test_readXXXXpmu tests above.
+    '''
+
+    for f in [
+        str(TESTS_DATA_PATH / PMUVBXFILE),
+        str(TESTS_DATA_PATH / PMUVE11CFILE)
+    ]:
+        assert p2bp.readpmu(f) is None
