@@ -248,4 +248,32 @@ def test_main_args(
     monkeypatch.setattr(sys, 'argv',args)
     # Make sure 'main' runs without errors:
     assert p2bp.main() is None
-    
+
+
+def test_testSamplingRate():
+    '''   Tests for testSamplingRate   '''
+
+    # 1) If the tolerance is wrong, we should get an error
+    for t in [ -0.5, 5]:
+        with pytest.raises(ValueError) as err_info:
+            p2bp.testSamplingRate(tolerance=t)
+            assert str(err_info.value) == 'tolerance has to be between 0 and 1. Got ' + str(t)
+
+    # 2) If the sampling rate is incorrect (allowing for default tolerance),
+    #    we should also get an error:
+    #    Note that the logTimes are in ms, and the sampling rate in samples per sec
+    with pytest.raises(ValueError) as err_info:
+        p2bp.testSamplingRate(
+            sampling_rate = 1,
+            Nsamples = 100,
+            logTimes = [0, 10000]
+        )
+        assert 'sampling rate' in str(err_info.value)
+
+    # 3) If the sampling rate is correct (within the default tolerance),
+    #    we should NOT get an error:
+    assert p2bp.testSamplingRate(
+        sampling_rate = 10,
+        Nsamples = 99,
+        logTimes = [0, 10000]
+    ) is None
