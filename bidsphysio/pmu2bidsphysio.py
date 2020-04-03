@@ -581,7 +581,7 @@ def testSamplingRate(
     """
 
     if not (tolerance < 1 and tolerance > 0):
-        raise ValueError('tolerance has to be between 0 and 1. Got ' + tolerance)
+        raise ValueError('tolerance has to be between 0 and 1. Got ' + str(tolerance))
 
     loggingTime_sec = (logTimes[1] - logTimes[0])/1000
     expected_samples = int(loggingTime_sec * sampling_rate)
