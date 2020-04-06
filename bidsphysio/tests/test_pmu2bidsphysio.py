@@ -307,7 +307,7 @@ def test_readpmu_with_incorrect_file():
     # 2) If you test with a file with the wrong format, you should get a PMUFormatError
     softwareVersionToRead = 'VE11C'
     with pytest.raises(p2bp.PMUFormatError) as err_info:
-        p2bp.readpmu(physio_file, softwareVersionToRead)
+        p2bp.readpmu(physio_file, softwareVersion=softwareVersionToRead)
     assert str(err_info.value) == p2bp.errmsg(
         'File %r does not seem to be a valid Siemens {sv} PMU file'.format(sv=softwareVersionToRead),
         physio_file
@@ -337,6 +337,17 @@ def test_readpmu(
     in the corresponding test_readXXXXpmu tests above.
     '''
 
+    # Specifying the (correct) version:
+    assert p2bp.readpmu(
+        str(TESTS_DATA_PATH / PMUVBXFILE),
+        softwareVersion='VBX'
+    ) is None
+    assert p2bp.readpmu(
+        str(TESTS_DATA_PATH / PMUVE11CFILE),
+        softwareVersion='VE11C'
+    ) is None
+
+    # Default mode: try all known versions:
     for f in [
         str(TESTS_DATA_PATH / PMUVBXFILE),
         str(TESTS_DATA_PATH / PMUVE11CFILE)
