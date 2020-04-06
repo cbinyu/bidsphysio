@@ -167,7 +167,7 @@ def test_readVE11Cpmu():
     assert physio_type == 'PULS'
     assert MDHTime == [STARTMDHTIME, STOPMDHTIME]
     assert sampling_rate == 400
-    with open( TESTS_DATA_PATH / ('pmu_VE11C_pulse_sample.tsv'),'rt' ) as expected:
+    with open( TESTS_DATA_PATH / ('pmu_VE11C_cardiac.tsv'),'rt' ) as expected:
         for expected_line, returned_signal in zip (expected, physio_signal):
             assert float(expected_line) == returned_signal
 
@@ -190,7 +190,7 @@ def test_readVB15Apmu():
     assert physio_type == 'PULS'
     assert MDHTime == [STARTMDHTIME, STOPMDHTIME]
     assert sampling_rate == 400
-    with open( TESTS_DATA_PATH / ('pmu_VB15A_pulse_sample.tsv'),'rt' ) as expected:
+    with open( TESTS_DATA_PATH / ('pmu_VB15A_cardiac.tsv'),'rt' ) as expected:
         for expected_line, returned_signal in zip (expected, physio_signal):
             assert float(expected_line) == returned_signal
     '''
@@ -214,7 +214,7 @@ def test_readVBXpmu():
     assert physio_type == 'PULSE'
     assert MDHTime == [47029710, 47654452]
     assert sampling_rate == 50
-    with open( TESTS_DATA_PATH / ('pmu_VBX_pulse_sample.tsv'),'rt' ) as expected:
+    with open( TESTS_DATA_PATH / ('pmu_VBX_cardiac.tsv'),'rt' ) as expected:
         for expected_line, returned_signal in zip (expected, physio_signal):
             assert float(expected_line) == returned_signal
 
@@ -315,7 +315,7 @@ def test_readpmu_with_incorrect_file():
 
     # 3) If you test with an ASCII file that is not a PMU file at all, or
     #    with a binaryfile, you should get a PMUFormatError
-    ascii_file = str(TESTS_DATA_PATH / 'pmu_VBX_pulse_sample.tsv')
+    ascii_file = str(TESTS_DATA_PATH / 'pmu_VBX_cardiac.tsv')
     binary_file = str(TESTS_DATA_PATH / 'sample.acq')
     for f in [ascii_file, binary_file]:
         with pytest.raises(p2bp.PMUFormatError) as err_info:
@@ -342,3 +342,63 @@ def test_readpmu(
         str(TESTS_DATA_PATH / PMUVE11CFILE)
     ]:
         assert p2bp.readpmu(f) is None
+
+
+def test_pmu2bids(
+        monkeypatch,
+        tmpdir,
+        capfd
+):
+    '''
+    Tests for the call to "pmu2bids"
+    We will call it by calling "main" to make sure the output directory
+    is created, etc.
+    '''
+    import json
+    import gzip
+
+    infile1 = str(TESTS_DATA_PATH / PMUVE11CFILE)
+    infile2 = infile1[:-5] + '.resp'
+    outbids = str(tmpdir / 'mydir' / 'bids')
+
+    args = (
+        'pmu2bidsphysio -i {infiles} -b {bp}'.format(
+            infiles=infile1 + ' ' + infile2,
+            bp=outbids
+        )
+    ).split(' ')
+    monkeypatch.setattr(sys, 'argv',args)
+
+    # call "main" (which will create the output dir and call "pmu2bids"):
+    p2bp.main()
+
+    # make sure we are not calling the mock_dcm2bidds, but the real one:
+    assert capfd.readouterr().out != 'mock_pmu2bids called\n'
+
+    # Check that we have as many signals as expected (2 in this case):
+    json_files = sorted(Path(tmpdir / 'mydir').glob('*.json'))
+    data_files = sorted(Path(tmpdir / 'mydir').glob('*.tsv*'))
+    assert len(json_files)==len(data_files)==2
+
+    for s in ['respiratory','cardiac']:
+        expectedFileBaseName = Path(outbids).name + '_recording-' + s + '_physio'
+        expectedFileName = tmpdir / 'mydir' / expectedFileBaseName
+        assert (expectedFileName + '.json') in json_files
+        assert (expectedFileName + '.tsv.gz') in data_files
+
+        # check content of the json file:
+        with open(expectedFileName + '.json') as f:
+            d = json.load(f)
+            assert d['Columns'] == [s]
+            if s == 'respiratory':
+                assert d['StartTime'] == 38973660
+            elif s == 'cardiac':
+                assert d['StartTime'] == 39008572
+            assert d['SamplingFrequency'] == 400
+
+        # check content of the tsv file:
+        with open( TESTS_DATA_PATH / ('pmu_VE11C_' + s + '.tsv'),'rt' ) as expected, \
+            gzip.open(expectedFileName + '.tsv.gz','rt') as f:
+                for expected_line, written_line in zip (expected, f):
+                    assert expected_line == written_line
+
