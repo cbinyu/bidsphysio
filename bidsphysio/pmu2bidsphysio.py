@@ -89,7 +89,7 @@ class PMUFormatError(ValueError):
 
 
 
-def pmu2bids( physio_files, bids_prefix ):
+def pmu2bids( physio_files, bids_prefix, verbose=False ):
     """
     Function to read a list of Siemens PMU physio files and
     save them as a BIDS physiological recording.
@@ -116,7 +116,7 @@ def pmu2bids( physio_files, bids_prefix ):
     # Read the files from the list, extract the relevant information and
     #   add a new physiosignal to the list:
     for f in physio_files:
-        physio_type, MDHTime, sampling_rate, physio_signal = readpmu( f )
+        physio_type, MDHTime, sampling_rate, physio_signal = readpmu( f, verbose=verbose )
 
         testSamplingRate(
                             sampling_rate = sampling_rate,
@@ -162,7 +162,7 @@ def pmu2bids( physio_files, bids_prefix ):
     return
 
 
-def readpmu( physio_file, softwareVersion=None ):
+def readpmu( physio_file, softwareVersion=None, verbose=False ):
     """
     Function to read the physiological signal from a Siemens PMU physio file
     It would try to open the knew formats (currently, VB15A, VE11C)
@@ -221,7 +221,8 @@ def readpmu( physio_file, softwareVersion=None ):
                 physio_file
             )
         except PMUFormatError as e:
-            print( 'Warning: ' + str(e))
+            if verbose:
+                print( 'Warning: ' + str(e))
             continue
 
     # if we made it this far, there was a problem:
@@ -612,6 +613,7 @@ def main():
     parser = argparse.ArgumentParser(description='Convert Siemens physiology files to BIDS-compliant physiology recording')
     parser.add_argument('-i', '--infiles', nargs='+', required=True, help='.puls or .resp physio file(s)')
     parser.add_argument('-b', '--bidsprefix', required=True, help='Prefix of the BIDS file. It should match the _bold.nii.gz')
+    parser.add_argument('-v', '--verbose', action="store_true", default=False, help='verbose screen output')
     args = parser.parse_args()
 
     # make sure input files exist:
@@ -624,7 +626,7 @@ def main():
     if not os.path.exists(odir):
         os.makedirs(odir)
 
-    pmu2bids( args.infiles, args.bidsprefix )
+    pmu2bids( args.infiles, args.bidsprefix, verbose=args.verbose )
 
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
