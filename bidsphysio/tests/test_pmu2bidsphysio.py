@@ -10,14 +10,6 @@ from pathlib import Path
 '''
 TO-DO:
 
-- Test main for the case of input argument a single file and
-  for the case of a list
-
-- Test readpmu:
-    * Get also a VB15A sample file
-
-- Test for testSamplingRate functions
-
 - Set the expected signals (and maybe file contents) from the
   tests data in a separate file , with the data, which the test
   functions will read. That way, if we change the tests datasets,
@@ -29,6 +21,7 @@ TO-DO:
 
 MSG = 'Test: %r'
 PMUVE11CFILE = 'sample_VE11C.puls'
+PMUVB15AFILE = 'sample_VB15A.resp'
 PMUVBXFILE = 'sample_VBX.puls'
 EXPSTR = 'expected'
 GOTSTR = 'foo'
@@ -182,18 +175,17 @@ def test_readVB15Apmu():
         physio_file = str(TESTS_DATA_PATH / PMUVBXFILE)
         p2bp.readVB15Apmu(physio_file)
         assert str(err_info.value) == myErrmsg
-    '''
+
     # 2) With the correct file format, you get the expected results:
-    physio_file = str(TESTS_DATA_PATH / PMUVE11CFILE)
+    physio_file = str(TESTS_DATA_PATH / PMUVB15AFILE)
 
     physio_type, MDHTime, sampling_rate, physio_signal = p2bp.readVB15Apmu(physio_file)
-    assert physio_type == 'PULS'
-    assert MDHTime == [STARTMDHTIME, STOPMDHTIME]
-    assert sampling_rate == 400
-    with open( TESTS_DATA_PATH / ('pmu_VB15A_cardiac.tsv'),'rt' ) as expected:
+    assert physio_type == 'RESP'
+    assert MDHTime == [57335095, 60647840]
+    assert sampling_rate == 50
+    with open( TESTS_DATA_PATH / ('pmu_VB15A_respiratory.tsv'),'rt' ) as expected:
         for expected_line, returned_signal in zip (expected, physio_signal):
             assert float(expected_line) == returned_signal
-    '''
 
 
 def test_readVBXpmu():
