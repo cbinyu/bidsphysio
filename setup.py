@@ -47,6 +47,7 @@ def main():
         classifiers=ldict['CLASSIFIERS'],
         packages=bidsphysio_pkgs,
         entry_points={'console_scripts': [
+            'physio2bidsphysio=bidsphysio.physio2bidsphysio:main',
             'dcm2bidsphysio=bidsphysio.dcm2bidsphysio:main',
             'acq2bidsphysio=bidsphysio.acq2bidsphysio:main',
             'pmu2bidsphysio=bidsphysio.pmu2bidsphysio:main',
