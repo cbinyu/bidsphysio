@@ -68,7 +68,7 @@ from bidsphysio.bidsphysio import (physiosignal,
                                    physiodata)
 
 
-def dcm2bids( physio_dcm, bids_prefix ):
+def dcm2bids( physio_dcm, bids_prefix, verbose=False ):
     # Create DICOM object
     d = pydicom.dcmread(physio_dcm, stop_before_pixels=True)
 
@@ -100,8 +100,9 @@ def dcm2bids( physio_dcm, bids_prefix ):
     for wc in range(n_waves):
         physio_label = ''
         
-        print('')
-        print('Parsing waveform %d' % wc)
+        if verbose:
+            print('')
+            print('Parsing waveform %d' % wc)
 
         offset = wc * wave_len
 
@@ -111,15 +112,16 @@ def dcm2bids( physio_dcm, bids_prefix ):
         fname_len = int.from_bytes(wave_data[4:8], byteorder=sys.byteorder)
         fname = wave_data[slice(8, 8+fname_len)]
 
-        print('Data length     : %d' % data_len)
-        print('Filename length : %d' % fname_len)
-        print('Filename        : %s' % fname)
+        if verbose:
+            print('Data length     : %d' % data_len)
+            print('Filename length : %d' % fname_len)
+            print('Filename        : %s' % fname)
 
         # Extract waveform log byte data
         log_bytes = wave_data[slice(1024, 1024+data_len)]
 
         # Parse waveform log
-        waveform_name, t, s, dt = parse_log(log_bytes)
+        waveform_name, t, s, dt = parse_log(log_bytes, verbose=verbose)
 
         # specify suffix:
         if 'PULS' in waveform_name:
@@ -168,7 +170,7 @@ def dcm2bids( physio_dcm, bids_prefix ):
     
 
 
-def parse_log(log_bytes):
+def parse_log(log_bytes, verbose=False):
 
     # Convert from a bytes literal to a UTF-8 encoded string, ignoring errors
     physio_string = log_bytes.decode('utf-8', 'ignore')
@@ -232,9 +234,10 @@ def parse_log(log_bytes):
                         s_list.append(1)
                    
 
-    print('UUID            : %s' % uuid)
-    print('Scan date       : %s' % scan_date)
-    print('Waveform type   : %s' % waveform_name)
+    if verbose:
+        print('UUID            : %s' % uuid)
+        print('Scan date       : %s' % scan_date)
+        print('Waveform type   : %s' % waveform_name)
 
     # Return numpy arrays
     return waveform_name, np.array(t_list), np.array(s_list), dt
@@ -266,6 +269,7 @@ def main():
     parser = argparse.ArgumentParser(description='Convert DICOM physiology files to BIDS-compliant physiology recording')
     parser.add_argument('-i', '--infile', required=True, help='CMRR physio DICOM file')
     parser.add_argument('-b', '--bidsprefix', required=True, help='Prefix of the BIDS file. It should match the _bold.nii.gz')
+    parser.add_argument('-v', '--verbose', action="store_true", default=False, help='verbose screen output')
     args = parser.parse_args()
 
     # make sure input file exists:
@@ -277,7 +281,7 @@ def main():
     if not os.path.exists(odir):
         os.makedirs(odir)
 
-    dcm2bids( args.infile, args.bidsprefix )
+    dcm2bids( args.infile, args.bidsprefix, verbose=args.verbose )
 
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
