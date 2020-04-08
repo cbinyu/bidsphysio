@@ -59,8 +59,8 @@ def test_main_args(
     monkeypatch.setattr(sys, 'argv',args)
     with pytest.raises(FileNotFoundError) as e_info:
         a2bp.main()
-        assert str(e_info.value).endswith(' file not found')
-        assert str(e_info.value).split(' file not found')[0] == infile
+    assert str(e_info.value).endswith(' file not found')
+    assert str(e_info.value).split(' file not found')[0] == infile
 
     # 2) "infile" does exist, but output directory doesn't exist:
     #    The output directory should be created and the "acq2bids" function should be called

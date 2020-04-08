@@ -66,7 +66,7 @@ def test_main(
 
     # 1) "infile" with wrong extension:
     # Note: we enter "-i" last because we'll be adding a second file in another test below
-    infile = str(tmpdir / 'boo.foo')
+    infile = str(TESTS_DATA_PATH / 'dcm_cardiac.tsv')
     args = (
         'physio2bidsphysio -b {bp} -i {infile}'.format(
             infile=infile,
@@ -77,7 +77,7 @@ def test_main(
 
     with pytest.raises(Exception) as e_info:
         physio2bidsphysio.main()
-        assert str(e_info.value).endswith(' is not a known physio file extension.')
+    assert str(e_info.value).endswith(' is not a known physio file extension.')
 
 
     # 2) "infile" doesn't exist:
@@ -87,8 +87,8 @@ def test_main(
 
     with pytest.raises(FileNotFoundError) as e_info:
         physio2bidsphysio.main()
-        assert str(e_info.value).endswith(' file not found')
-        assert str(e_info.value).split(' file not found')[0] == infile
+    assert str(e_info.value).endswith(' file not found')
+    assert str(e_info.value).split(' file not found')[0] == infile
 
 
     # 3) test all different known file types:
@@ -117,7 +117,7 @@ def test_main(
     monkeypatch.setattr(sys, 'argv',args)
     with pytest.raises(Exception) as e_info:
         physio2bidsphysio.main()
-        assert 'Only one input file' in str(e_info.value)
+    assert 'Only one input file' in str(e_info.value)
     
     # 4.2) It should work for '.acq' and PMU files:
     for multifile in [

@@ -91,7 +91,7 @@ def test_PMUFormatError_class(myErrmsg):
     assert isinstance(myError, p2bp.PMUFormatError)
     with pytest.raises(p2bp.PMUFormatError) as err_info:
         raise myError
-        assert str(err_info.value) == myErrmsg
+    assert str(err_info.value) == myErrmsg
 
 
 def test_parserawPMUsignal(capfd):
@@ -151,7 +151,12 @@ def test_readVE11Cpmu():
     with pytest.raises(p2bp.PMUFormatError) as err_info:
         physio_file = str(TESTS_DATA_PATH / PMUVBXFILE)
         p2bp.readVE11Cpmu(physio_file)
-        assert str(err_info.value) == myErrmsg
+    assert str(err_info.value).startswith(
+        p2bp.errmsg(
+            'File %r does not seem to be a valid {sv} PMU file'.format(sv='VE11C'),
+            physio_file
+        )
+    )
     
     # 2) With the correct file format, you get the expected results:
     physio_file = str(TESTS_DATA_PATH / PMUVE11CFILE)
@@ -174,7 +179,12 @@ def test_readVB15Apmu():
     with pytest.raises(p2bp.PMUFormatError) as err_info:
         physio_file = str(TESTS_DATA_PATH / PMUVBXFILE)
         p2bp.readVB15Apmu(physio_file)
-        assert str(err_info.value) == myErrmsg
+    assert str(err_info.value).startswith(
+        p2bp.errmsg(
+            'File %r does not seem to be a valid {sv} PMU file'.format(sv='VB15A'),
+            physio_file
+        )
+    )
 
     # 2) With the correct file format, you get the expected results:
     physio_file = str(TESTS_DATA_PATH / PMUVB15AFILE)
@@ -197,7 +207,12 @@ def test_readVBXpmu():
     with pytest.raises(p2bp.PMUFormatError) as err_info:
         physio_file = str(TESTS_DATA_PATH / PMUVE11CFILE)
         p2bp.readVBXpmu(physio_file)
-        assert str(err_info.value) == myErrmsg
+    assert str(err_info.value).startswith(
+        p2bp.errmsg(
+            'File %r does not seem to be a valid {sv} PMU file'.format(sv='VBX'),
+            physio_file
+        )
+    )
     
     # 2) With the correct file format, you get the expected results:
     physio_file = str(TESTS_DATA_PATH / PMUVBXFILE)
@@ -234,8 +249,8 @@ def test_main_args(
     monkeypatch.setattr(sys, 'argv',args)
     with pytest.raises(FileNotFoundError) as e_info:
         p2bp.main()
-        assert str(e_info.value).endswith(' file not found')
-        assert str(e_info.value).split(' file not found')[0] == infile
+    assert str(e_info.value).endswith(' file not found')
+    assert str(e_info.value).split(' file not found')[0] == infile
 
     # 2) "infile" does exist, but output directory doesn't exist:
     #    The output directory should be created and the "pmu2bids" function should be called
@@ -261,7 +276,7 @@ def test_testSamplingRate():
     for t in [ -0.5, 5]:
         with pytest.raises(ValueError) as err_info:
             p2bp.testSamplingRate(tolerance=t)
-            assert str(err_info.value) == 'tolerance has to be between 0 and 1. Got ' + str(t)
+        assert str(err_info.value) == 'tolerance has to be between 0 and 1. Got ' + str(t)
 
     # 2) If the sampling rate is incorrect (allowing for default tolerance),
     #    we should also get an error:
@@ -272,7 +287,7 @@ def test_testSamplingRate():
             Nsamples = 100,
             logTimes = [0, 10000]
         )
-        assert 'sampling rate' in str(err_info.value)
+    assert 'sampling rate' in str(err_info.value)
 
     # 3) If the sampling rate is correct (within the default tolerance),
     #    we should NOT get an error:
@@ -294,7 +309,7 @@ def test_readpmu_with_incorrect_file():
     # 1) If you call it with an unknown PMU software version, raise an error:
     with pytest.raises(Exception) as err_info:
         p2bp.readpmu(physio_file, 'Vfoo')
-        assert str(err_info.value) == "Vfoo is not a known software version."
+    assert str(err_info.value) == "Vfoo is not a known software version."
 
     # 2) If you test with a file with the wrong format, you should get a PMUFormatError
     softwareVersionToRead = 'VE11C'
