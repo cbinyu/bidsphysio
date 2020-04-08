@@ -67,20 +67,14 @@ def test_calculate_timing(
     correct timing when the neccessary parameters are present
     """
 
+    # 1) Try with a physiosignal without sampling rate:
     with pytest.raises(Exception) as e_info:
-        # 1) Try with a physiosignal without sampling rate:
         physiosignal(
             label='simulated',
             physiostarttime=PHYSIO_START_TIME
         ).calculate_timing()
 
-        # 2) Try with a physiosignal without physiostarttime:
-        physiosignal(
-            label='simulated',
-            samples_per_second=PHYSIO_SAMPLES_PER_SECOND
-        ).calculate_timing()
-
-    # 3) With a correct signal:
+    # 2) With a correct signal:
     mySignal.calculate_timing()
     assert len(mySignal.sampling_times) == PHYSIO_SAMPLES_COUNT
     assert mySignal.sampling_times[0] == mySignal.physiostarttime
@@ -346,7 +340,7 @@ def test_get_trigger_timing(
     # try it on a physiodata without trigger signal:
     with pytest.raises(ValueError) as e_info:
         myphysiodata.get_trigger_timing()
-        assert str(e_info.value) == "'trigger' is not in list"
+    assert str(e_info.value) == "'trigger' is not in list"
 
     # try with physiodata_with_trigger
     assert myphysiodata_with_trigger.get_trigger_timing() == [
