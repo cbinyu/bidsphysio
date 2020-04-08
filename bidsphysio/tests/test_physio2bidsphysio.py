@@ -9,7 +9,6 @@ from .utils import TESTS_DATA_PATH
 
 import pytest
 import sys
-from pathlib import Path
 
 
 ###   Globals   ###
