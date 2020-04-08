@@ -54,9 +54,10 @@ SOFTWARE.
 import os
 import sys
 import argparse
-from bidsphysio.acq2bidsphysio import acq2bids
-from bidsphysio.dcm2bidsphysio import dcm2bids
-from bidsphysio.pmu2bidsphysio import pmu2bids
+from bidsphysio import physio2bidsphysio,      \
+                       acq2bidsphysio as a2bp, \
+                       dcm2bidsphysio as d2bp, \
+                       pmu2bidsphysio as p2bp
 
 
 def main():
@@ -97,11 +98,11 @@ def main():
     if allowedExtensions == 'dcm':
         if len(args.infiles) > 1:
             raise Exception('Only one input file is allowed for DICOM physio files')
-        dcm2bids( args.infiles[0], args.bidsprefix, verbose=args.verbose )
+        d2bp.dcm2bids( args.infiles[0], args.bidsprefix, verbose=args.verbose )
     elif allowedExtensions == 'acq':
-        acq2bids( args.infiles, args.bidsprefix )
+        a2bp.acq2bids( args.infiles, args.bidsprefix )
     elif allowedExtensions == ['puls','resp']:
-        pmu2bids( args.infiles, args.bidsprefix, verbose=args.verbose )
+        p2bp.pmu2bids( args.infiles, args.bidsprefix, verbose=args.verbose )
 
 
 
