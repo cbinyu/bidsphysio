@@ -61,43 +61,50 @@ from bidsphysio.bidsphysio import (physiosignal,
                                    physiodata)
 
 
-def acq2bids( physio_acq, bids_prefix ):
-    # Extract data from AcqKnowledge file:
-    physio_data = bioread.read( physio_acq )
+def acq2bids( physio_acq_files, bids_prefix ):
+    # In case we are handled just a single file, make it a one-element list:
+    if isinstance(physio_acq_files, str):
+        physio_acq_files = [physio_acq_files]
 
-    # Init physiodata object to hold physio signals
+    # Init physiodata object to hold physio signals:
     physio = physiodata()
 
-    for item in physio_data.channels:
-        physio_label = ''
-        
-        # specify label:
-        if 'puls' in item.name.lower():
-            physio_label = 'cardiac'
+    # Read the files from the list, extract the relevant information and
+    #   add a new physiosignal to the list:
+    for physio_acq in physio_acq_files:
+        # Extract data from AcqKnowledge file:
+        physio_data = bioread.read( physio_acq )
 
-        elif 'resp' in item.name.lower():
-            physio_label = 'respiratory'
+        for item in physio_data.channels:
+            physio_label = ''
 
-        elif "trigger" in item.name.lower():
-            physio_label = 'trigger'
+            # specify label:
+            if 'puls' in item.name.lower():
+                physio_label = 'cardiac'
 
-        else:
-            physio_label = item.name
+            elif 'resp' in item.name.lower():
+                physio_label = 'respiratory'
 
-        if physio_label:
-            physio.append_signal(
-                # Note: Because the channel name is user-defined, the 'TRIGGER' channel might not
-                #   correspond to the scanner trigger, but to the stimulus onset, or something
-                #   else. So, I'm going to set the BIDS "StartTime" to 0 (by not passing the
-                #   physiostarttime and neuralstarttime), and let the user figure out the offset.
-                physiosignal(
-                    label=physio_label,
-                    samples_per_second=item.samples_per_second,
-                    sampling_times=item.time_index,
-                    signal=item.data,
-                    units=item.units
+            elif "trigger" in item.name.lower():
+                physio_label = 'trigger'
+
+            else:
+                physio_label = item.name
+
+            if physio_label:
+                physio.append_signal(
+                    # Note: Because the channel name is user-defined, the 'TRIGGER' channel might not
+                    #   correspond to the scanner trigger, but to the stimulus onset, or something
+                    #   else. So, I'm going to set the BIDS "StartTime" to 0 (by not passing the
+                    #   physiostarttime and neuralstarttime), and let the user figure out the offset.
+                    physiosignal(
+                        label=physio_label,
+                        samples_per_second=item.samples_per_second,
+                        sampling_times=item.time_index,
+                        signal=item.data,
+                        units=item.units
+                    )
                 )
-            )
 
     # remove '_bold.nii(.gz)' or '_physio' if present **at the end of the bids_prefix**
     # (This is a little convoluted, but we make sure we don't delete it if
@@ -135,20 +142,21 @@ def main():
 
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Convert AcqKnowledge physiology files to BIDS-compliant physiology recording')
-    parser.add_argument('-i', '--infile', required=True, help='AcqKnowledge physio file')
+    parser.add_argument('-i', '--infiles', nargs='+', required=True, help='AcqKnowledge physio file(s) (space separated)')
     parser.add_argument('-b', '--bidsprefix', required=True, help='Prefix of the BIDS file. It should match the _bold.nii.gz')
     args = parser.parse_args()
 
-    # make sure input file exists:
-    if not os.path.exists(args.infile):
-        raise FileNotFoundError( '{i} file not found'.format(i=args.infile))
+    # make sure input files exist:
+    for infile in args.infiles:
+        if not os.path.exists(infile):
+            raise FileNotFoundError( '{i} file not found'.format(i=infile))
 
     # make sure output directory exists:
     odir = os.path.dirname(args.bidsprefix)
     if not os.path.exists(odir):
         os.makedirs(odir)
 
-    acq2bids( args.infile, args.bidsprefix )
+    acq2bids( args.infiles, args.bidsprefix )
 
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
