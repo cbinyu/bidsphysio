@@ -115,6 +115,25 @@ def test_calculate_trigger_events(
     assert ( sum(trig_signal) == sum(num_trig_within_physio_samples) )
 
 
+def test_plug_missing_data():
+    '''   Test for plug_missing_data   '''
+
+    # generate a physiosignal with a temporal series and corresponding fake signal with
+    #   missing timepoints:
+    st = [i/1 for i in range(35) if i%10]
+    spamSignal=physiosignal(
+                 label='simulated',
+                 samples_per_second=1,
+                 sampling_times=st,
+                 signal= [i for i in range(len(st))]
+             )
+
+    spamSignal.plug_missing_data()
+    assert all(np.ediff1d(spamSignal.sampling_times)) == 1
+    assert all(np.isnan(spamSignal.signal[[i for i in range(len(spamSignal.signal)) if not (i+1)%10]]))
+    assert len(spamSignal.signal) == spamSignal.samples_count
+
+
 def test_matching_trigger_signal(
         mySignal,
         trigger_timing

@@ -126,11 +126,9 @@ def dcm2bids( physio_dcm, bids_prefix, verbose=False ):
         # specify suffix:
         if 'PULS' in waveform_name:
             physio_label = 'cardiac'
-            t, s = plug_missing_data(t,s,dt)
 
         elif 'RESP' in waveform_name:
             physio_label = 'respiratory'            
-            t, s = plug_missing_data(t,s,dt)
 
         elif "ACQUISITION_INFO" in waveform_name:
             physio_label = 'trigger'
@@ -156,6 +154,8 @@ def dcm2bids( physio_dcm, bids_prefix, verbose=False ):
     #   (if present in the file)
     for p_signal in physio.signals :
         p_signal.neuralstarttime = t_first_trigger if t_first_trigger is not None else p_signal.physiostarttime
+        # we also fill with NaNs the places for which there is missing data:
+        p_signal.plug_missing_data()
         
     # remove '_bold.nii(.gz)' or '_physio' if present **at the end of the bids_prefix**
     # (This is a little convoluted, but we make sure we don't delete it if
@@ -232,7 +232,7 @@ def parse_log(log_bytes, verbose=False):
                         # we have a new volume - record a scanner trigger:
                         vol = parts[0]
                         s_list.append(1)
-                   
+
 
     if verbose:
         print('UUID            : %s' % uuid)
@@ -241,26 +241,6 @@ def parse_log(log_bytes, verbose=False):
 
     # Return numpy arrays
     return waveform_name, np.array(t_list), np.array(s_list), dt
-
-
-
-def plug_missing_data(t,s,dt,missing_value=np.nan):
-    # Function to plug "missing_value" (NaN, by default) whereever
-    #   the signal was not recorded.
-
-    # This finds the first index for which the difference between consecutive
-    #   elements is larger than dt (argmax stops at the first "True"; if it
-    #   doesn't find any, it returns 0):
-    i = np.argmax( np.ediff1d(t) > dt )
-    while i != 0:
-        # new time array, which adds the missing timepoint:
-        t = np.concatenate( (t[:i+1], [t[i]+dt], t[i+1:]) )
-        # new signal array, which adds a "missing_value" at the missing timepoint:
-        s = np.concatenate( (s[:i+1], [missing_value], s[i+1:]) )
-        # check to see if we are done:
-        i = np.argmax( np.ediff1d(t) > dt )
-
-    return t,s
 
 
 def main():

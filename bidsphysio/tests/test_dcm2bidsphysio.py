@@ -131,21 +131,6 @@ def test_parse_log():
     #       as time, it would give a "ValueError: invalid literal for int() with base 10"
 
 
-def test_plug_missing_data():
-    '''   Test for plug_missing_data   '''
-    import numpy as np
-
-    # generate a temporal series and corresponding fake signal with
-    #   missing timepoints:
-    dt = 1
-    t = [i/1 for i in range(35) if i%10]
-    s = [i for i in range(len(t))]
-
-    expected_t, expected_s = d2bp.plug_missing_data(t,s,dt)
-    assert all(np.ediff1d(expected_t)) == dt
-    assert all(np.isnan(expected_s[[i for i in range(len(expected_s)) if not (i+1)%10]]))
-
-
 def test_dcm2bids(
         monkeypatch,
         tmpdir,

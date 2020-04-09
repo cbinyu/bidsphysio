@@ -137,6 +137,36 @@ class physiosignal(object):
         return trig_signal
 
 
+    def plug_missing_data(self, missing_value=np.nan):
+        '''
+        Function to plug "missing_value" (NaN, by default) wherever the
+        signal was not recorded.
+        '''
+
+        # The time increment between samples:
+        dt = 1/self.samples_per_second
+
+        # The following finds the first index for which the difference between
+        #   consecutive elements is larger than dt (plus a small rounding error)
+        # (argmax stops at the first "True"; if it doesn't find any, it returns 0):
+        i = np.argmax( np.ediff1d(self.sampling_times) > dt*(1.001) )
+        while i != 0:
+            # new time array, which adds the missing timepoint:
+            self.sampling_times = np.concatenate(
+                # Note: np.concatenate takes a list as argument, so you need (...)
+                (self.sampling_times[:i+1], [self.sampling_times[i]+dt], self.sampling_times[i+1:])
+            )
+            # new signal array, which adds a "missing_value" at the missing timepoint:
+            self.signal = np.concatenate(
+                # Note: np.concatenate takes a list as argument, so you need (...)
+                (self.signal[:i+1], [missing_value], self.signal[i+1:])
+            )
+            # check to see if we are done:
+            i = np.argmax( np.ediff1d(self.sampling_times) > dt )
+
+        self.samples_count = len( self.signal )
+
+
     @classmethod
     def matching_trigger_signal(cls, mysignal, trigger_s):
         """
@@ -315,7 +345,7 @@ class physiodata(object):
         trig_physiosignal = self.signals[ signal_labels.index('trigger') ]
 
         # make sure we have the timing of the trigger samples; otherwise, calculate:
-        if trig_physiosignal.sampling_times is not []:
+        if len(trig_physiosignal.sampling_times) == 0:
             try:
                 trig_physiosignal.calculate_timing()
             except Exception as e:
@@ -403,7 +433,7 @@ class physiodata(object):
                     physiodata_group.signals[0].calculate_trigger_events(t_trig)
                 )
 
-                # Append this new signal to "hola":
+                # Append this new signal to "physiodata_group":
                 physiodata_group.append_signal( trigger_for_this_group )
 
             ###   Save the data   ###

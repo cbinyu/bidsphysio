@@ -54,7 +54,6 @@ SOFTWARE.
 import os
 import sys
 import argparse
-import numpy as np
 import bioread
 import json
 from bidsphysio.bidsphysio import (physiosignal,
@@ -116,26 +115,6 @@ def acq2bids( physio_acq_files, bids_prefix ):
     physio.save_to_bids_with_trigger( bids_prefix )
 
     return
-    
-
-
-def plug_missing_data(t,s,dt,missing_value=np.nan):
-    # Function to plug "missing_value" (NaN, by default) whereever
-    #   the signal was not recorded.
-
-    # This finds the first index for which the difference between consecutive
-    #   elements is larger than dt (argmax stops at the first "True"; if it
-    #   doesn't find any, it returns 0):
-    i = np.argmax( np.ediff1d(t) > dt )
-    while i != 0:
-        # new time array, which adds the missing timepoint:
-        t = np.concatenate( (t[:i+1], [t[i]+dt], t[i+1:]) )
-        # new signal array, which adds a "missing_value" at the missing timepoint:
-        s = np.concatenate( (s[:i+1], [missing_value], s[i+1:]) )
-        # check to see if we are done:
-        i = np.argmax( np.ediff1d(t) > dt )
-
-    return t,s
 
 
 def main():
