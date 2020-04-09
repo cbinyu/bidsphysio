@@ -7,21 +7,26 @@ Converts physio data (CMRR, AcqKnowledge, Siemens PMU) to BIDS physiological rec
 
 ## Usage
 ```
-dcm2bidsphysio --infile <DCMfile> --bidsprefix <Prefix>
-acq2bidsphysio --infile <acqfile> --bidsprefix <Prefix>
-pmu2bidsphysio --infile <acqfiles> --bidsprefix <Prefix>
+physio2bidsphysio --infile <physiofiles> --bidsprefix  <Prefix> [--verbose]
 ```
 
 Example:
 ```
-dcm2bidsphysio --infile 07+epi_MB4_2mm_Physio+00001.dcm      \
+physio2bidsphysio --infile 07+epi_MB4_2mm_Physio+00001.dcm      \
                            --bidsprefix BIDSfolder/sub-01/func/sub-01_task-REST_run-1
 ```
 
 ## Arguments
- * `<DCMfile>` is the DICOM file that contains the physiological recordings.
- * `<acqfile>` is an AcqKnowledge file with physiological recordings.
+ * `<physiofiles>` space-separated files with the physiological
+ recordings (formats:
+	 * `<.dcm>`: DICOM file with physiological recording from a CMRR
+     Multi-Band sequence (only a single one for this file type).
+	 * `<.acq>`: AcqKnowledge file (BioPac).
+	 * `<.puls>` or `<.resp>`: Siemens PMU file (VB15A, VBX, VE11C).
  * `<Prefix>` is the prefix that will be used for the BIDS physiology files.  If all physiological recordings have the same sampling rate and starting time, the script will save the files: `<Prefix>_physio.json` and `<Prefix>_physio.tsv.gz`.  If the physiological signals have different sampling rates and/or starting times, the script will save the files: `<Prefix>_recording-<label>_physio.json` and `<Prefix>_recording-<label>_physio.tsv.gz`, with the corresponding labels (e.g., `cardiac`, `respiratory`, etc.).
+ * `--verbose` will print out some warning messages.
+
+
 
 Note: If desired, you can use the corresponding `_bold.nii.gz` BIDS file as `--bidsprefix`. The script will strip the `_bold.nii.gz` part from the filename and use what is left as `<Prefix>`. This way, you can assure that the output physiology files match the `_bold.nii.gz` file for which they are intended.
 
@@ -42,10 +47,10 @@ mkdir /tmp/bidsphysio && \
 ## Docker usage
 ```
 docker run [docker options] cbinyu/bidsphysio \
-    --infile <DCMfile/AcqFile>      \
+    --infile <physiofiles>      \
     --bidsprefix <Prefix>
 ```
-Note that the `<DCMfile>` or `<AcqFile>` and the `<Prefix>` should use the corresponding paths inside the Docker container.
+Note that the `<physiofiles>` and the `<Prefix>` should use the corresponding paths inside the Docker container.
 
 Example:
 ```
@@ -58,12 +63,31 @@ docker run --rm \
         --bidsprefix /tmp/test
 ```
 
+## Alternative use:
+
+The tool will also install the binaries: `dcm2bidsphysio`, `acq2bidsphysio` and `pmu2bidsphysio`, to extract a specific file type.
+
+```
+dcm2bidsphysio --infile <DCMfile> --bidsprefix <Prefix>
+acq2bidsphysio --infile <acqfiles> --bidsprefix <Prefix>
+pmu2bidsphysio --infile <pmufiles> --bidsprefix <Prefix>
+```
 
 ## How to use in your own Python program
 After installing the module using `pip` (see [above](https://github.com/cbinyu/bidsphysio#installation "Installation") ), you can use it in your own Python program this way:
 ```
-from bidsphysio import bidsphysio
+from bidsphysio import dcm2bidsphysio
 bidsphysio.dcm2bids( dicom_file,  prefix )
-bidsphysio.acq2bids( acq_file,    prefix )
-bidsphysio.pmu2bids( [acq_files], prefix )
 ```
+or:
+```
+from bidsphysio import acq2bidsphysio
+bidsphysio.acq2bids( [acq_files],    prefix )
+```
+or:
+```
+from bidsphysio import pmu2bidsphysio
+bidsphysio.pmu2bids( [pmu_files], prefix )
+```
+
+
