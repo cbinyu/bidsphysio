@@ -148,7 +148,7 @@ def test_dcm2bids(
     outbids = str(tmpdir / 'mydir' / 'bids')
 
     args = (
-        'dcm2bidsphysio -i {infile} -b {bp}'.format(
+        'dcm2bidsphysio -i {infile} -b {bp} -v'.format(
             infile=str(infile),
             bp=outbids
         )
