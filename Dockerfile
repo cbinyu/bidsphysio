@@ -28,6 +28,6 @@ RUN \
 	rm -rf ~/.cache/pip/*
 
 
-ENTRYPOINT ["/usr/local/bin/dcm2bidsphysio"]
+ENTRYPOINT ["/usr/local/bin/physio2bidsphysio"]
 
 
