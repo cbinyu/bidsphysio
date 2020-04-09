@@ -147,17 +147,8 @@ def pmu2bids( physio_files, bids_prefix, verbose=False ):
             )
         )
 
-    # remove '_bold.nii(.gz)' or '_physio' if present **at the end of the bids_prefix**
-    # (This is a little convoluted, but we make sure we don't delete it if
-    #  it happens in the middle of the string)
-    for mystr in ['.gz', '.nii', '_bold', '_physio']:
-        bids_prefix = bids_prefix[:-len(mystr)] if bids_prefix.endswith(mystr) else bids_prefix
-    
     # Save files:
-    if 'trigger' in physio.labels():
-        physio.save_to_bids_with_trigger( bids_prefix )
-    else:
-        physio.save_to_bids( bids_prefix )
+    physio.save_to_bids_with_trigger( bids_prefix )
 
     return
 

@@ -198,9 +198,11 @@ class physiodata(object):
 
     def __init__(
             self,
-            signals = None
+            signals = None,
+            bidsPrefix = None
             ):
         self.signals = signals if signals is not None else []
+        self.bidsPrefix = bidsPrefix
 
 
     def labels(self):
@@ -222,7 +224,22 @@ class physiodata(object):
             self.signals.append( signal )
         else:
             self.signals = [signal]
-        
+
+
+    def set_bidsPrefix(self, bidsPrefix):
+        """
+        Sets the bidsPrefix attribute for the class
+        """
+
+        # remove '_bold.nii(.gz)' or '_physio' if present **at the end of the bidsPrefix**
+        # (This is a little convoluted, but we make sure we don't delete it if
+        #  it happens in the middle of the string)
+        for mystr in ['.gz', '.nii', '_bold', '_physio']:
+            bidsPrefix = bidsPrefix[:-len(mystr)] if bidsPrefix.endswith(mystr) else bidsPrefix
+
+        # Whatever is left, we assign to the bidsPrefix class attribute:
+        self.bidsPrefix = bidsPrefix
+
 
     def save_bids_json(self, json_fName):
         """
@@ -237,10 +254,10 @@ class physiodata(object):
             len( np.unique([item.t_start()          for item in self.signals]) ) == 1
         ),"The different signals have different sampling rates. You can't save them in a single file!"
 
-        # make sure the file name ends with "_physio.json":
+        # make sure the file name ends with "_physio.json" by removing it (if present)
+        #   and adding it back:
         for myStr in ['.json','_physio']:
             json_fName = json_fName[:-len(myStr)] if json_fName.endswith( myStr ) else json_fName
-        
         json_fName = json_fName + '_physio.json'
 
         with open( json_fName, 'w') as f:
@@ -288,12 +305,22 @@ class physiodata(object):
         )
 
 
-    def save_to_bids(self, bids_fName):
+    def save_to_bids(self, bids_fName=None):
         """
         Saves the physiodata sidecar '.json' file(s) and signal(s).
         It saves all signals with the same sampling rate and t_start in a single
         .json/.tsv.gz pair.
         """
+
+        if bids_fName:
+            # if bids_fName argument is passed, use it:
+            self.set_bidsPrefix(bids_fName)
+        else:
+            # otherwise, check to see if there is already a 'bidsPrefix'
+            # for this instance of the class. If neither of them is
+            # present, return an error:
+            if not self.bidsPrefix:
+                raise Exception('fileName was not a known provided')
 
         # find the unique pairs of sampling rate and t_start (and indices):
         unique_sr_ts, idx_un = np.unique(
@@ -309,15 +336,15 @@ class physiodata(object):
             #   there will be just one _physio file and we don't need to add "_recording-"
 
             print('Saving physio data')
-            self.save_bids_json(bids_fName)
-            self.save_bids_data(bids_fName)
+            self.save_bids_json(self.bidsPrefix)
+            self.save_bids_data(self.bidsPrefix)
 
         else:
 
             for idx, [sr,ts] in enumerate( unique_sr_ts ):
                 rec_label = self.signals[idx_un[idx]].label
 
-                rec_fName = '{0}_recording-{1}_physio'.format(bids_fName, rec_label)
+                rec_fName = '{0}_recording-{1}_physio'.format(self.bidsPrefix, rec_label)
                 # create a new physiodata object with just the signals with matching sampling rate and t_start:
                 hola = physiodata(
                            [ item for item in self.signals if item.samples_per_second == sr and
@@ -362,11 +389,21 @@ class physiodata(object):
         return list(trigger_timing)
 
 
-    def save_to_bids_with_trigger(self, bids_fName):
+    def save_to_bids_with_trigger(self, bids_fName=None):
         """
         Rather than saving the triggers as a separate physiological signal, save a column with
         triggers for each list of signals sharing the same timing:
         """
+
+        if bids_fName:
+            # if bids_fName argument is passed, use it:
+            self.set_bidsPrefix(bids_fName)
+        else:
+            # otherwise, check to see if there is already a 'bidsPrefix'
+            # for this instance of the class. If neither of them is
+            # present, return an error:
+            if not self.bidsPrefix:
+                raise Exception('fileName was not a known provided')
 
         # list all the signal labels:
         signal_labels = [l.lower() for l in self.labels()]
@@ -374,7 +411,7 @@ class physiodata(object):
         # Sanity check: make sure we have a "trigger" signal
         if 'trigger' not in self.labels():
             print("We cannot save with trigger because we found no trigger.")
-            self.save_to_bids(bids_fName)
+            self.save_to_bids()
             return
 
         # From now on, we do have a trigger
@@ -400,12 +437,12 @@ class physiodata(object):
                 # All the physio signals (except, potentially, the "trigger") have the
                 #   same sampling rate and t_start, there will be just one _physio file
                 #   and we don't need to add "_recording-":
-                rec_fName = bids_fName
+                rec_fName = self.bidsPrefix
                 print('Saving physio data')
 
             else:
                 rec_label = self.signals[idx_un[idx]].label
-                rec_fName = '{0}_recording-{1}_physio'.format(bids_fName, rec_label)
+                rec_fName = '{0}_recording-{1}_physio'.format(self.bidsPrefix, rec_label)
                 print('Saving {0} waveform'.format(rec_label))
 
             ###   Create group of signals to save   ###
