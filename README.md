@@ -77,17 +77,17 @@ pmu2bidsphysio --infile <pmufiles> --bidsprefix <Prefix>
 After installing the module using `pip` (see [above](https://github.com/cbinyu/bidsphysio#installation "Installation") ), you can use it in your own Python program this way:
 ```
 from bidsphysio import dcm2bidsphysio
-bidsphysio.dcm2bids( dicom_file,  prefix )
+dcm2bidsphysio.dcm2bids( dicom_file,  prefix )
 ```
 or:
 ```
 from bidsphysio import acq2bidsphysio
-bidsphysio.acq2bids( [acq_files],    prefix )
+acq2bidsphysio.acq2bids( [acq_files],    prefix )
 ```
 or:
 ```
 from bidsphysio import pmu2bidsphysio
-bidsphysio.pmu2bids( [pmu_files], prefix )
+pmu2bidsphysio.pmu2bids( [pmu_files], prefix )
 ```
 
 
