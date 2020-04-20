@@ -1,11 +1,14 @@
 '''   Tests for the module "acq2bidsphysio.py"   '''
 
-import bidsphysio.acq2bidsphysio as a2bp
-from .utils import TESTS_DATA_PATH
+import json
+import gzip
+from pathlib import Path
+import sys
 
 import pytest
-import sys
-from pathlib import Path
+
+import bidsphysio.acq2bidsphysio as a2bp
+from .utils import TESTS_DATA_PATH
 
 '''
 TO-DO:
@@ -81,9 +84,6 @@ def test_acq2bids(
     We will call it by calling "main" to make sure the output directory
     is created, etc.
     '''
-    import json
-    import gzip
-
     infile = str(TESTS_DATA_PATH / 'sample.acq')
     outbids = str(tmpdir / 'mydir' / 'bids')
 

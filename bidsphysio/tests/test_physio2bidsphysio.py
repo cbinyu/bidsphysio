@@ -1,14 +1,14 @@
 '''   Tests for the module "physio2bidsphysio.py"   '''
 
+import sys
+
+import pytest
+
 from bidsphysio import physio2bidsphysio,      \
                        acq2bidsphysio as a2bp, \
                        dcm2bidsphysio as d2bp, \
                        pmu2bidsphysio as p2bp
-
 from .utils import TESTS_DATA_PATH
-
-import pytest
-import sys
 
 
 ###   Globals   ###

@@ -1,4 +1,4 @@
-__version__ = "2.0"
+__version__ = "3.0"
 __author__ = "Pablo Velasco"
 __url__ = "https://github.com/cbinyu/bidsphysio"
 __packagename__ = 'bidsphysio'

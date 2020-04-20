@@ -1,13 +1,15 @@
 '''   Tests for the module "bidsphysio.py"   '''
 
-import pytest
-import json
-import gzip
 import copy
-import numpy as np
+from glob import glob
+import gzip
+import json
 from os import remove
 from os.path import join as pjoin
-from glob import glob
+
+import numpy as np
+import pytest
+
 from bidsphysio.bidsphysio import (physiosignal,
                                    physiodata)
 

@@ -1,11 +1,12 @@
 '''   Tests for the module "dcm2bidsphysio.py"   '''
 
-import bidsphysio.dcm2bidsphysio as d2bp
-from .utils import TESTS_DATA_PATH
+from pathlib import Path
+import sys
 
 import pytest
-import sys
-from pathlib import Path
+
+import bidsphysio.dcm2bidsphysio as d2bp
+from .utils import TESTS_DATA_PATH
 
 '''
 TO-DO:

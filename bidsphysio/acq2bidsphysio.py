@@ -51,11 +51,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import argparse
+import json
 import os
 import sys
-import argparse
+
 import bioread
-import json
+
 from bidsphysio.bidsphysio import (physiosignal,
                                    physiodata)
 

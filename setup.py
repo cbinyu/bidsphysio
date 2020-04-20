@@ -5,12 +5,12 @@
 #
 # ## ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ##
 
+import os.path as op
+
+from setuptools import findall, setup, find_packages
+
 
 def main():
-
-    import os.path as op
-
-    from setuptools import findall, setup, find_packages
 
     thispath = op.dirname(__file__)
     ldict = locals()

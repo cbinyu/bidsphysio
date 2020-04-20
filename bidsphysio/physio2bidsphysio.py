@@ -51,9 +51,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import argparse
 import os
 import sys
-import argparse
+
 from bidsphysio import physio2bidsphysio,      \
                        acq2bidsphysio as a2bp, \
                        dcm2bidsphysio as d2bp, \

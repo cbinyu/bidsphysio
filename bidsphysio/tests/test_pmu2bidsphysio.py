@@ -1,11 +1,14 @@
 '''   Tests for the module "pmu2bidsphysio.py"   '''
 
-import bidsphysio.pmu2bidsphysio as p2bp
-from .utils import TESTS_DATA_PATH
+import gzip
+import json
+from pathlib import Path
+import sys
 
 import pytest
-import sys
-from pathlib import Path
+
+import bidsphysio.pmu2bidsphysio as p2bp
+from .utils import TESTS_DATA_PATH
 
 '''
 TO-DO:
@@ -372,9 +375,6 @@ def test_pmu2bids(
     We will call it by calling "main" to make sure the output directory
     is created, etc.
     '''
-    import json
-    import gzip
-
     infile1 = str(TESTS_DATA_PATH / PMUVE11CFILE)
     infile2 = infile1[:-5] + '.resp'
     outbids = str(tmpdir / 'mydir' / 'bids')
