@@ -39,7 +39,7 @@ def main():
     setup(
         name=ldict['__packagename__'],
         author=ldict['__author__'],
-        #author_email="team@???",
+        author_email=ldict['__author_email__'],
         version=ldict['__version__'],
         description=ldict['__description__'],
         long_description=ldict['__longdesc__'],

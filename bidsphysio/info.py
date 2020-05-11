@@ -1,5 +1,6 @@
 __version__ = "3.0"
 __author__ = "Pablo Velasco"
+__author_email__ = "pablo.velasco@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"
 __packagename__ = 'bidsphysio'
 __description__ = "Physio-to-BIDS Converter"
@@ -9,7 +10,7 @@ __longdesc__ = """Converts physio data from either CMRR DICOM, Siemens PMU or Ac
 CLASSIFIERS = [
     'Environment :: Console',
     'Intended Audience :: Science/Research',
-    'License :: OSI Approved :: Apache Software License',
+    'License :: OSI Approved :: MIT License',
     'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
