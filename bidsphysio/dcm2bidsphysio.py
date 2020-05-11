@@ -155,7 +155,7 @@ def dcm2bids( physio_dcm, bids_prefix, verbose=False ):
     # We do this after we have read all signals to make sure we have read the trigger
     #   (if present in the file)
     for p_signal in physio.signals :
-        p_signal.neuralstarttime = t_first_trigger if t_first_trigger is not None else p_signal.physiostarttime
+        p_signal.neuralstarttime = t_first_trigger or p_signal.physiostarttime
         # we also fill with NaNs the places for which there is missing data:
         p_signal.plug_missing_data()
 
