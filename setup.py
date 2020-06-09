@@ -51,6 +51,7 @@ def main():
             'dcm2bidsphysio=bidsphysio.dcm2bidsphysio:main',
             'acq2bidsphysio=bidsphysio.acq2bidsphysio:main',
             'pmu2bidsphysio=bidsphysio.pmu2bidsphysio:main',
+            'acq_session_to_bids=bidsphysio.acq_session_to_bids:main',
         ]},
         python_requires=ldict['PYTHON_REQUIRES'],
         install_requires=ldict['REQUIRES'],

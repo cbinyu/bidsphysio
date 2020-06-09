@@ -1,8 +1,8 @@
-###########################################################
-# This is the Dockerfile for an app to extract raw physio #
-# data (from a CMRR DICOM file, '.puls' and '.resp'       #
-# Siemens files or '.acq' file) to BIDS physio            #
-###########################################################
+########################################################
+# This is the Dockerfile for a Docker image to extract #
+# raw physio data (from a CMRR DICOM file, '.puls' and #
+# '.resp' Siemens files or '.acq' file) to BIDS physio #
+########################################################
 
 ARG DEBIAN_VERSION=buster
 ARG BASE_PYTHON_VERSION=3.8
@@ -11,23 +11,20 @@ ARG BASE_PYTHON_VERSION=3.8
 # Use an official Python runtime as a parent image
 FROM python:${BASE_PYTHON_VERSION}-slim-${DEBIAN_VERSION}
 
+RUN pip install --upgrade pip
+
 ## install required python packages:
-#  Not sure why, but I have to install bioread in
-#  a separated pip install command.
 RUN pip install pydicom==1.4.1 \
 		numpy==1.18.1  \
-		etelemetry==0.1.2 && \
-    pip install	bioread>=1.0.4 && \
-    pip install	pytest
+		etelemetry==0.1.2 \
+        bioread>=1.0.4 \
+    	pytest \
+        bids
 
 ### copy module:
-COPY [".", "/src/bidsphysio"]
-RUN \
-    pip install \
-        /src/bidsphysio[all] && \
-	rm -rf ~/.cache/pip/*
+ENV INSTALL_FOLDER=/src/bidsphysio
+COPY . ${INSTALL_FOLDER}
+RUN pip install ${INSTALL_FOLDER}[all]
 
-
-ENTRYPOINT ["/usr/local/bin/physio2bidsphysio"]
-
+ENTRYPOINT ["/bin/bash"]
 

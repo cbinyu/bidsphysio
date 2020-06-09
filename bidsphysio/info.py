@@ -24,6 +24,8 @@ REQUIRES = [
     'pydicom >= 1.4.1',
     'bioread >= 1.0.4',
     'etelemetry',
+    'pandas >= 1.0.4',
+    'bids',
 ]
 
 TESTS_REQUIRES = [
