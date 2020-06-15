@@ -7,7 +7,7 @@ import sys
 
 import pytest
 
-import bidsphysio.acq2bidsphysio as a2bp
+from bidsphysio.acq2bids import acq2bidsphysio as a2bp
 from .utils import TESTS_DATA_PATH
 
 '''
