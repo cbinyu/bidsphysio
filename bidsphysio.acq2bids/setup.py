@@ -33,7 +33,7 @@ def main():
         packages=find_packages(),
         namespace_packages=['bidsphysio'],
         entry_points={'console_scripts': [
-            'acq2bidsphysio=bidsphysio.acq2bids.bidsphysio.acq2bidsphysio:main',
+            'acq2bidsphysio=bidsphysio.acq2bids.acq2bidsphysio:main',
         ]},
         python_requires=ldict['PYTHON_REQUIRES'],
         install_requires=ldict['REQUIRES'],
