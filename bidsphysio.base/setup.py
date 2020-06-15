@@ -35,15 +35,6 @@ def main():
         python_requires=ldict['PYTHON_REQUIRES'],
         install_requires=ldict['REQUIRES'],
         extras_require=ldict['EXTRA_REQUIRES'],
-        package_data={
-            'bidsphysio.tests': [
-                        op.join('data', '*.acq'),
-                        op.join('data', '*.dcm'),
-                        op.join('data', '*.puls'),
-                        op.join('data', '*.resp'),
-                        op.join('data', '*.tsv')
-            ],
-        }
     )
 
 
