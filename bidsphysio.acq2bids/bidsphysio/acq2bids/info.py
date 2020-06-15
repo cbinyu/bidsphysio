@@ -1,4 +1,4 @@
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 __author__ = "Pablo Velasco"
 __author_email__ = "pablo.velasco@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"
@@ -21,7 +21,7 @@ PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
     'bidsphysio.base',
-    'bioread[mat]',
+    'bioread[mat]>=2.0.0',
 ]
 
 TESTS_REQUIRES = [

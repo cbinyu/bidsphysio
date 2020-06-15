@@ -39,7 +39,7 @@ def main():
         install_requires=ldict['REQUIRES'],
         extras_require=ldict['EXTRA_REQUIRES'],
         package_data={
-            'bidsphysio.tests': [
+            'bidsphysio.acq2bids.tests': [
                         op.join('data', '*.acq'),
                         op.join('data', '*.tsv')
             ],
