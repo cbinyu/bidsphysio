@@ -1,5 +1,5 @@
 # bidsphysio.acq2bids
-Base classes for BIDS Physiology
+Converts AcqKnoledge physio data (from a BioPac system) to BIDS physiological recording
 
 [![Docker image](https://img.shields.io/badge/docker-cbinyu/bidsphysio:latest-brightgreen.svg?logo=docker&style=flat)](https://hub.docker.com/r/cbinyu/bidsphysio/tags/)
 [![TravisCI](https://travis-ci.com/cbinyu/bidsphysio.svg?branch=master)](https://travis-ci.com/cbinyu/bidsphysio)
