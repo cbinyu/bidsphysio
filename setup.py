@@ -1,18 +1,19 @@
 #!/usr/bin/env python
 # ## ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ##
 #
-#   See dcm2bidsphysio.py file for the copyright and license terms.
+#   See the LICENSE file for the copyright and license terms.
 #
 # ## ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ##
 
 import os.path as op
+from os import scandir
 
-from setuptools import findall, setup, find_packages
+from setuptools import setup, find_packages
 
 
 def main():
 
-    thispath = op.dirname(__file__)
+    thispath = op.dirname(__file__) or '.'
     ldict = locals()
 
     # Get version and release info, which is all stored in info.py
@@ -20,21 +21,13 @@ def main():
     with open(info_file) as infofile:
         exec(infofile.read(), globals(), ldict)
 
-
-    def findsome(subdir, extensions):
-        """Find files under subdir having specified extensions
-
-        Leading directory (datalad) gets stripped
-        """
-        return [
-            f.split(op.sep, 1)[1] for f in findall(subdir)
-            if op.splitext(f)[-1].lstrip('.') in extensions
-        ]
-    # Only recentish versions of find_packages support include
-    # bidsphysio_pkgs = find_packages('.', include=['bidsphysio*'])
-    # so we will filter manually for maximal compatibility
-    bidsphysio_pkgs = [pkg for pkg in find_packages('.') if pkg.startswith('bidsphysio')]
-
+    # find_packages() doesn't find the bidsphysio.* sub-packages
+    # because they don't have an __init__.py file.
+    children_dirs = [
+        op.relpath(f.path,thispath) for f in scandir(thispath)
+        if f.is_dir()
+    ]
+    bidsphysio_pkgs = [d for d in children_dirs if d.startswith('bidsphysio.')]
 
     setup(
         name=ldict['__packagename__'],
@@ -45,26 +38,11 @@ def main():
         long_description=ldict['__longdesc__'],
         license=ldict['__license__'],
         classifiers=ldict['CLASSIFIERS'],
-        packages=bidsphysio_pkgs,
-        entry_points={'console_scripts': [
-            'physio2bidsphysio=bidsphysio.physio2bidsphysio:main',
-            'dcm2bidsphysio=bidsphysio.dcm2bidsphysio:main',
-            'acq2bidsphysio=bidsphysio.acq2bidsphysio:main',
-            'pmu2bidsphysio=bidsphysio.pmu2bidsphysio:main',
-            'acq_session_to_bids=bidsphysio.acq_session_to_bids:main',
-        ]},
+        packages=find_packages(),
+        entry_points={},
         python_requires=ldict['PYTHON_REQUIRES'],
-        install_requires=ldict['REQUIRES'],
+        install_requires=bidsphysio_pkgs,
         extras_require=ldict['EXTRA_REQUIRES'],
-        package_data={
-            'bidsphysio.tests': [
-                        op.join('data', '*.acq'),
-                        op.join('data', '*.dcm'),
-                        op.join('data', '*.puls'),
-                        op.join('data', '*.resp'),
-                        op.join('data', '*.tsv')
-            ],
-        }
     )
 
 
