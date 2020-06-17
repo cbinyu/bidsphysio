@@ -41,7 +41,7 @@ def main():
         packages=find_packages(),
         entry_points={},
         python_requires=ldict['PYTHON_REQUIRES'],
-        install_requires=bidsphysio_pkgs,
+        install_requires=ldict['REQUIRES'],
         extras_require=ldict['EXTRA_REQUIRES'],
     )
 
