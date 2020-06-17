@@ -55,10 +55,9 @@ import argparse
 import os
 import sys
 
-from bidsphysio import physio2bidsphysio,      \
-                       acq2bidsphysio as a2bp, \
-                       dcm2bidsphysio as d2bp, \
-                       pmu2bidsphysio as p2bp
+from bidsphysio.acq2bids import acq2bidsphysio as a2bp
+from bidsphysio.dcm2bids import dcm2bidsphysio as d2bp
+from bidsphysio.pmu2bids import pmu2bidsphysio as p2bp
 
 
 def main():

@@ -4,10 +4,10 @@ import sys
 
 import pytest
 
-from bidsphysio import physio2bidsphysio,      \
-                       acq2bidsphysio as a2bp, \
-                       dcm2bidsphysio as d2bp, \
-                       pmu2bidsphysio as p2bp
+from bidsphysio.physio2bids import physio2bidsphysio
+from bidsphysio.acq2bids import acq2bidsphysio as a2bp
+from bidsphysio.dcm2bids import dcm2bidsphysio as d2bp
+from bidsphysio.pmu2bids import pmu2bidsphysio as p2bp
 from .utils import TESTS_DATA_PATH
 
 
