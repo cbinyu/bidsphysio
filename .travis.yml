@@ -16,7 +16,7 @@ install:
 
 # command to run tests
 script:
-  - pytest --cov=bidsphysio
+  - for d in bidsphysio.*; do pytest --cov=bidsphysio --cov-append $d; done
 
 after_success:
   - codecov
