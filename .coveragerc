@@ -1,7 +1,6 @@
 [run]
-include = bidsphysio/*
-          setup.py
 
 [report]
-omit = bidsphysio/info.py
+omit = */info.py
+       */setup.py
 exclude_lines = if __name__ == '__main__':
