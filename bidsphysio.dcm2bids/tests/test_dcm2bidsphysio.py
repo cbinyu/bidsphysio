@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-import bidsphysio.dcm2bidsphysio as d2bp
+from bidsphysio.dcm2bids import dcm2bidsphysio as d2bp
 from .utils import TESTS_DATA_PATH
 
 '''

@@ -58,8 +58,8 @@ import sys
 
 import bioread
 
-from bidsphysio.bidsphysio import (physiosignal,
-                                   physiodata)
+from bidsphysio.base.bidsphysio import (physiosignal,
+                                        physiodata)
 
 
 def acq2bids( physio_acq_files, bids_prefix ):

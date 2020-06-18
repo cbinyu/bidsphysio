@@ -10,8 +10,8 @@ from os.path import join as pjoin
 import numpy as np
 import pytest
 
-from bidsphysio.bidsphysio import (physiosignal,
-                                   physiodata)
+from bidsphysio.base.bidsphysio import (physiosignal,
+                                        physiodata)
 
 ###  Globals   ###
 
@@ -32,7 +32,7 @@ SCANNER_TR = 0.75   # (in sec)
 def mySignal(scope="module"):
     """    Simulate a physiosignal object    """
 
-    mySignal=physiosignal(
+    mySignal = physiosignal(
                  label='simulated',
                  samples_per_second=PHYSIO_SAMPLES_PER_SECOND,
                  physiostarttime=PHYSIO_START_TIME,

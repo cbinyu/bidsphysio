@@ -57,8 +57,8 @@ import os
 import re
 import sys
 
-from bidsphysio.bidsphysio import (physiosignal,
-                                   physiodata)
+from bidsphysio.base.bidsphysio import (physiosignal,
+                                        physiodata)
 
 
 def errmsg(msg, pmuFile, expStr=None, gotStr=None):

@@ -14,16 +14,18 @@ physio2bidsphysio --infile <physiofiles> --bidsprefix  <Prefix> [--verbose]
 Example:
 ```
 physio2bidsphysio --infile 07+epi_MB4_2mm_Physio+00001.dcm      \
-                           --bidsprefix BIDSfolder/sub-01/func/sub-01_task-REST_run-1
+                  --bidsprefix BIDSfolder/sub-01/func/sub-01_task-REST_run-1
 ```
 
 ## Arguments
- * `<physiofiles>` space-separated files with the physiological
- recordings (formats:
+ * `<physiofiles>` space-separated files with the physiological recordings.
+ 
+    Supported file types:
 	 * `<.dcm>`: DICOM file with physiological recording from a CMRR
-     Multi-Band sequence (only a single one for this file type).
+     Multi-Band sequence (only a single file for this file type).
 	 * `<.acq>`: AcqKnowledge file (BioPac).
 	 * `<.puls>` or `<.resp>`: Siemens PMU file (VB15A, VBX, VE11C).
+	 * (`<.edf>` (SR-Research) support coming soon...)
  * `<Prefix>` is the prefix that will be used for the BIDS physiology files.  If all physiological recordings have the same sampling rate and starting time, the script will save the files: `<Prefix>_physio.json` and `<Prefix>_physio.tsv.gz`.  If the physiological signals have different sampling rates and/or starting times, the script will save the files: `<Prefix>_recording-<label>_physio.json` and `<Prefix>_recording-<label>_physio.tsv.gz`, with the corresponding labels (e.g., `cardiac`, `respiratory`, etc.).
  * `--verbose` will print out some warning messages.
 
@@ -32,9 +34,21 @@ physio2bidsphysio --infile 07+epi_MB4_2mm_Physio+00001.dcm      \
 Note: If desired, you can use the corresponding `_bold.nii.gz` BIDS file as `--bidsprefix`. The script will strip the `_bold.nii.gz` part from the filename and use what is left as `<Prefix>`. This way, you can assure that the output physiology files match the `_bold.nii.gz` file for which they are intended.
 
 ## Installation
-You can install the tool by downloading the package and installing it
-with `pip`:
+You can install the tool directly from PyPI:
+```
+pip install bidsphysio
+```
 
+If you don't want to install the whole package, you can install individual subpackages:
+```
+pip install bidsphysio.<sub-package>
+```
+Available sub-packages are `acq2bids` (for `.acq` files),
+`dcm2bids` (for `.dcm` CMRR physiology files)
+ and `pmu2bids` (for Siemens PMU files). 
+You can also install the base classes with the `bidsphysio.base` sub-package.
+
+Alternatively, you can download the package and install it with `pip`:
 ```
 mkdir /tmp/bidsphysio && \
     curl -sSL https://github.com/cbinyu/bidsphysio/archive/master.tar.gz \
@@ -66,7 +80,8 @@ docker run --rm \
 
 ## Alternative use:
 
-The tool will also install the binaries: `dcm2bidsphysio`, `acq2bidsphysio` and `pmu2bidsphysio`, to extract a specific file type.
+The package will also install the binaries: `dcm2bidsphysio`, `acq2bidsphysio`
+and `pmu2bidsphysio`, to extract a specific file type:
 
 ```
 dcm2bidsphysio --infile <DCMfile> --bidsprefix <Prefix>
@@ -77,18 +92,17 @@ pmu2bidsphysio --infile <pmufiles> --bidsprefix <Prefix>
 ## How to use in your own Python program
 After installing the module using `pip` (see [above](https://github.com/cbinyu/bidsphysio#installation "Installation") ), you can use it in your own Python program this way:
 ```
-from bidsphysio import dcm2bidsphysio
-dcm2bidsphysio.dcm2bids( dicom_file,  prefix )
+from bidsphysio.dcm2bids import dcm2bidsphysio
+dcm2bidsphysio.dcm2bids( dicom_file, prefix )
 ```
 or:
 ```
-from bidsphysio import acq2bidsphysio
-acq2bidsphysio.acq2bids( [acq_files],    prefix )
+from bidsphysio.acq2bids import acq2bidsphysio
+acq2bidsphysio.acq2bids( [acq_files], prefix )
 ```
 or:
 ```
-from bidsphysio import pmu2bidsphysio
+from bidsphysio.pmu2bids import pmu2bidsphysio
 pmu2bidsphysio.pmu2bids( [pmu_files], prefix )
 ```
-
 

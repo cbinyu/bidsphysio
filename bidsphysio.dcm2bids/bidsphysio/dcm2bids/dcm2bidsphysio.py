@@ -66,8 +66,8 @@ import sys
 import numpy as np
 import pydicom
 
-from bidsphysio.bidsphysio import (physiosignal,
-                                   physiodata)
+from bidsphysio.base.bidsphysio import (physiosignal,
+                                        physiodata)
 
 
 def dcm2bids( physio_dcm, bids_prefix, verbose=False ):

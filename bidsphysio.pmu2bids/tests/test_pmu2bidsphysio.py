@@ -7,7 +7,7 @@ import sys
 
 import pytest
 
-import bidsphysio.pmu2bidsphysio as p2bp
+from bidsphysio.pmu2bids import pmu2bidsphysio as p2bp
 from .utils import TESTS_DATA_PATH
 
 '''
