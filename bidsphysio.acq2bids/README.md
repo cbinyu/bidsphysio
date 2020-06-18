@@ -1,5 +1,5 @@
 # bidsphysio.acq2bids
-Converts AcqKnoledge physio data (from a BioPac system) to BIDS physiological recording
+Converts AcqKnowledge physio data (from a BioPac system) to BIDS physiological recording
 
 [![Docker image](https://img.shields.io/badge/docker-cbinyu/bidsphysio:latest-brightgreen.svg?logo=docker&style=flat)](https://hub.docker.com/r/cbinyu/bidsphysio/tags/)
 [![TravisCI](https://travis-ci.com/cbinyu/bidsphysio.svg?branch=master)](https://travis-ci.com/cbinyu/bidsphysio)
@@ -30,6 +30,17 @@ You can install the bidsphysio.acq2bids subpackage from PyPI with `pip`:
 
 ```
 pip install bidsphysio.acq2bids
+```
+
+Alternatively, you can download the package and install the sub-package with `pip`:
+```
+mkdir /tmp/bidsphysio && \
+    curl -sSL https://github.com/cbinyu/bidsphysio/archive/master.tar.gz \
+        | tar -vxz -C /tmp/bidsphysio --strip-components=1 && \
+    cd /tmp/bidsphysio/bidsphysio.acq2bids/ && \
+    pip install . && \
+    cd / && \
+    rm -rf /tmp/bidsphysio
 ```
 
 ## How to use in your own Python program

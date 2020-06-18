@@ -13,23 +13,23 @@ You can install the base class from PyPI with `pip`:
 pip install bidsphysio.base
 ```
 
+Alternatively, you can download the package and install the sub-package with `pip`:
+```
+mkdir /tmp/bidsphysio && \
+    curl -sSL https://github.com/cbinyu/bidsphysio/archive/master.tar.gz \
+        | tar -vxz -C /tmp/bidsphysio --strip-components=1 && \
+    cd /tmp/bidsphysio/bidsphysio.base/ && \
+    pip install . && \
+    cd / && \
+    rm -rf /tmp/bidsphysio
+```
+
 ## How to use in your own Python program
-After installing the module using `pip` (see [above](https://github.com/cbinyu/bidsphysio#installation "Installation") ), you can use it in your own Python program this way:
+After installing the module using `pip` (see [above](#installation "Installation") ), you can use it in your own Python program this way:
 ```
 from bidsphysio.base.bidsphysio import (physiosignal,
                                         physiodata)
 
 mySignal = physiosignal()
+...
 ```
-or:
-```
-from bidsphysio import acq2bidsphysio
-acq2bidsphysio.acq2bids( [acq_files],    prefix )
-```
-or:
-```
-from bidsphysio import pmu2bidsphysio
-pmu2bidsphysio.pmu2bids( [pmu_files], prefix )
-```
-
-

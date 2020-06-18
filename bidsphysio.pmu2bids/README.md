@@ -32,6 +32,17 @@ You can install the bidsphysio.pmu2bids subpackage from PyPI with `pip`:
 pip install bidsphysio.pmu2bids
 ```
 
+Alternatively, you can download the package and install the sub-package with `pip`:
+```
+mkdir /tmp/bidsphysio && \
+    curl -sSL https://github.com/cbinyu/bidsphysio/archive/master.tar.gz \
+        | tar -vxz -C /tmp/bidsphysio --strip-components=1 && \
+    cd /tmp/bidsphysio/bidsphysio.pmu2bids/ && \
+    pip install . && \
+    cd / && \
+    rm -rf /tmp/bidsphysio
+```
+
 ## How to use in your own Python program
 After installing the module using `pip` (see [above](#installation "Installation") ), you can use it in your own Python program this way:
 ```
