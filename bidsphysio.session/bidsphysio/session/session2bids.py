@@ -21,13 +21,85 @@
    in cases where trigger failed, and ignore trigger periods associated with
    scans that weren't kept in the BIDS dataset.
 """
+import os
 import os.path as op
+import tarfile
+from tempfile import TemporaryDirectory
+from datetime import datetime
 
 from bids import BIDSLayout
+import bioread
 import pandas as pd
 import numpy as np
 import nibabel as nib
-from datetime import datetime
+
+
+def compress_physio(physio_file, out_prefix, overwrite):
+    """Archives a physiological file into a tarball
+
+    Also it tries to do it reproducibly, so it takes the date for
+    the physio_file and targets tarball based on the acquisition time
+
+    Parameters
+    ----------
+    physio_file : str
+      original physiological file
+    out_prefix : str
+      output path prefix, including the portion of the output file
+      name before .*.tgz suffix
+    overwrite : bool
+      Overwrite existing tarfiles
+
+    Returns
+    -------
+    filename : str
+      Result tarball
+    """
+
+    fname, physio_extension = op.splitext(physio_file)
+    outtar = out_prefix + physio_extension + '.tgz'
+
+    if op.exists(outtar) and not overwrite:
+        print("File {} already exists, will not overwrite".format(outtar))
+        return
+    # tarfile encodes current time.time inside, making those non-
+    # reproducible, so we should use the earliest_marker_created_at
+    # of the acq_file
+
+    # return time the first marker in acq_file was created as a
+    # float (like in time.time()):
+    # TODO: make it generic to any physio file type.
+    #       Probably move it to specific module
+    acq_time = bioread.read_file(physio_file).earliest_marker_created_at.timestamp()
+
+    def _assign_acq_time(ti):
+        # Reset the time of the TarInfo object:
+        ti.mtime = acq_time
+        return ti
+
+    # poor man mocking since can't rely on having mock
+    try:
+        import time
+        _old_time = time.time
+        time.time = lambda: acq_time
+        if op.lexists(outtar):
+            os.unlink(outtar)
+        with tarfile.open(outtar, 'w:gz', dereference=True) as tar:
+            tmpdir = TemporaryDirectory()
+            outfile = op.join(tmpdir.name, op.basename(physio_file))
+            if not op.islink(outfile):
+                os.symlink(op.realpath(physio_file), outfile)
+            # place into archive stripping any lead directories and
+            # adding the one corresponding to prefix
+            tar.add(outfile,
+                    arcname=op.join(op.basename(out_prefix),
+                                    op.basename(outfile)),
+                    recursive=False,
+                    filter=_assign_acq_time)
+    finally:
+        time.time = _old_time
+
+    return outtar
 
 
 def extract_physio_onsets(physio_file):
@@ -68,27 +140,30 @@ def extract_physio_onsets(physio_file):
 
 
 def synchronize_onsets(phys_df, scan_df):
-    """Find matching scans and physio trigger periods from separate DataFrames.
+    """Find matching scans and physio trigger periods from separate DataFrames,
+    using time differences within each DataFrame.
 
     There can be fewer physios than scans (task failed to trigger physio)
     or fewer scans than physios (aborted scans are not retained in BIDS dataset).
 
-    Onsets are in seconds. The baseline doesn't matter.
+    Onsets are in seconds. The baseline (i.e., absolute timing) doesn't matter.
+    Relative timing is all that matters.
 
     Parameters
     ----------
     phys_df : pandas.DataFrame
         DataFrame with onsets of physio trigger periods, in seconds. The
         baseline does not matter, so it is reasonable for the onsets to start
-        with zero.
+        with zero. The following columns are required: 'onset', 'index'.
     scan_df : pandas.DataFrame
         DataFrame with onsets and names of functional scans from BIDS dataset,
         in seconds. The baseline does not matter, so it is reasonable for the
-        onsets to start with zero.
+        onsets to start with zero. The following columns are required: 'onset',
+        'duration'.
 
     Returns
     -------
-    scan_df : pandas.DataFrame
+    phys_df : pandas.DataFrame
         Updated scan DataFrame, now with columns for predicted physio onsets in
         seconds and in indices of the physio trigger channel, as well as scan
         duration in units of the physio trigger channel.
@@ -125,7 +200,7 @@ def synchronize_onsets(phys_df, scan_df):
 
     # Isolate close, but negative relative onsets, to ensure scan onsets are
     # always before or at physio triggers.
-    close_thresh = 2  # threshold for "close" onsets
+    close_thresh = 2  # threshold for "close" onsets, in seconds
     diffs_from_phys_onset = onset_diffs - offset
     min_diff_row_idx = np.argmin(np.abs(diffs_from_phys_onset), axis=0)
     min_diff_col_idx = np.arange(len(min_diff_row_idx))
@@ -164,6 +239,8 @@ def merge_segments(physio_file):
     Timestamps have second-level resolution, so stitching them together adds
     uncertainty to timing, which should be accounted for in the onset
     synchronization.
+
+    NOTE: NOT WORKING
     """
     import bioread
     d = bioread.read_file(physio_file)
@@ -194,7 +271,7 @@ def merge_segments(physio_file):
             # Now we have the sizes, we can load the data and insert zeros.
 
 
-def split_physio(scan_df, physio_file, time_before=6, time_after=6):
+def split_physio(physio, split_times, time_before=6, time_after=6):
     """Extract timeseries associated with each scan.
     Key in dict is scan name or physio filename and value is physio data in
     some format.
@@ -203,10 +280,14 @@ def split_physio(scan_df, physio_file, time_before=6, time_after=6):
 
     Parameters
     ----------
-    scan_df : pandas.DataFrame
-    physio_file : str
+    physio_file : BlueprintInput
+    split_times : list of tuple
     time_before : float
+        Amount of time, in seconds, to retain in physio time series *before*
+        scan.
     time_after : float
+        Amount of time, in seconds, to retain in physio time series *after*
+        scan.
 
     Returns
     -------
@@ -217,7 +298,7 @@ def split_physio(scan_df, physio_file, time_before=6, time_after=6):
     pass
 
 
-def save_physio(physio_data_dict):
+def save_physio(fn, physio_data):
     """Save split physio data to BIDS dataset.
     """
     pass
@@ -319,32 +400,74 @@ def load_scan_data(layout, sub, ses):
     return df
 
 
-def workflow(bids_dir, physio_file, sub, ses=None):
-    """A potential workflow for running physio/scan onset synchronization and
-    BIDSification. This workflow writes out physio files to a BIDS dataset.
+def convert_session(physio_files, save_physio_file, bids_dir, sub, ses=None,
+                    outdir=None, overwrite=False):
+    """Function to save the physiology data in a given folder as BIDS,
+    matching the filenames from the study imaging files
 
     Parameters
     ----------
+    physio_files : list of str
+        List of paths of the original physio files
+    save_physio_file : function
+        function to save a signle physio file (e.g., acq2bids, from bidsphysio.acq2bids.acq2bidsphysio)
     bids_dir : str
         Path to BIDS dataset
-    physio_file : str or list of str
-        Either a single BioPac physio file or multiple physio files from the
-        same scanning session. Each file *must* contain multiple physio trigger
-        periods associated with scans. If multiple files are provided, they
-        must have timestamped segments.
     sub : str
         Subject ID. Used to search the BIDS dataset for relevant scans.
     ses : str or None, optional
         Session ID. Used to search the BIDS dataset for relevant scans in
         longitudinal studies. Default is None.
+    outdir : str
+        Path to a BIDS folder where we want to store the physio data.
+        Default: bids_dir
+    overwrite : bool
+      Overwrite existing tarfiles
     """
+
+    # Default out_dir is bids_dir:
+    outdir = outdir or bids_dir
+
+    # TODO: likewise here
+    file_times = [bioread.read_file(f).earliest_marker_created_at for f in physio_files]
+    # relative to the first one:
+    rel_file_times = [f - min(file_times) for f in file_times]
+
+    physio_df = []
+    for idx, f in enumerate(physio_files):
+        p_df = extract_physio_onsets(f)
+        # adjust for relative file time:
+        p_df['onset'] = [o + rel_file_times[idx].total_seconds() for o in p_df['onset']]
+        p_df['filename'] = f
+        physio_df.append(p_df)
+
+    # Concatenate all dataframes, adding the filename as key:
+    physio_df = pd.concat(physio_df, keys=range(len(physio_df)))
+    physio_df.index.names = [None, 'trig_number']
+
+    # Now, for the scanner timing:
     layout = BIDSLayout(bids_dir)
-    scan_df = load_scan_data(layout, sub=sub, ses=ses)
-    physio_df = extract_physio_onsets(physio_file)
-    scan_df = synchronize_onsets(physio_df, scan_df)
-    # Extract timeseries associated with each scan. Key in dict is scan name or
-    # physio filename and key is physio data in some format.
-    physio_data_dict = split_physio(scan_df, physio_file)
-    save_physio(layout, physio_data_dict)
+    df = load_scan_data(layout, sub=sub, ses=ses)
+
+    out_df = synchronize_onsets(physio_df, df)
+
+    sourcedir = op.join(outdir, 'sourcedata')
+    if not op.isdir(sourcedir):
+        os.makedirs(sourcedir)
+    sub_ses_dir = op.join('sub-' + sub, ('ses-' + str(ses)) if ses else '')
+
+    for (phys_file, scan_file) in zip(out_df['filename'], out_df['scan_fname']):
+        if scan_file:
+            prefix = op.join(sub_ses_dir, scan_file.split('.nii')[0])
+            outdir_ = op.join(outdir, op.dirname(prefix))
+            if not op.isdir(outdir_):
+                os.makedirs(outdir_)
+            save_physio_file(phys_file, op.join(outdir, prefix))
+            sourcedir_ = op.join(sourcedir, op.dirname(prefix))
+            if not op.isdir(sourcedir_):
+                os.makedirs(sourcedir_)
+            compress_physio(phys_file,
+                            op.join(sourcedir_, op.basename(prefix)),
+                            overwrite=overwrite)
 
 
