@@ -34,7 +34,7 @@ import numpy as np
 import nibabel as nib
 
 
-def compress_physio(physio_file, out_prefix, overwrite):
+def compress_physio(physio_file, out_prefix, get_physio_acq_time, overwrite):
     """Archives a physiological file into a tarball
 
     Also it tries to do it reproducibly, so it takes the date for
@@ -47,6 +47,9 @@ def compress_physio(physio_file, out_prefix, overwrite):
     out_prefix : str
       output path prefix, including the portion of the output file
       name before .*.tgz suffix
+    get_physio_acq_time : function
+        Function to get the acquisition time of a physiological file
+        (e.g., read_file(file).earliest_marker_created_at, from bioread)
     overwrite : bool
       Overwrite existing tarfiles
 
@@ -66,11 +69,9 @@ def compress_physio(physio_file, out_prefix, overwrite):
     # reproducible, so we should use the earliest_marker_created_at
     # of the acq_file
 
-    # return time the first marker in acq_file was created as a
-    # float (like in time.time()):
-    # TODO: make it generic to any physio file type.
-    #       Probably move it to specific module
-    acq_time = bioread.read_file(physio_file).earliest_marker_created_at.timestamp()
+    # return physio file acquisition time as a float (like in
+    # the method time.time()):
+    acq_time = get_physio_acq_time(physio_file).timestamp()
 
     def _assign_acq_time(ti):
         # Reset the time of the TarInfo object:
@@ -400,8 +401,10 @@ def load_scan_data(layout, sub, ses):
     return df
 
 
-def convert_session(physio_files, save_physio_file, bids_dir, sub, ses=None,
-                    outdir=None, overwrite=False):
+def convert_session(physio_files, bids_dir, sub, ses=None,
+                    get_physio_acq_time=None,
+                    outdir=None, save_physio_file=None,
+                    overwrite=False):
     """Function to save the physiology data in a given folder as BIDS,
     matching the filenames from the study imaging files
 
@@ -409,8 +412,6 @@ def convert_session(physio_files, save_physio_file, bids_dir, sub, ses=None,
     ----------
     physio_files : list of str
         List of paths of the original physio files
-    save_physio_file : function
-        function to save a signle physio file (e.g., acq2bids, from bidsphysio.acq2bids.acq2bidsphysio)
     bids_dir : str
         Path to BIDS dataset
     sub : str
@@ -418,9 +419,15 @@ def convert_session(physio_files, save_physio_file, bids_dir, sub, ses=None,
     ses : str or None, optional
         Session ID. Used to search the BIDS dataset for relevant scans in
         longitudinal studies. Default is None.
+    get_physio_acq_time : function
+        Function to get the acquisition time of a physiological file
+        (e.g., read_file(file).earliest_marker_created_at, from bioread)
     outdir : str
         Path to a BIDS folder where we want to store the physio data.
         Default: bids_dir
+    save_physio_file : function
+        function to save a single physio file
+        (e.g., acq2bids, from bidsphysio.acq2bids.acq2bidsphysio)
     overwrite : bool
       Overwrite existing tarfiles
     """
@@ -428,8 +435,7 @@ def convert_session(physio_files, save_physio_file, bids_dir, sub, ses=None,
     # Default out_dir is bids_dir:
     outdir = outdir or bids_dir
 
-    # TODO: likewise here
-    file_times = [bioread.read_file(f).earliest_marker_created_at for f in physio_files]
+    file_times = [get_physio_acq_time(f) for f in physio_files]
     # relative to the first one:
     rel_file_times = [f - min(file_times) for f in file_times]
 
@@ -468,6 +474,7 @@ def convert_session(physio_files, save_physio_file, bids_dir, sub, ses=None,
                 os.makedirs(sourcedir_)
             compress_physio(phys_file,
                             op.join(sourcedir_, op.basename(prefix)),
+                            get_physio_acq_time,
                             overwrite=overwrite)
 
 
