@@ -79,7 +79,7 @@ def dcm2bids( physio_dcm, bids_prefix, verbose=False ):
     try:
         physio_data = d[0x7fe1, 0x1010].value
     except:
-        print('Input signal does not have a d[0x7fe1, 0x1010] field')
+        print('Input signal does not have a [0x7fe1, 0x1010] field')
 
     # Extract relevant info from header
     n_points = len(physio_data)
