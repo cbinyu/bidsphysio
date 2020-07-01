@@ -62,7 +62,8 @@ class physiosignal(object):
         Start time in seconds of the physiological recording.
         Uses the same clock as 'neuralstarttime'
     neuralstarttime : number
-        Start time in seconds of the corresponding recording
+        Start time in seconds of the corresponding neural recording
+        (MRI, EEG, etc.)
         Uses the same clock as 'physiostarttime'
     signal : list of numbers
         The physiological signal proper
@@ -388,6 +389,18 @@ class physiodata(object):
         trigger_timing = np.array(trig_physiosignal.sampling_times)[trig_indices]
         # return timing of the triggers as a list:
         return list(trigger_timing)
+
+
+    def get_scanner_onset(self):
+        """
+        Get the time of the first trigger in the physiodata
+        """
+        # TODO: maybe there is more than one scanner run in this file.
+        #       If that's the case, you can get the onsets, maybe by
+        #       checking the mean/mode timing between triggers, and decide
+        #       a run is finished when there is a gap of more than 3x
+        #       the mean/mode. That way you can get all the onsets
+        return self.get_trigger_timing()[0]
 
 
     def save_to_bids_with_trigger(self, bids_fName=None):

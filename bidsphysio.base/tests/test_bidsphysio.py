@@ -370,6 +370,21 @@ def test_get_trigger_timing(
                          ]
 
 
+def test_get_scanner_onset(
+        myphysiodata,
+        myphysiodata_with_trigger
+):
+    """   Tests for 'get_scanner_onset'   """
+
+    # try it on a physiodata without trigger signal:
+    with pytest.raises(ValueError) as e_info:
+        myphysiodata.get_scanner_onset()
+    assert str(e_info.value) == "'trigger' is not in list"
+
+    # try with physiodata_with_trigger
+    assert myphysiodata_with_trigger.get_scanner_onset() == PHYSIO_START_TIME + SCANNER_DELAY
+
+
 def test_save_to_bids_with_trigger(
         tmpdir,
         capfd,
