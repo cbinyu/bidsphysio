@@ -88,9 +88,10 @@ def test_acq2bids(
     outbids = str(tmpdir / 'mydir' / 'bids')
 
     args = (
-        'acq2bidsphysio -i {infile} -b {bp}'.format(
+        'acq2bidsphysio -i {infile} -b {bp} -t {tl}'.format(
             infile=str(infile),
-            bp=outbids
+            bp=outbids,
+            tl='digital',
         )
     ).split(' ')
     monkeypatch.setattr(sys, 'argv',args)
@@ -112,7 +113,7 @@ def test_acq2bids(
     assert (expectedFileName + '.tsv.gz') in data_files
 
     # check content of the json file:
-    expectedSignals = ['cardiac', 'respiratory', 'GSR', 'Digital input']
+    expectedSignals = ['cardiac', 'respiratory', 'GSR', 'trigger']
     with open(expectedFileName + '.json') as f:
         d = json.load(f)
         assert d['Columns'] == expectedSignals
@@ -121,7 +122,7 @@ def test_acq2bids(
                 assert d[s]['Units'] == 'microsiemens'
             else:
                 assert d[s]['Units'] == 'Volts'
-        assert d['StartTime'] == 0
+        assert d['StartTime'] == 1583762929.924
         assert d['SamplingFrequency'] == 500
 
     # check content of the tsv file:
