@@ -72,9 +72,12 @@ def acq2bids( physio_acq_files, bids_prefix ):
 
     # Read the files from the list, extract the relevant information and
     #   add a new physiosignal to the list:
+    trigger_channel = ''
     for physio_acq in physio_acq_files:
         # Extract data from AcqKnowledge file:
         physio_data = bioread.read( physio_acq )
+        # Get the time the file was created:
+        physiostarttime = physio_data.earliest_marker_created_at
 
         for item in physio_data.channels:
             physio_label = ''
@@ -88,24 +91,38 @@ def acq2bids( physio_acq_files, bids_prefix ):
 
             elif "trigger" in item.name.lower():
                 physio_label = 'trigger'
+                trigger_channel = item.name
 
             else:
                 physio_label = item.name
 
             if physio_label:
                 physio.append_signal(
-                    # Note: Because the channel name is user-defined, the 'TRIGGER' channel might not
-                    #   correspond to the scanner trigger, but to the stimulus onset, or something
-                    #   else. So, I'm going to set the BIDS "StartTime" to 0 (by not passing the
-                    #   physiostarttime and neuralstarttime), and let the user figure out the offset.
                     physiosignal(
                         label=physio_label,
                         samples_per_second=item.samples_per_second,
                         sampling_times=item.time_index,
+                        physiostarttime=physiostarttime.timestamp(),
                         signal=item.data,
                         units=item.units
                     )
                 )
+
+    # Get the "neuralstarttime" for the physiosignals by finding the first trigger.
+    # We do this after we have read all signals to make sure we have read the trigger
+    # (if present in the file. If not present, use the physiostart time. This is the
+    # same as assuming the physiological recording started at the same time as the
+    # neural recording.)
+    # This assumes that the channel named "trigger" indeed contains the scanner trigger
+    # and not something else (e.g., stimulus trigger). So we print a warning.
+    neuralstarttime = ''
+    if trigger_channel:
+        print('Warning: Assuming {} channel corresponds to the scanner trigger'.format(trigger_channel))
+        neuralstarttime = physio.get_scanner_onset()
+    for p_signal in physio.signals:
+        p_signal.neuralstarttime = neuralstarttime or p_signal.physiostarttime
+        # we also fill with NaNs the places for which there is missing data:
+        p_signal.plug_missing_data()
 
     # Save files:
     physio.save_to_bids_with_trigger( bids_prefix )
