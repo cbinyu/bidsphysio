@@ -62,7 +62,23 @@ from bidsphysio.base.bidsphysio import (physiosignal,
                                         physiodata)
 
 
-def acq2bids( physio_acq_files, bids_prefix, trigger_label='trigger' ):
+def acq2bids(physio_acq_files, trigger_label='trigger'):
+    """Reads the physiological data from a series of AcqKnowledge
+    files and stores it in a physiodata member
+
+    Parameters
+    ----------
+    physio_acq_files : list of str
+        List of paths of the original physio files
+    trigger_label : str
+        Label of the channel that carries the scanner trigger.
+        Just one word from the channel name is enough
+
+    Returns
+    -------
+    physio : physiodata
+        physiodata with the contents of the file
+    """
     # In case we are handled just a single file, make it a one-element list:
     if isinstance(physio_acq_files, str):
         physio_acq_files = [physio_acq_files]
@@ -124,10 +140,7 @@ def acq2bids( physio_acq_files, bids_prefix, trigger_label='trigger' ):
         # we also fill with NaNs the places for which there is missing data:
         p_signal.plug_missing_data()
 
-    # Save files:
-    physio.save_to_bids_with_trigger( bids_prefix )
-
-    return
+    return physio
 
 
 def main():
@@ -136,7 +149,7 @@ def main():
     parser = argparse.ArgumentParser(description='Convert AcqKnowledge physiology files to BIDS-compliant physiology recording')
     parser.add_argument('-i', '--infiles', nargs='+', required=True, help='AcqKnowledge physio file(s) (space separated)')
     parser.add_argument('-b', '--bidsprefix', required=True, help='Prefix of the BIDS file. It should match the _bold.nii.gz')
-    parser.add_argument('-t', '--triggerlabel', required=False, help='Label of the trigger channel in the physio file(s). Just one word is enough.', default='trigger')
+    parser.add_argument('-t', '--triggerlabel', required=False, help='Label of the trigger channel in the physio file(s). Just one word from the channel name is enough.', default='trigger')
     args = parser.parse_args()
 
     # make sure input files exist:
@@ -149,7 +162,9 @@ def main():
     if not os.path.exists(odir):
         os.makedirs(odir)
 
-    acq2bids( args.infiles, args.bidsprefix, args.triggerlabel )
+    physio_data = acq2bids(args.infiles, args.triggerlabel)
+    physio_data.save_to_bids_with_trigger(args.bidsprefix)
+
 
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
