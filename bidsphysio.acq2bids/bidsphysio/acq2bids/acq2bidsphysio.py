@@ -62,7 +62,7 @@ from bidsphysio.base.bidsphysio import (physiosignal,
                                         physiodata)
 
 
-def acq2bids( physio_acq_files, bids_prefix ):
+def acq2bids( physio_acq_files, bids_prefix, trigger_label='trigger' ):
     # In case we are handled just a single file, make it a one-element list:
     if isinstance(physio_acq_files, str):
         physio_acq_files = [physio_acq_files]
@@ -89,7 +89,7 @@ def acq2bids( physio_acq_files, bids_prefix ):
             elif 'resp' in item.name.lower():
                 physio_label = 'respiratory'
 
-            elif "trigger" in item.name.lower():
+            elif trigger_label.lower() in item.name.lower():
                 physio_label = 'trigger'
                 trigger_channel = item.name
 
@@ -136,6 +136,7 @@ def main():
     parser = argparse.ArgumentParser(description='Convert AcqKnowledge physiology files to BIDS-compliant physiology recording')
     parser.add_argument('-i', '--infiles', nargs='+', required=True, help='AcqKnowledge physio file(s) (space separated)')
     parser.add_argument('-b', '--bidsprefix', required=True, help='Prefix of the BIDS file. It should match the _bold.nii.gz')
+    parser.add_argument('-t', '--triggerlabel', required=False, help='Label of the trigger channel in the physio file(s). Just one word is enough.', default='trigger')
     args = parser.parse_args()
 
     # make sure input files exist:
@@ -148,7 +149,7 @@ def main():
     if not os.path.exists(odir):
         os.makedirs(odir)
 
-    acq2bids( args.infiles, args.bidsprefix )
+    acq2bids( args.infiles, args.bidsprefix, args.triggerlabel )
 
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
