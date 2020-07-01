@@ -76,7 +76,10 @@ def dcm2bids( physio_dcm, bids_prefix, verbose=False ):
 
     # Extract data from Siemens spectroscopy tag (0x7fe1, 0x1010)
     # Yields one long byte array
-    physio_data = d[0x7fe1, 0x1010].value
+    if [0x7fe1, 0x1010] in d:
+       physio_data = d[0x7fe1, 0x1010].value
+    else:
+        raise RuntimeError('Physiological data are not available or cannot be accessed from current input data: Element tag [0x7fe1, 0x1010] is missing.')
 
     # Extract relevant info from header
     n_points = len(physio_data)
