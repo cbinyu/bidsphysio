@@ -163,7 +163,8 @@ def main():
         os.makedirs(odir)
 
     physio_data = acq2bids(args.infiles, args.triggerlabel)
-    physio_data.save_to_bids_with_trigger(args.bidsprefix)
+    if physio_data.labels():
+        physio_data.save_to_bids_with_trigger(args.bidsprefix)
 
 
 # This is the standard boilerplate that calls the main() function.
