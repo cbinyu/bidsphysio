@@ -1,4 +1,4 @@
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "Pablo Velasco"
 __author_email__ = "pablo.velasco@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"
