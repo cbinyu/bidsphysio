@@ -26,6 +26,7 @@ from bids import BIDSLayout
 import pandas as pd
 import numpy as np
 import nibabel as nib
+import matplotlib.pyplot as plt
 
 
 def compress_physio(physio_file, out_prefix, get_physio_acq_time, overwrite):
@@ -193,6 +194,11 @@ def plot_sync(scan_df, physio_df):
     """
     Plot unsynchronized and synchonized scan and physio onsets and durations.
     """
+
+    # You need a scan_df already synchronized (so it has the 'phys_onset':
+    if 'phys_onset' not in scan_df.columns:
+        raise RuntimeError('The physio data has not been synchronized yet.')
+
     fig, axes = plt.subplots(nrows=2, figsize=(20, 6), sharex=True)
 
     # get max value rounded to nearest 1000
