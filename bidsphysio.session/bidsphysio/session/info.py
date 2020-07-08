@@ -23,6 +23,7 @@ REQUIRES = [
     'bids',
     'pandas',
     'numpy >= 1.17.1',
+    'matplotlib',
 ]
 
 TESTS_REQUIRES = [
