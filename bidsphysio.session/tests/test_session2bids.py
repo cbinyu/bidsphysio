@@ -1,9 +1,5 @@
-'''   Tests for the module "session2bids.py"   '''
+"""   Tests for the module "session2bids.py"   """
 
-from glob import glob
-import copy
-import gzip
-import json
 from datetime import datetime, timedelta
 from os.path import join as pjoin
 import random
@@ -79,9 +75,6 @@ class MockPhysioData(object):
         self.path = path
         self.scanner_onset = JITTER_FACTOR * random.random()
 
-    def get_physio_data(self):
-        return self.path
-
     def get_scanner_onset(self):
         return self.scanner_onset
 
@@ -109,7 +102,6 @@ def myphysiodf(scope="module"):
     # randomize order of the dataframe:
     physio_df = physio_df.sample(frac=1).reset_index(drop=True)
     return physio_df
-
 
 
 @pytest.fixture
@@ -259,7 +251,6 @@ def test_load_scan_data(
 
 def test_convert_session(
         monkeypatch,
-        capfd
 ):
     """ Tests for load_scan_data.
     """
@@ -296,3 +287,4 @@ def test_convert_session(
                         get_physio_data=_get_physio_data,
                         get_physio_acq_time=_get_physio_acq_time,
                         outdir='bar', overwrite=True)
+    
