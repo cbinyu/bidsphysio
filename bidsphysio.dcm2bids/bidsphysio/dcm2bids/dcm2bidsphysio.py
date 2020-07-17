@@ -66,8 +66,8 @@ import sys
 import numpy as np
 import pydicom
 
-from bidsphysio.base.bidsphysio import (physiosignal,
-                                        physiodata)
+from bidsphysio.base.bidsphysio import (PhysioSignal,
+                                        PhysioData)
 
 
 def dcm2bids( physio_dcm, bids_prefix, verbose=False ):
@@ -98,8 +98,8 @@ def dcm2bids( physio_dcm, bids_prefix, verbose=False ):
     n_waves = int(n_cols / 1024)
     wave_len = int(n_points / n_waves)
 
-    # Init physiodata object to hold physio signals and time of first trigger:
-    physio = physiodata()
+    # Init PhysioData object to hold physio signals and time of first trigger:
+    physio = PhysioData()
     t_first_trigger = None
 
     for wc in range(n_waves):
@@ -146,7 +146,7 @@ def dcm2bids( physio_dcm, bids_prefix, verbose=False ):
 
         if physio_label:
             physio.append_signal(
-                physiosignal(
+                PhysioSignal(
                     label=physio_label,
                     samples_per_second=1000/dt,         # dt is in ms.
                     sampling_times=t/1000,

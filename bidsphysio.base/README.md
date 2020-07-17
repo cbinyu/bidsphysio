@@ -27,9 +27,9 @@ mkdir /tmp/bidsphysio && \
 ## How to use in your own Python program
 After installing the module using `pip` (see [above](#installation "Installation") ), you can use it in your own Python program this way:
 ```
-from bidsphysio.base.bidsphysio import (physiosignal,
-                                        physiodata)
+from bidsphysio.base.bidsphysio import (PhysioSignal,
+                                        PhysioData)
 
-mySignal = physiosignal()
+mySignal = PhysioSignal()
 ...
 ```

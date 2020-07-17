@@ -46,7 +46,7 @@ import json
 import numpy as np
 
 
-class physiosignal(object):
+class PhysioSignal(object):
     """
     Individual physiology signal (e.g., pulse, respiration, etc.)
 
@@ -92,7 +92,6 @@ class physiosignal(object):
         self.signal = signal
         self.samples_count = len( signal ) if signal is not [] else None
 
-
     def t_start( self ):
         """
         Computes the BIDS t_start (offset between the beginning of the neural signal and the beginning
@@ -106,7 +105,6 @@ class physiosignal(object):
         except ValueError:
             pass
 
-
     def calculate_timing( self ):
         """
         Calculate the recording timing, based on the physiostarttime
@@ -117,10 +115,9 @@ class physiosignal(object):
         else:
             self.sampling_times = [self.physiostarttime + i/self.samples_per_second for i in range(len(self.signal))]
 
-
     def calculate_trigger_events(self, t_trig):
         """
-        Function to calculate the trigger events for a given physiosignal, given
+        Function to calculate the trigger events for a given PhysioSignal, given
         the timing of the scanner triggers (t_trig)
         """
 
@@ -138,12 +135,11 @@ class physiosignal(object):
                 trig_signal[np.argmax( sampling_times >= t )] = True
         return trig_signal
 
-
     def plug_missing_data(self, missing_value=np.nan):
-        '''
+        """
         Function to plug "missing_value" (NaN, by default) wherever the
         signal was not recorded.
-        '''
+        """
 
         # The time increment between samples:
         dt = 1/self.samples_per_second
@@ -168,17 +164,16 @@ class physiosignal(object):
 
         self.samples_count = len( self.signal )
 
-
     @classmethod
     def matching_trigger_signal(cls, mysignal, trigger_s):
         """
-        Given a physiosignal object (mysignal), return another one with the same timing but
+        Given a PhysioSignal object (mysignal), return another one with the same timing but
         with 'signal' the trigger_s
         """
 
         assert (
             isinstance(mysignal, cls)
-        ),"You can only add physiosignals to physiodata"
+        ), "You can only add PhysioSignals to PhysioData"
 
         return cls(
                    label='trigger',
@@ -190,10 +185,9 @@ class physiosignal(object):
                )
 
 
-        
 ####################
 
-class physiodata(object):
+class PhysioData(object):
     """
     List of physiological signals. It has its own methods to write to file
     """
@@ -206,27 +200,24 @@ class physiodata(object):
         self.signals = signals if signals is not None else []
         self.bidsPrefix = bidsPrefix
 
-
     def labels(self):
         """
         Returns a list with the labels of all the object signals
         """
         return [ item.label for item in self.signals ]
 
-
     def append_signal(self, signal):
         """
         Appends a new signal to the signals list
         """
         assert (
-            isinstance(signal, physiosignal)
-        ),"You can only add physiosignals to physiodata"
+            isinstance(signal, PhysioSignal)
+        ), "You can only add PhysioSignals to PhysioData"
 
         if hasattr(self,'signals'):
             self.signals.append( signal )
         else:
             self.signals = [signal]
-
 
     def set_bidsPrefix(self, bidsPrefix):
         """
@@ -242,10 +233,9 @@ class physiodata(object):
         # Whatever is left, we assign to the bidsPrefix class attribute:
         self.bidsPrefix = bidsPrefix
 
-
     def save_bids_json(self, json_fName):
         """
-        Saves the physiodata header information to the BIDS json file.
+        Saves the PhysioData header information to the BIDS json file.
         It's the responsibility of the calling function to make sure they can all be
         saved in the same fileNone: if all the signals don't have the same sampling rate
         and t_start, it will give an error.
@@ -276,10 +266,9 @@ class physiodata(object):
             }, f, sort_keys = True, indent = 4, ensure_ascii = False)
             f.write('\n')
 
-
     def save_bids_data(self, data_fName):
         """
-        Saves the physiodata signal to the BIDS .tsv.gz file.
+        Saves the PhysioData signal to the BIDS .tsv.gz file.
         It's the responsibility of the calling function to make sure they can all be
         saved in the same file: if all the signals don't have the same number of points,
         it will give an error.
@@ -306,10 +295,9 @@ class physiodata(object):
             delimiter='\t'
         )
 
-
     def save_to_bids(self, bids_fName=None):
         """
-        Saves the physiodata sidecar '.json' file(s) and signal(s).
+        Saves the PhysioData sidecar '.json' file(s) and signal(s).
         It saves all signals with the same sampling rate and t_start in a single
         .json/.tsv.gz pair.
         """
@@ -347,8 +335,8 @@ class physiodata(object):
                 rec_label = self.signals[idx_un[idx]].label
 
                 rec_fName = '{0}_recording-{1}_physio'.format(self.bidsPrefix, rec_label)
-                # create a new physiodata object with just the signals with matching sampling rate and t_start:
-                hola = physiodata(
+                # create a new PhysioData object with just the signals with matching sampling rate and t_start:
+                hola = PhysioData(
                            [ item for item in self.signals if item.samples_per_second == sr and
                                                               item.t_start() == ts ]
                        )
@@ -359,18 +347,17 @@ class physiodata(object):
 
         print('')
 
-
     def get_trigger_timing(self):
         """
         Returns the timing of the received triggers.
-        It finds the first physiosignal labeled 'trigger' in the object and returns
+        It finds the first PhysioSignal labeled 'trigger' in the object and returns
         the times for which the trigger signal is 1
         """
 
         # list all the signal labels:
         signal_labels = [l.lower() for l in self.labels()]
 
-        # physiosignal object corresponding to the trigger:
+        # PhysioSignal object corresponding to the trigger:
         trig_physiosignal = self.signals[ signal_labels.index('trigger') ]
 
         # make sure we have the timing of the trigger samples; otherwise, calculate:
@@ -390,10 +377,9 @@ class physiodata(object):
         # return timing of the triggers as a list:
         return list(trigger_timing)
 
-
     def get_scanner_onset(self):
         """
-        Get the time of the first trigger in the physiodata
+        Get the time of the first trigger in the PhysioData
         """
         # TODO: maybe there is more than one scanner run in this file.
         #       If that's the case, you can get the onsets, maybe by
@@ -401,7 +387,6 @@ class physiodata(object):
         #       a run is finished when there is a gap of more than 3x
         #       the mean/mode. That way you can get all the onsets
         return self.get_trigger_timing()[0]
-
 
     def save_to_bids_with_trigger(self, bids_fName=None):
         """
@@ -429,7 +414,7 @@ class physiodata(object):
             return
 
         # From now on, we do have a trigger
-        # physiosignal object corresponding to the trigger:
+        # PhysioSignal object corresponding to the trigger:
         trig_physiosignal = self.signals[ signal_labels.index('trigger') ]
         t_trig = self.get_trigger_timing()
 
@@ -461,9 +446,9 @@ class physiodata(object):
 
             ###   Create group of signals to save   ###
 
-            # Now, create a new physiodata object with the signals for this sampling
+            # Now, create a new PhysioData object with the signals for this sampling
             #   rate and t_start as the rest of the signals:
-            physiodata_group = physiodata(
+            physiodata_group = PhysioData(
                 [ s for s in self.signals if (
                     s.samples_per_second == sr and
                     s.t_start() == ts
@@ -479,7 +464,7 @@ class physiodata(object):
             if not (trig_physiosignal.samples_per_second == sr and
                     trig_physiosignal.t_start()          == ts):
 
-                trigger_for_this_group = physiosignal.matching_trigger_signal(
+                trigger_for_this_group = PhysioSignal.matching_trigger_signal(
                     physiodata_group.signals[0],
                     physiodata_group.signals[0].calculate_trigger_events(t_trig)
                 )

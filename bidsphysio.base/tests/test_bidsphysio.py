@@ -10,8 +10,8 @@ from os.path import join as pjoin
 import numpy as np
 import pytest
 
-from bidsphysio.base.bidsphysio import (physiosignal,
-                                        physiodata)
+from bidsphysio.base.bidsphysio import (PhysioSignal,
+                                        PhysioData)
 
 ###  Globals   ###
 
@@ -26,13 +26,13 @@ SCANNER_DELAY = 2   # From the beginning of the physio recording to the first vo
 SCANNER_TR = 0.75   # (in sec)
 
 
-###   TESTS FOR CLASS "physiosignal"   ###
+###   TESTS FOR CLASS "PhysioSignal"   ###
 
 @pytest.fixture
 def mySignal(scope="module"):
-    """    Simulate a physiosignal object    """
+    """    Simulate a PhysioSignal object    """
 
-    mySignal = physiosignal(
+    mySignal = PhysioSignal(
                  label='simulated',
                  samples_per_second=PHYSIO_SAMPLES_PER_SECOND,
                  physiostarttime=PHYSIO_START_TIME,
@@ -69,9 +69,9 @@ def test_calculate_timing(
     correct timing when the neccessary parameters are present
     """
 
-    # 1) Try with a physiosignal without sampling rate:
+    # 1) Try with a PhysioSignal without sampling rate:
     with pytest.raises(Exception) as e_info:
-        physiosignal(
+        PhysioSignal(
             label='simulated',
             physiostarttime=PHYSIO_START_TIME
         ).calculate_timing()
@@ -96,7 +96,7 @@ def test_calculate_trigger_events(
 
     # 1) If you try to calculate it for a signal for which we cannot calculate
     #    the timing, it should print an error and return None:
-    assert physiosignal(
+    assert PhysioSignal(
             label='simulated',
             physiostarttime=PHYSIO_START_TIME
         ).calculate_trigger_events(trigger_timing) == None
@@ -120,10 +120,10 @@ def test_calculate_trigger_events(
 def test_plug_missing_data():
     '''   Test for plug_missing_data   '''
 
-    # generate a physiosignal with a temporal series and corresponding fake signal with
+    # generate a PhysioSignal with a temporal series and corresponding fake signal with
     #   missing timepoints:
     st = [i/1 for i in range(35) if i%10]
-    spamSignal=physiosignal(
+    spamSignal=PhysioSignal(
                  label='simulated',
                  samples_per_second=1,
                  sampling_times=st,
@@ -141,7 +141,7 @@ def test_matching_trigger_signal(
         trigger_timing
 ):
     """
-    Test that both physiosignals (the original signal and the derived one with the trigger)
+    Test that both PhysioSignals (the original signal and the derived one with the trigger)
     have the same fields.
     It requires the result of "test_calculate_trigger_events"
     """
@@ -149,9 +149,9 @@ def test_matching_trigger_signal(
     # calculate trigger events:
     trig_signal = mySignal.calculate_trigger_events( trigger_timing )
 
-    trigger_physiosignal = physiosignal.matching_trigger_signal(mySignal, trig_signal)
+    trigger_physiosignal = PhysioSignal.matching_trigger_signal(mySignal, trig_signal)
 
-    assert isinstance(trigger_physiosignal, physiosignal)
+    assert isinstance(trigger_physiosignal, PhysioSignal)
     assert trigger_physiosignal.label == 'trigger'
     assert trigger_physiosignal.samples_per_second == mySignal.samples_per_second
     assert trigger_physiosignal.physiostarttime == mySignal.physiostarttime
@@ -160,14 +160,14 @@ def test_matching_trigger_signal(
     assert all(trigger_physiosignal.signal == trig_signal)
 
 
-###   TESTS FOR CLASS "physiodata"   ###
+###   TESTS FOR CLASS "PhysioData"   ###
 
 @pytest.fixture
 def myphysiodata(scope="module"):
-    """   Create a "physiodata" object with barebones content  """
+    """   Create a "PhysioData" object with barebones content  """
 
-    myphysiodata = physiodata(
-                [ physiosignal(
+    myphysiodata = PhysioData(
+                [ PhysioSignal(
                     label = l,
                     samples_per_second = PHYSIO_SAMPLES_PER_SECOND,
                     physiostarttime = PHYSIO_START_TIME,
@@ -211,7 +211,7 @@ def myphysiodata_with_trigger(
 
     # add a trigger signal to the physiodata_with_trigger:
     myphysiodata_with_trigger.append_signal(
-        physiosignal(
+        PhysioSignal(
             label = 'trigger',
             samples_per_second = TRIGGER_SAMPLES_PER_SECOND,
             physiostarttime = TRIGGER_START_TIME,
@@ -226,8 +226,8 @@ def test_physiodata_labels(
         myphysiodata
 ):
     """
-    Test both the physiodata constructor and that
-    physiodata.labels() returns the labels of the physiosignals
+    Test both the PhysioData constructor and that
+    PhysioData.labels() returns the labels of the PhysioSignals
     """
 
     assert myphysiodata.labels() == LABELS
@@ -244,7 +244,7 @@ def test_append_signal(
     #  so that it is later available unmodified to other tests:
     physdata = copy.deepcopy(myphysiodata)
     physdata.append_signal(
-        physiosignal( label = 'extra_signal' )
+        PhysioSignal( label = 'extra_signal' )
     )
 
     mylabels = LABELS.copy()
@@ -262,7 +262,7 @@ def test_save_bids_json(
 
     json_file_name = pjoin(tmpdir.strpath,'foo.json')
 
-    # make sure it gives an error if sampling or t_start are not the same for all physiosignals
+    # make sure it gives an error if sampling or t_start are not the same for all PhysioSignals
     # samples_per_second:
     myphysiodata.signals[0].samples_per_second *= 2
     with pytest.raises(Exception) as e_info:
@@ -284,7 +284,7 @@ def test_save_bids_json(
     json_file = json_files[0]
     assert json_file.endswith('_physio.json')
 
-    # read the json file and check the content vs. the physiodata:
+    # read the json file and check the content vs. the PhysioData:
     with open(json_file) as f:
         d = json.load(f)
     assert d['Columns'] == LABELS
@@ -308,7 +308,7 @@ def test_save_bids_data(
     data_file = data_files[0]
     assert data_file.endswith('_physio.tsv.gz')
 
-    # read the data file and check the content vs. the physiodata:
+    # read the data file and check the content vs. the PhysioData:
     with gzip.open(data_file,'rt') as f:
         for idx,line in enumerate(f):
             assert [float(s) for s in line.split('\t')] == [s.signal[idx] for s in myphysiodata.signals]
@@ -358,7 +358,7 @@ def test_get_trigger_timing(
 ):
     """   Tests for 'get_trigger_timing'   """
 
-    # try it on a physiodata without trigger signal:
+    # try it on a PhysioData without trigger signal:
     with pytest.raises(ValueError) as e_info:
         myphysiodata.get_trigger_timing()
     assert str(e_info.value) == "'trigger' is not in list"
@@ -376,7 +376,7 @@ def test_get_scanner_onset(
 ):
     """   Tests for 'get_scanner_onset'   """
 
-    # try it on a physiodata without trigger signal:
+    # try it on a PhysioData without trigger signal:
     with pytest.raises(ValueError) as e_info:
         myphysiodata.get_scanner_onset()
     assert str(e_info.value) == "'trigger' is not in list"
@@ -395,7 +395,7 @@ def test_save_to_bids_with_trigger(
 
     output_file_name = pjoin(tmpdir.strpath,'foo')
 
-    ###   A) test on a physiodata without trigger signal   ###
+    ###   A) test on a PhysioData without trigger signal   ###
     myphysiodata.save_to_bids_with_trigger(output_file_name)
     # we should get a warning, and then a print out indicating save_to_bids was called:
     out = capfd.readouterr().out
@@ -427,7 +427,7 @@ def test_save_to_bids_with_trigger(
     data_file = data_files[0]
     assert '_recording-' not in data_file
 
-    # read the data file and check the content vs. the physiodata:
+    # read the data file and check the content vs. the PhysioData:
     with gzip.open(data_file,'rt') as f:
         for idx,line in enumerate(f):
             s = [float(s) for s in line.split('\t')]

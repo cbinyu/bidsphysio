@@ -8,7 +8,7 @@ import sys
 import pytest
 
 from bidsphysio.acq2bids import acq2bidsphysio as a2bp
-from bidsphysio.base.bidsphysio import physiodata
+from bidsphysio.base.bidsphysio import PhysioData
 from .utils import TESTS_DATA_PATH
 
 '''
@@ -33,7 +33,7 @@ def mock_acq2bidsphysio(monkeypatch):
     """
     def mock_acq2bids(*args, **kwargs):
         print('mock_acq2bids called')
-        return physiodata()
+        return PhysioData()
 
     monkeypatch.setattr(a2bp, "acq2bids", mock_acq2bids)
 

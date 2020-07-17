@@ -57,8 +57,8 @@ import os
 import re
 import sys
 
-from bidsphysio.base.bidsphysio import (physiosignal,
-                                        physiodata)
+from bidsphysio.base.bidsphysio import (PhysioSignal,
+                                        PhysioData)
 
 
 def errmsg(msg, pmuFile, expStr=None, gotStr=None):
@@ -111,11 +111,11 @@ def pmu2bids( physio_files, bids_prefix, verbose=False ):
     if isinstance(physio_files, str):
         physio_files = [physio_files]
     
-    # Init physiodata object to hold physio signals:
-    physio = physiodata()
+    # Init PhysioData object to hold physio signals:
+    physio = PhysioData()
 
     # Read the files from the list, extract the relevant information and
-    #   add a new physiosignal to the list:
+    #   add a new PhysioSignal to the list:
     for f in physio_files:
         physio_type, MDHTime, sampling_rate, physio_signal = readpmu( f, verbose=verbose )
 
@@ -139,7 +139,7 @@ def pmu2bids( physio_files, bids_prefix, verbose=False ):
             physio_label = physio_type
 
         physio.append_signal(
-            physiosignal(
+            PhysioSignal(
                 label=physio_label,
                 units='',
                 samples_per_second=sampling_rate,

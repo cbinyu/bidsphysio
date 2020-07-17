@@ -56,13 +56,13 @@ import os
 
 import bioread
 
-from bidsphysio.base.bidsphysio import (physiosignal,
-                                        physiodata)
+from bidsphysio.base.bidsphysio import (PhysioSignal,
+                                        PhysioData)
 
 
 def acq2bids(physio_acq_files, trigger_label='trigger'):
     """Reads the physiological data from a series of AcqKnowledge
-    files and stores it in a physiodata member
+    files and stores it in a PhysioData member
 
     Parameters
     ----------
@@ -74,18 +74,18 @@ def acq2bids(physio_acq_files, trigger_label='trigger'):
 
     Returns
     -------
-    physio : physiodata
-        physiodata with the contents of the file
+    physio : PhysioData
+        PhysioData with the contents of the file
     """
     # In case we are handled just a single file, make it a one-element list:
     if isinstance(physio_acq_files, str):
         physio_acq_files = [physio_acq_files]
 
-    # Init physiodata object to hold physio signals:
-    physio = physiodata()
+    # Init PhysioData object to hold physio signals:
+    physio = PhysioData()
 
     # Read the files from the list, extract the relevant information and
-    #   add a new physiosignal to the list:
+    #   add a new PhysioSignal to the list:
     trigger_channel = ''
     for physio_acq in physio_acq_files:
         # Extract data from AcqKnowledge file:
@@ -112,7 +112,7 @@ def acq2bids(physio_acq_files, trigger_label='trigger'):
 
             if physio_label:
                 physio.append_signal(
-                    physiosignal(
+                    PhysioSignal(
                         label=physio_label,
                         samples_per_second=item.samples_per_second,
                         sampling_times=item.time_index,
@@ -122,7 +122,7 @@ def acq2bids(physio_acq_files, trigger_label='trigger'):
                     )
                 )
 
-    # Get the "neuralstarttime" for the physiosignals by finding the first trigger.
+    # Get the "neuralstarttime" for the PhysioSignals by finding the first trigger.
     # We do this after we have read all signals to make sure we have read the trigger
     # (if present in the file. If not present, use the physiostart time. This is the
     # same as assuming the physiological recording started at the same time as the

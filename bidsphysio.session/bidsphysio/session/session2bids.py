@@ -370,7 +370,7 @@ def convert_session(physio_files, bids_dir, sub, ses=None,
         Session ID. Used to search the BIDS dataset for relevant scans in
         longitudinal studies. Default is None.
     get_physio_data : function
-        Function to get physio data from a file to "physiodata" class
+        Function to get physio data from a file to "PhysioData" class
         (e.g., acq2bids)
     get_physio_acq_time : function
         Function to get the acquisition time of a physiological file
