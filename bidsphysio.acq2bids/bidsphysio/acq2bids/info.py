@@ -1,4 +1,8 @@
-__version__ = "1.0.2"
+""" NOTE: When bumping up the version number, double-check if you
+need to also bump up the version of the dependencies
+"""
+
+__version__ = "1.1.1"
 __author__ = "Pablo Velasco"
 __author_email__ = "pablo.velasco@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"
@@ -20,8 +24,8 @@ CLASSIFIERS = [
 PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
-    'bidsphysio.base>=1.0.1',
-    'bidsphysio.session>=1.0.0',
+    'bidsphysio.base>=1.1.1',
+    'bidsphysio.session>=1.1.1',
     'bioread[mat]>=2.0.0',
 ]
 
