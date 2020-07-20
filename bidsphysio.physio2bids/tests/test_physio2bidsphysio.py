@@ -1,4 +1,4 @@
-'''   Tests for the module "physio2bidsphysio.py"   '''
+"""   Tests for the module "physio2bidsphysio.py"   """
 
 import sys
 
@@ -55,11 +55,11 @@ def test_main(
         mock_physio2bidsphysio_calls,
         capfd
 ):
-    '''
+    """
     Tests for "main"
     Just check the arguments, etc. We test the call to the differnt XXX2bids functions in a
     separated test module
-    '''
+    """
 
     bidsPrefix = str(tmpdir / 'mydir' / 'foo')
 

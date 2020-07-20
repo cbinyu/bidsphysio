@@ -1,4 +1,4 @@
-'''   Tests for the module "acq2bidsphysio.py"   '''
+"""   Tests for the module "acq2bidsphysio.py"   """
 
 import json
 import gzip
@@ -47,11 +47,11 @@ def test_main_args(
         mock_acq2bidsphysio,
         capfd
 ):
-    '''
+    """
     Tests for "main"
     Just check the arguments, etc. We'll test the call to acq2bids in a
     separated function
-    '''
+    """
     # 1) "infile" doesn't exist:
     infile = str(tmpdir / 'boo.dcm')
     args = (
@@ -80,11 +80,11 @@ def test_acq2bids(
         tmpdir,
         capfd
 ):
-    '''
+    """
     Tests for the call to "acq2bids"
     We will call it by calling "main" to make sure the output directory
     is created, etc.
-    '''
+    """
     infile = str(TESTS_DATA_PATH / 'sample.acq')
     outbids = str(tmpdir / 'mydir' / 'bids')
 

@@ -1,4 +1,4 @@
-'''   Tests for the module "bidsphysio.py"   '''
+"""   Tests for the module "bidsphysio.py"   """
 
 import copy
 from glob import glob
@@ -118,7 +118,7 @@ def test_calculate_trigger_events(
 
 
 def test_plug_missing_data():
-    '''   Test for plug_missing_data   '''
+    """   Test for plug_missing_data   """
 
     # generate a PhysioSignal with a temporal series and corresponding fake signal with
     #   missing timepoints:

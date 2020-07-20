@@ -1,4 +1,4 @@
-'''   Tests for the module "pmu2bidsphysio.py"   '''
+"""   Tests for the module "pmu2bidsphysio.py"   """
 
 import gzip
 import json
@@ -38,7 +38,7 @@ STOPMDHTIME = 39017760
 
 @pytest.fixture
 def myErrmsg(scope="module"):
-    '''   myErrmsg   '''
+    """   myErrmsg   """
     return p2bp.errmsg(MSG, PMUVE11CFILE, EXPSTR, GOTSTR)
 
 
@@ -73,9 +73,9 @@ def mock_readXXXXpmu_caller(monkeypatch):
 ###   Tests   ###
 
 def test_errmsg():
-    '''
+    """
     Test that the message is what you expect, given the input args
-    '''
+    """
 
     expectedMsg1 = "Test: '" + PMUVE11CFILE + "'"
     expectedMsg2 = expectedMsg1 + ": Expected: '" + EXPSTR + "'; got: '" + GOTSTR + "'"
@@ -86,10 +86,10 @@ def test_errmsg():
 
 
 def test_PMUFormatError_class(myErrmsg):
-    '''
+    """
     Test that when we create a new object of the class PMUFormatError, it
     gets initialized properly
-    '''
+    """
     myError = p2bp.PMUFormatError(MSG, PMUVE11CFILE, EXPSTR, GOTSTR)
     assert isinstance(myError, p2bp.PMUFormatError)
     with pytest.raises(p2bp.PMUFormatError) as err_info:
@@ -98,9 +98,9 @@ def test_PMUFormatError_class(myErrmsg):
 
 
 def test_parserawPMUsignal(capfd):
-    '''
+    """
     Tests for parserawPMUsignal
-    '''
+    """
 
     # 1) simulated raw signal without a '5003' value to indicate the end of the recording:
     raw_signal = ['', '1733', '1725', '1725', '1721', '1721', '1718']
@@ -119,10 +119,10 @@ def test_parserawPMUsignal(capfd):
 
 
 def test_getPMUtiming():
-    '''
+    """
     Tests for getPMUtiming
     We only care about the lines that contain te MPCUTime and MDHTime
-    '''
+    """
 
     # 1) If the keywords are missing, the outputs should be 0
     assert p2bp.getPMUtiming([]) == ([0,0], [0,0])
@@ -146,9 +146,9 @@ def test_getPMUtiming():
 
 
 def test_readVE11Cpmu():
-    '''
+    """
     Tests for readVE11Cpmu
-    '''
+    """
 
     # 1) If you test with a file with the wrong format, you should get a PMUFormatError
     with pytest.raises(p2bp.PMUFormatError) as err_info:
@@ -174,9 +174,9 @@ def test_readVE11Cpmu():
 
 
 def test_readVB15Apmu():
-    '''
+    """
     Tests for readVB15Apmu
-    '''
+    """
 
     # 1) If you test with a file with the wrong format, you should get a PMUFormatError
     with pytest.raises(p2bp.PMUFormatError) as err_info:
@@ -202,9 +202,9 @@ def test_readVB15Apmu():
 
 
 def test_readVBXpmu():
-    '''
+    """
     Tests for readVBXpmu
-    '''
+    """
 
     # 1) If you test with a file with the wrong format, you should get a PMUFormatError
     with pytest.raises(p2bp.PMUFormatError) as err_info:
@@ -235,11 +235,11 @@ def test_main_args(
         mock_pmu2bidsphysio,
         capfd
 ):
-    '''
+    """
     Tests for "main"
     Just check the arguments, etc. We'll test the call to pmu2bids in a
     separated function
-    '''
+    """
     # 1) "infile" doesn't exist:
     # Note: we enter "-i" last because in 3), we'll be adding a second file
     infile = str(tmpdir / 'boo.dcm')
@@ -273,7 +273,7 @@ def test_main_args(
 
 
 def test_testSamplingRate():
-    '''   Tests for testSamplingRate   '''
+    """   Tests for testSamplingRate   """
 
     # 1) If the tolerance is wrong, we should get an error
     for t in [ -0.5, 5]:
@@ -302,10 +302,10 @@ def test_testSamplingRate():
 
 
 def test_readpmu_with_incorrect_file():
-    '''
+    """
     Tests for readpmu when called with an incorrect file
     Given an input file from any PMU software version, check that it is saved to bids
-    '''
+    """
 
     physio_file = str(TESTS_DATA_PATH / PMUVBXFILE)
 
@@ -340,12 +340,12 @@ def test_readpmu(
         monkeypatch,
         mock_readXXXXpmu_caller
 ):
-    '''
+    """
     Tests for readpmu with the right file
     Given an input file from any PMU software version, check that it does not give an error
     We don't need to check the results because those are checked
     in the corresponding test_readXXXXpmu tests above.
-    '''
+    """
 
     # Specifying the (correct) version:
     assert p2bp.readpmu(
@@ -370,11 +370,11 @@ def test_pmu2bids(
         tmpdir,
         capfd
 ):
-    '''
+    """
     Tests for the call to "pmu2bids"
     We will call it by calling "main" to make sure the output directory
     is created, etc.
-    '''
+    """
     infile1 = str(TESTS_DATA_PATH / PMUVE11CFILE)
     infile2 = infile1[:-5] + '.resp'
     outbids = str(tmpdir / 'mydir' / 'bids')

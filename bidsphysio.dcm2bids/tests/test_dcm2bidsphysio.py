@@ -1,4 +1,4 @@
-'''   Tests for the module "dcm2bidsphysio.py"   '''
+"""   Tests for the module "dcm2bidsphysio.py"   """
 
 from pathlib import Path
 import sys
@@ -44,11 +44,11 @@ def test_main_args(
         mock_dcm2bidsphysio,
         capfd
 ):
-    '''
+    """
     Tests for "main"
     Just check the arguments, etc. We'll test the call to dcm2bids in a
     separated function
-    '''
+    """
     # 1) "infile" doesn't exist:
     infile = str(tmpdir / 'boo.dcm')
     args = (
@@ -73,7 +73,7 @@ def test_main_args(
 
 
 def test_parse_log():
-    '''   Test for parse_log   '''
+    """   Test for parse_log   """
 
     expected_uuid = 'uuid'
     expected_ScanDate = 20000101
@@ -137,11 +137,11 @@ def test_dcm2bids(
         tmpdir,
         capfd
 ):
-    '''
+    """
     Tests for the call to "dcm2bids"
     We will call it by calling "main" to make sure the output directory
     is created, etc.
-    '''
+    """
     import json
     import gzip
 

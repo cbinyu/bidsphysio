@@ -1,4 +1,4 @@
-'''   Tests for the module "acqsession2bids.py"   '''
+"""   Tests for the module "acqsession2bids.py"   """
 
 import sys
 
