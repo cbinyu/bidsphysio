@@ -24,13 +24,13 @@ from .utils import TESTS_DATA_PATH, file_md5sum
 
 NOW = datetime.now()
 # physio clock delay w.r.t. the scanner clock:
-DELAY = 10 * random.random()
-TIME_BETWEEN_RUNS = 100
-N_RUNS = 3
+DELAY = random.uniform(0, 10)
+TIME_BETWEEN_RUNS = random.uniform(95, 105)
+N_RUNS = random.randint(3, 5)
 # We'll add some jitter to the beginning of the physio recordings:
-JITTER_FACTOR = 0.1
-TR = 3 * random.random()
-N_VOLS = round(100 * random.random())
+JITTER_FACTOR = random.uniform(0.01, 0.1)
+TR = random.uniform(0.5, 3)
+N_VOLS = random.randint(1, 100)
 SECS_IN_DAY = 24 * 60 * 60
 
 

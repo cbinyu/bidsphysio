@@ -4,6 +4,7 @@ import copy
 from glob import glob
 import gzip
 import json
+import random
 from os import remove
 from os.path import join as pjoin
 
@@ -15,15 +16,16 @@ from bidsphysio.base.bidsphysio import (PhysioSignal,
 
 ###  Globals   ###
 
-PHYSIO_SAMPLES_PER_SECOND = 5
-PHYSIO_START_TIME = 101     # (in sec) with respect to some reference clock
-PHYSIO_DURATION = 20
-PHYSIO_SAMPLES_COUNT = PHYSIO_SAMPLES_PER_SECOND * PHYSIO_DURATION
+PHYSIO_SAMPLES_PER_SECOND = random.randint(10, 100)
+PHYSIO_START_TIME = random.uniform(10, 111)  # (in sec) with respect to some reference clock
+PHYSIO_DURATION = random.uniform(15, 25)
+PHYSIO_SAMPLES_COUNT = round(PHYSIO_SAMPLES_PER_SECOND * PHYSIO_DURATION)
 LABELS = ['signal1', 'signal2', 'signal3']
-TRIGGER_SAMPLES_PER_SECOND = 10
-TRIGGER_START_TIME = 100    # (in sec) beginning of the trigger recording (same ref clock)
-SCANNER_DELAY = 2   # From the beginning of the physio recording to the first volume
-SCANNER_TR = 0.75   # (in sec)
+TRIGGER_SAMPLES_PER_SECOND = random.randint(15, 25)
+# (in sec) beginning of the trigger recording (same ref clock):
+TRIGGER_START_TIME = random.uniform(0, PHYSIO_START_TIME)
+SCANNER_DELAY = random.uniform(1, 3)  # From the beginning of the physio recording to the first volume
+SCANNER_TR = random.uniform(0.5, 2)  # (in sec)
 
 
 ###   TESTS FOR CLASS "PhysioSignal"   ###
@@ -33,12 +35,12 @@ def mySignal(scope="module"):
     """    Simulate a PhysioSignal object    """
 
     mySignal = PhysioSignal(
-                 label='simulated',
-                 samples_per_second=PHYSIO_SAMPLES_PER_SECOND,
-                 physiostarttime=PHYSIO_START_TIME,
-                 neuralstarttime=PHYSIO_START_TIME+SCANNER_DELAY,
-                 signal= PHYSIO_SAMPLES_COUNT * [0]     # fill with zeros
-             )
+        label='simulated',
+        samples_per_second=PHYSIO_SAMPLES_PER_SECOND,
+        physiostarttime=PHYSIO_START_TIME,
+        neuralstarttime=PHYSIO_START_TIME + SCANNER_DELAY,
+        signal=PHYSIO_SAMPLES_COUNT * [0]  # fill with zeros
+    )
 
     return mySignal
 
@@ -50,9 +52,9 @@ def trigger_timing(scope="module"):
     With respect to the reference clock
     """
 
-    t_first_trigger = PHYSIO_START_TIME + SCANNER_DELAY     # w.r.t. reference clock
+    t_first_trigger = PHYSIO_START_TIME + SCANNER_DELAY  # w.r.t. reference clock
     scanner_duration_seconds = PHYSIO_DURATION - SCANNER_DELAY
-    number_of_scanner_triggers = int(scanner_duration_seconds/SCANNER_TR)
+    number_of_scanner_triggers = int(scanner_duration_seconds / SCANNER_TR)
     # (note: both scanner_duration_seconds and TR can be floats, so "//" is not enough)
 
     trigger_timing = [t_first_trigger + SCANNER_TR * i for i in range(number_of_scanner_triggers)]
@@ -80,7 +82,7 @@ def test_calculate_timing(
     mySignal.calculate_timing()
     assert len(mySignal.sampling_times) == PHYSIO_SAMPLES_COUNT
     assert mySignal.sampling_times[0] == mySignal.physiostarttime
-    np.testing.assert_allclose(np.ediff1d(mySignal.sampling_times), 1/mySignal.samples_per_second, 1e-10)
+    np.testing.assert_allclose(np.ediff1d(mySignal.sampling_times), 1 / mySignal.samples_per_second, 1e-10)
 
 
 def test_calculate_trigger_events(
@@ -97,24 +99,24 @@ def test_calculate_trigger_events(
     # 1) If you try to calculate it for a signal for which we cannot calculate
     #    the timing, it should print an error and return None:
     assert PhysioSignal(
-            label='simulated',
-            physiostarttime=PHYSIO_START_TIME
-        ).calculate_trigger_events(trigger_timing) == None
+        label='simulated',
+        physiostarttime=PHYSIO_START_TIME
+    ).calculate_trigger_events(trigger_timing) == None
     assert capfd.readouterr().out == "Unable to calculate the recording timing\n"
 
     # 2) Run it succesfully:
     # calculate trigger events:
-    trig_signal = mySignal.calculate_trigger_events( trigger_timing )
+    trig_signal = mySignal.calculate_trigger_events(trigger_timing)
 
     assert isinstance(trig_signal, np.ndarray)
 
     # calculate how many triggers there are between the first and last sampling_times:
     num_trig_within_physio_samples = np.bitwise_and(
-                np.array(trigger_timing) >= mySignal.sampling_times[0],
-                np.array(trigger_timing) <= mySignal.sampling_times[-1]
+        np.array(trigger_timing) >= mySignal.sampling_times[0],
+        np.array(trigger_timing) <= mySignal.sampling_times[-1]
     )
-    
-    assert ( sum(trig_signal) == sum(num_trig_within_physio_samples) )
+
+    assert (sum(trig_signal) == sum(num_trig_within_physio_samples))
 
 
 def test_plug_missing_data():
@@ -122,17 +124,17 @@ def test_plug_missing_data():
 
     # generate a PhysioSignal with a temporal series and corresponding fake signal with
     #   missing timepoints:
-    st = [i/1 for i in range(35) if i%10]
-    spamSignal=PhysioSignal(
-                 label='simulated',
-                 samples_per_second=1,
-                 sampling_times=st,
-                 signal= [i for i in range(len(st))]
-             )
+    st = [i / 1 for i in range(35) if i % 10]
+    spamSignal = PhysioSignal(
+        label='simulated',
+        samples_per_second=1,
+        sampling_times=st,
+        signal=[i for i in range(len(st))]
+    )
 
     spamSignal.plug_missing_data()
     assert all(np.ediff1d(spamSignal.sampling_times)) == 1
-    assert all(np.isnan(spamSignal.signal[[i for i in range(len(spamSignal.signal)) if not (i+1)%10]]))
+    assert all(np.isnan(spamSignal.signal[[i for i in range(len(spamSignal.signal)) if not (i + 1) % 10]]))
     assert len(spamSignal.signal) == spamSignal.samples_count
 
 
@@ -147,7 +149,7 @@ def test_matching_trigger_signal(
     """
 
     # calculate trigger events:
-    trig_signal = mySignal.calculate_trigger_events( trigger_timing )
+    trig_signal = mySignal.calculate_trigger_events(trigger_timing)
 
     trigger_physiosignal = PhysioSignal.matching_trigger_signal(mySignal, trig_signal)
 
@@ -167,14 +169,14 @@ def myphysiodata(scope="module"):
     """   Create a "PhysioData" object with barebones content  """
 
     myphysiodata = PhysioData(
-                [ PhysioSignal(
-                    label = l,
-                    samples_per_second = PHYSIO_SAMPLES_PER_SECOND,
-                    physiostarttime = PHYSIO_START_TIME,
-                    neuralstarttime=PHYSIO_START_TIME+SCANNER_DELAY,
-                    signal = [i for i in range(PHYSIO_SAMPLES_COUNT)]
-                ) for l in LABELS ]
-            )
+        [PhysioSignal(
+            label=l,
+            samples_per_second=PHYSIO_SAMPLES_PER_SECOND,
+            physiostarttime=PHYSIO_START_TIME,
+            neuralstarttime=PHYSIO_START_TIME + SCANNER_DELAY,
+            signal=[i for i in range(PHYSIO_SAMPLES_COUNT)]
+        ) for l in LABELS]
+    )
     return myphysiodata
 
 
@@ -186,13 +188,13 @@ def simulated_trigger_signal(scope="module"):
 
     trigger_samples_per_tr = TRIGGER_SAMPLES_PER_SECOND * SCANNER_TR
     physio_recoding_delay = PHYSIO_START_TIME - TRIGGER_START_TIME
-    first_trigger_delay = physio_recoding_delay + SCANNER_DELAY   # w.r.t. beginning of trigger recording
+    first_trigger_delay = physio_recoding_delay + SCANNER_DELAY  # w.r.t. beginning of trigger recording
     first_trigger_delay_in_samples = first_trigger_delay * TRIGGER_SAMPLES_PER_SECOND
     # supposing the trigger recording ends at the same time as the physio recording:
     trigger_recording_duration = physio_recoding_delay + PHYSIO_DURATION
-    trigger_samples_count = trigger_recording_duration * TRIGGER_SAMPLES_PER_SECOND
+    trigger_samples_count = round(trigger_recording_duration * TRIGGER_SAMPLES_PER_SECOND)
 
-    trigger_signal= trigger_samples_count * [0]     # initialize to zeros
+    trigger_signal = trigger_samples_count * [0]  # initialize to zeros
     for i in range(trigger_samples_count):
         sample_offset = i - first_trigger_delay_in_samples
         if (sample_offset >= 0) and (sample_offset % trigger_samples_per_tr < 1):
@@ -212,11 +214,11 @@ def myphysiodata_with_trigger(
     # add a trigger signal to the physiodata_with_trigger:
     myphysiodata_with_trigger.append_signal(
         PhysioSignal(
-            label = 'trigger',
-            samples_per_second = TRIGGER_SAMPLES_PER_SECOND,
-            physiostarttime = TRIGGER_START_TIME,
-            neuralstarttime = TRIGGER_START_TIME,
-            signal = simulated_trigger_signal
+            label='trigger',
+            samples_per_second=TRIGGER_SAMPLES_PER_SECOND,
+            physiostarttime=TRIGGER_START_TIME,
+            neuralstarttime=TRIGGER_START_TIME,
+            signal=simulated_trigger_signal
         )
     )
     return myphysiodata_with_trigger
@@ -244,7 +246,7 @@ def test_append_signal(
     #  so that it is later available unmodified to other tests:
     physdata = copy.deepcopy(myphysiodata)
     physdata.append_signal(
-        PhysioSignal( label = 'extra_signal' )
+        PhysioSignal(label='extra_signal')
     )
 
     mylabels = LABELS.copy()
@@ -253,14 +255,14 @@ def test_append_signal(
 
 
 def test_save_bids_json(
-            tmpdir,
-            myphysiodata
-    ):
+        tmpdir,
+        myphysiodata
+):
     """
     Tests  "save_bids_json"
     """
 
-    json_file_name = pjoin(tmpdir.strpath,'foo.json')
+    json_file_name = pjoin(tmpdir.strpath, 'foo.json')
 
     # make sure it gives an error if sampling or t_start are not the same for all PhysioSignals
     # samples_per_second:
@@ -279,8 +281,8 @@ def test_save_bids_json(
 
     # make sure the filename ends with "_physio.json"
     myphysiodata.save_bids_json(json_file_name)
-    json_files = glob(pjoin(tmpdir,'*.json'))
-    assert len(json_files)==1
+    json_files = glob(pjoin(tmpdir, '*.json'))
+    assert len(json_files) == 1
     json_file = json_files[0]
     assert json_file.endswith('_physio.json')
 
@@ -299,18 +301,18 @@ def test_save_bids_data(
     """
     Tests  "save_bids_data"
     """
-    data_file_name = pjoin(tmpdir.strpath,'foo.tsv')
+    data_file_name = pjoin(tmpdir.strpath, 'foo.tsv')
 
     # make sure the filename ends with "_physio.tsv.gz"
     myphysiodata.save_bids_data(data_file_name)
-    data_files = glob(pjoin(tmpdir,'*.tsv*'))
-    assert len(data_files)==1
+    data_files = glob(pjoin(tmpdir, '*.tsv*'))
+    assert len(data_files) == 1
     data_file = data_files[0]
     assert data_file.endswith('_physio.tsv.gz')
 
     # read the data file and check the content vs. the PhysioData:
-    with gzip.open(data_file,'rt') as f:
-        for idx,line in enumerate(f):
+    with gzip.open(data_file, 'rt') as f:
+        for idx, line in enumerate(f):
             assert [float(s) for s in line.split('\t')] == [s.signal[idx] for s in myphysiodata.signals]
 
 
@@ -321,17 +323,17 @@ def test_save_to_bids(
     """
     Test "save_to_bids"
     """
-    output_file_name = pjoin(tmpdir.strpath,'foo')
+    output_file_name = pjoin(tmpdir.strpath, 'foo')
 
     # when all sample rates and t_starts are the same, there should be only one
     #   (.sjon/.tsv.gz) pair:
     myphysiodata.save_to_bids(output_file_name)
-    json_files = glob(pjoin(tmpdir,'*.json'))
-    assert len(json_files)==1
+    json_files = glob(pjoin(tmpdir, '*.json'))
+    assert len(json_files) == 1
     json_file = json_files[0]
     assert json_file.endswith('_physio.json')
-    data_files = glob(pjoin(tmpdir,'*.tsv*'))
-    assert len(data_files)==1
+    data_files = glob(pjoin(tmpdir, '*.tsv*'))
+    assert len(data_files) == 1
     data_file = data_files[0]
     assert data_file.endswith('_physio.tsv.gz')
     remove(json_file)
@@ -341,12 +343,12 @@ def test_save_to_bids(
     #   in a separate file:
     myphysiodata.signals[-1].samples_per_second *= 2
     myphysiodata.save_to_bids(output_file_name)
-    json_files = glob(pjoin(tmpdir,'*.json'))
-    assert len(json_files)==2
+    json_files = glob(pjoin(tmpdir, '*.json'))
+    assert len(json_files) == 2
     # make sure one of them ends with "_recording-" plus the label of the last signal, etc:
     assert [jf for jf in json_files if jf.endswith('_recording-{s3}_physio.json'.format(s3=LABELS[-1]))]
-    data_files = glob(pjoin(tmpdir,'*.tsv*'))
-    assert len(data_files)==2
+    data_files = glob(pjoin(tmpdir, '*.tsv*'))
+    assert len(data_files) == 2
     # make sure one of them ends with "_recording-" plus the label of the last signal, etc:
     assert [df for df in data_files if df.endswith('_recording-{s3}_physio.tsv.gz'.format(s3=LABELS[-1]))]
 
@@ -365,9 +367,9 @@ def test_get_trigger_timing(
 
     # try with physiodata_with_trigger
     assert myphysiodata_with_trigger.get_trigger_timing() == [
-                                TRIGGER_START_TIME + idx / TRIGGER_SAMPLES_PER_SECOND
-                                   for idx, trig in enumerate(simulated_trigger_signal) if trig == 1
-                         ]
+        TRIGGER_START_TIME + idx / TRIGGER_SAMPLES_PER_SECOND
+        for idx, trig in enumerate(simulated_trigger_signal) if trig == 1
+    ]
 
 
 def test_get_scanner_onset(
@@ -381,8 +383,11 @@ def test_get_scanner_onset(
         myphysiodata.get_scanner_onset()
     assert str(e_info.value) == "'trigger' is not in list"
 
-    # try with physiodata_with_trigger
-    assert myphysiodata_with_trigger.get_scanner_onset() == PHYSIO_START_TIME + SCANNER_DELAY
+    # try with physiodata_with_trigger.
+    # Make sure the scanner onset happens when expected (within
+    # sampling resolution):
+    assert myphysiodata_with_trigger.get_scanner_onset() == \
+           pytest.approx(PHYSIO_START_TIME + SCANNER_DELAY, 1 / PHYSIO_SAMPLES_PER_SECOND)
 
 
 def test_save_to_bids_with_trigger(
@@ -393,7 +398,7 @@ def test_save_to_bids_with_trigger(
 ):
     """   Tests for 'save_to_bids_with_trigger'   """
 
-    output_file_name = pjoin(tmpdir.strpath,'foo')
+    output_file_name = pjoin(tmpdir.strpath, 'foo')
 
     ###   A) test on a PhysioData without trigger signal   ###
     myphysiodata.save_to_bids_with_trigger(output_file_name)
@@ -402,13 +407,12 @@ def test_save_to_bids_with_trigger(
     assert 'We cannot save with trigger because we found no trigger.' in out
     assert 'Saving physio data' in out
 
-
     ###   B)test the case of all signals (except the trigger) have the same     ###
     ###     sampling rate and t_start. We expect one "_physio" json/tsv pair:   ###
     myphysiodata_with_trigger.save_to_bids_with_trigger(output_file_name)
 
-    json_files = glob(pjoin(tmpdir,'*.json'))
-    assert len(json_files)==1
+    json_files = glob(pjoin(tmpdir, '*.json'))
+    assert len(json_files) == 1
     json_file = json_files[0]
     assert '_recording-' not in json_file
 
@@ -422,21 +426,20 @@ def test_save_to_bids_with_trigger(
     assert d['StartTime'] == myphysiodata_with_trigger.signals[0].t_start()
 
     # make sure the filename ends with "_physio.tsv.gz"
-    data_files = glob(pjoin(tmpdir,'*.tsv*'))
-    assert len(data_files)==1
+    data_files = glob(pjoin(tmpdir, '*.tsv*'))
+    assert len(data_files) == 1
     data_file = data_files[0]
     assert '_recording-' not in data_file
 
     # read the data file and check the content vs. the PhysioData:
-    with gzip.open(data_file,'rt') as f:
-        for idx,line in enumerate(f):
+    with gzip.open(data_file, 'rt') as f:
+        for idx, line in enumerate(f):
             s = [float(s) for s in line.split('\t')]
             # check that the signals (except for the last, that has the tirgger)
             #   are what we expect:
             assert s[:-1] == [s.signal[idx] for s in myphysiodata_with_trigger.signals[:-1]]
     remove(json_file)
     remove(data_file)
-
 
     ###   C) test the case of two different types of sampling rates   ###
 
@@ -446,12 +449,12 @@ def test_save_to_bids_with_trigger(
 
     # Check that there are two sets of files, one corresponding to signal[0] and
     #   the other to signal[1]:
-    json_files = glob(pjoin(tmpdir,'*.json'))
-    assert len(json_files)==2
-    for idx,s in enumerate(myphysiodata_with_trigger.labels()[0:1]):
+    json_files = glob(pjoin(tmpdir, '*.json'))
+    assert len(json_files) == 2
+    for idx, s in enumerate(myphysiodata_with_trigger.labels()[0:1]):
         json_file = json_files[
             json_files.index(
-                '{0}_recording-{1}_physio.json'.format(output_file_name,s)
+                '{0}_recording-{1}_physio.json'.format(output_file_name, s)
             )
         ]
         assert json_file in json_files
@@ -465,9 +468,8 @@ def test_save_to_bids_with_trigger(
 
     # For the data itself, because case B) worked, and the json files contained the
     #   right info, we just make sure that there are two of them:
-    data_files = glob(pjoin(tmpdir,'*.tsv*'))
-    assert len(data_files)==2
-
+    data_files = glob(pjoin(tmpdir, '*.tsv*'))
+    assert len(data_files) == 2
 
     # reset the sampling rate for the first signal, in case we need to use
     #   the variable again:
