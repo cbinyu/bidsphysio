@@ -40,14 +40,14 @@ Note: If desired, you can use the corresponding `_bold.nii.gz` BIDS file as `--b
 Alternatively, you can convert a whole session worth of physiology files automatically naming them. Currently, only AcqKnowledge files are supported:
 
 ```
-acqsession2bids --infolder <infolder> --bidsfolder <bidsfolder> --subject <subID>
+acqsession2bids --infolder <physiofolder> --bidsfolder <bidsfolder> --subject <subID>
 ```
 The tool will find which physiological file corresponds to which functional image file and will name it accordingly.
 
 
 ### Arguments
 
- * `<infolder>`: Path to a folder containing all the `.acq` files for a full session.
+ * `<physiofolder>`: Path to a folder containing all the `.acq` files for a full session.
  * `<bidsfolder>`: Path to the top level BIDS folder where you want to extract the physiological data.
  The functional images corresponding to this session need to have been extracted.
  * `<subID>`: label of the participant to whom the physiological data belong. The label corresponds to `sub-<participant_label>` from the BIDS spec (so it does not include "sub-").  
@@ -80,27 +80,16 @@ mkdir /tmp/bidsphysio && \
 ```
 
 ## Docker usage
+After pulling the latest version (`docker pull cbinyu/bidsphysio`), start a Docker container with:
 ```
-docker run [docker options] cbinyu/bidsphysio \
-    --infile <physiofiles>      \
-    --bidsprefix <Prefix>
+docker run [docker options] cbinyu/bidsphysio
 ```
-Note that the `<physiofiles>` and the `<Prefix>` should use the corresponding paths inside the Docker container.
+Then, you can run any `bidsphysio` command (see `Usage` above)
 
-Example:
-```
-docker run --rm \
-    --user $(id -u):$(id -g) \
-    --name test_bidsphysio \
-    --volume /tmp:/tmp \
-    cbinyu/bidsphysio \
-        --infile /tmp/07+epi_MB4_2mm_Physio+00001.dcm \
-        --bidsprefix /tmp/test
-```
 
 ## Alternative use:
 
-The package will also install the binaries: `dcm2bidsphysio`, `acq2bidsphysio`
+Installing `bidsphysio` will also install the binaries: `dcm2bidsphysio`, `acq2bidsphysio`
 and `pmu2bidsphysio`, to extract a specific file type:
 
 ```
