@@ -428,4 +428,85 @@ def convert_session(physio_files, bids_dir, sub, ses=None,
                             get_physio_acq_time,
                             overwrite=overwrite)
 
+def convert_edf_session(physio_files, bids_dir, sub, ses=None,
+                        get_physio_data=None,
+                        get_event_data=None,
+                        get_physio_acq_time=None,
+                        outdir=None, overwrite=False):
+    """Function to save the EDF data in a given folder as BIDS physiology and events files, matching the filenames from the study imaging files
+        
+    Parameters
+    ----------
+    physio_files : list of str
+        List of paths of the original physio files
+    bids_dir : str
+        Path to BIDS dataset
+    sub : str
+        Subject ID. Used to search the BIDS dataset for relevant scans.
+    ses : str or None, optional
+        Session ID. Used to search the BIDS dataset for relevant scans in
+        longitudinal studies. Default is None.
+    get_physio_data : function
+        Function to get physio data from a file to "PhysioData" class
+        (e.g., edf2bids)
+    get_event_data : function
+        Function to get event data from a file to "eventdata" class
+        (e.g., edfevents2bids)
+    get_physio_acq_time : function
+        Function to get the acquisition time of a physiological file
+        (e.g., read_file(file).earliest_marker_created_at, from bioread)
+    outdir : str
+        Path to a BIDS folder where we want to store the physio data.
+        Default: bids_dir
+    overwrite : bool
+        Overwrite existing tarfiles
+        """
+    
+    # Default out_dir is bids_dir:
+    outdir = outdir or bids_dir
+    
+    file_times = [get_physio_acq_time(f) for f in physio_files]
+    # relative to the first one:
+    rel_file_times = [(f - min(file_times)).total_seconds() for f in file_times]
+    
+    physio_data = [get_physio_data(f) for f in physio_files]
+    event_data = [get_event_data(f) for f in physio_files]
+    
+    onsets_in_sec = [
+        p.get_scanner_onset() + rt for p, rt in zip(physio_data, rel_file_times)
+    ]
+        
+    physio_df = pd.DataFrame(
+        {
+            'onset': onsets_in_sec,
+            'data': physio_data,
+            'filename': physio_files
+        }
+    )
+                     
+    # Now, for the scanner timing:
+    layout = BIDSLayout(bids_dir)
+    df = load_scan_data(layout, sub=sub, ses=ses)
+                     
+    out_df = synchronize_onsets(physio_df, df)
+                     
+    sourcedir = op.join(outdir, 'sourcedata')
+    if not op.isdir(sourcedir):
+        os.makedirs(sourcedir)
+    sub_ses_dir = op.join('sub-' + sub, ('ses-' + str(ses)) if ses else '')
+
+    for (phys_file, phys_data, ev_data, scan_file) in zip(out_df['filename'], out_df['data'], out_df['event_data'], out_df['scan_fname']):
+    if scan_file:
+        prefix = op.join(sub_ses_dir, scan_file.split('.nii')[0])
+        outdir_ = op.join(outdir, op.dirname(prefix))
+        if not op.isdir(outdir_):
+            os.makedirs(outdir_)
+            eye_prefix = op.join(outdir, prefix)
+        for mystr in ['.gz', '.nii', '_bold', '_physio']:
+            eye_prefix =  eye_prefix [:-len(mystr)] if eye_prefix.endswith(mystr) else eye_prefix
+        eye_prefix = eye_prefix + '-eyetracker'
+            phys_data.save_to_bids_with_trigger(op.join(outdir, prefix))
+            ev_data.save_events_to_bids(eye_prefix)
+#TODO: Add compressing all the files together
+
 
