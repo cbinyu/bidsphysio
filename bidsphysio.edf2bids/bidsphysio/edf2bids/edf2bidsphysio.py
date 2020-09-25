@@ -124,11 +124,10 @@ def edf2bids( physio_edf ):
     return physio
 
             
-    # Now we will work on our events contents
-    # Get all the different trial marker names. The first 11 elements contain some recording information so we drop them
-    #TODO: Calculate trigger timing and get onset from there...maybe function in class, based on session
+    
 def edfevents2bids(physio_edf):
     
+    # Get all the different trial marker names. The first 11 elements contain some recording information so we drop them
     trial_markers = np.unique(edfread.read_messages(physio_edf)[11:])
     samples, events, messages = edf.pread(physio_edf)
     
