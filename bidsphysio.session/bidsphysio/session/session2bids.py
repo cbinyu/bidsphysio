@@ -496,15 +496,15 @@ def convert_edf_session(physio_files, bids_dir, sub, ses=None,
     sub_ses_dir = op.join('sub-' + sub, ('ses-' + str(ses)) if ses else '')
 
     for (phys_file, phys_data, ev_data, scan_file) in zip(out_df['filename'], out_df['data'], out_df['event_data'], out_df['scan_fname']):
-    if scan_file:
-        prefix = op.join(sub_ses_dir, scan_file.split('.nii')[0])
-        outdir_ = op.join(outdir, op.dirname(prefix))
-        if not op.isdir(outdir_):
-            os.makedirs(outdir_)
-            eye_prefix = op.join(outdir, prefix)
-        for mystr in ['.gz', '.nii', '_bold', '_physio']:
-            eye_prefix =  eye_prefix [:-len(mystr)] if eye_prefix.endswith(mystr) else eye_prefix
-        eye_prefix = eye_prefix + '-eyetracker'
+        if scan_file:
+            prefix = op.join(sub_ses_dir, scan_file.split('.nii')[0])
+            outdir_ = op.join(outdir, op.dirname(prefix))
+            if not op.isdir(outdir_):
+                os.makedirs(outdir_)
+                eye_prefix = op.join(outdir, prefix)
+            for mystr in ['.gz', '.nii', '_bold', '_physio']:
+                eye_prefix =  eye_prefix [:-len(mystr)] if eye_prefix.endswith(mystr) else eye_prefix
+            eye_prefix = eye_prefix + '-eyetracker'
             phys_data.save_to_bids_with_trigger(op.join(outdir, prefix))
             ev_data.save_events_to_bids(eye_prefix)
 #TODO: Add compressing all the files together
