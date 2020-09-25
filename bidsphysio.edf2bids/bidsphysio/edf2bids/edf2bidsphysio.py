@@ -56,9 +56,8 @@ from pyedfread import edfread
 
 from bidsphysio.base.bidsphysio import (PhysioSignal,
                                         PhysioData)
-
-from bidsevents import (eventsignal,
-                        eventdata)
+from bidsevents.base.bidsevents import (EventSignal,
+                                        EventData)
 
 def edf2bids( physio_edf ):
     #Read EDF data into three pandas dataframes
@@ -123,12 +122,10 @@ def edf2bids( physio_edf ):
 
     return physio
 
-            
-    # Now we will work on our events contents
-    # Get all the different trial marker names. The first 11 elements contain some recording information so we drop them
-    #TODO: Calculate trigger timing and get onset from there...maybe function in class, based on session
+
 def edfevents2bids(physio_edf):
     
+    # Get all the different trial marker names. The first 11 elements contain some recording information so we drop them
     trial_markers = np.unique(edfread.read_messages(physio_edf)[11:])
     samples, events, messages = edf.pread(physio_edf)
     
@@ -190,7 +187,7 @@ def edfevents2bids(physio_edf):
                 event_description = None
                 
             event.append_event(
-                               eventsignal(
+                               EventSignal(
                                            label=event_label,
                                            units = event_units,
                                            description = event_description,

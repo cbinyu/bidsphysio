@@ -26,7 +26,7 @@ Note: If desired, you can use the corresponding `_bold.nii.gz` BIDS file as `--b
 
 ## Usage - Full session
 
-Alternatively, you can convert a whole session worth of `.acq` physiology files automatically naming them:
+Alternatively, you can convert a whole session worth of `.edf` eyetracker files automatically naming them:
 ```
 edfsession2bids --infolder <infolder> --bidsfolder <bidsfolder> --subject <subID>
 ```

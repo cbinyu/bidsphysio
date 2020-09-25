@@ -1,15 +1,11 @@
-""" NOTE: When bumping up the version number, double-check if you
-need to also bump up the version of the dependencies
-"""
-
 __version__ = "1.1.1"
-__author__ = "Pablo Velasco"
-__author_email__ = "pablo.velasco@nyu.edu"
+__author__ = "Chrysa Papadaniil"
+__author_email__ = "chrysa@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"
-__packagename__ = 'bidsphysio.edf2bids'
-__description__ = "EDF-to-BIDS Converter"
+__packagename__ = 'bidsevents.base'
+__description__ = "BIDS Events classes"
 __license__ = "MIT"
-__longdesc__ = """Converts EDF eye-tracker data (from a SR Research Eyelink system) to BIDS eye-tracker physiological recording and events."""
+__longdesc__ = """Base classes to handle BIDS event data."""
 
 CLASSIFIERS = [
     'Environment :: Console',
@@ -24,15 +20,7 @@ CLASSIFIERS = [
 PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
-    'bidsphysio.base>=1.1.1',
-    'bidsphysio.session>=1.1.1',
-    'bidsevents.session>=1.1.1',
-    'pandas',
     'numpy >= 1.17.1',
-    'pyedfread',
-    'h5py',
-    'cython',
-    'Eyelink Developers Kit'
 ]
 
 TESTS_REQUIRES = [
