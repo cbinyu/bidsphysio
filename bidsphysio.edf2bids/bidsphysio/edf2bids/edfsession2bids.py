@@ -74,12 +74,12 @@ def main():
         time_obj = datetime.strptime(buff_parts[5].decode("utf-8"), '%H:%M:%S')
         return time_obj
 
-    session2bids.convert_session(
+    session2bids.convert_edf_session(
         physio_files,
         bids_dir,
         sub=args.subject,
         get_physio_data=edf2bidsphysio.edf2bids,
-        get_event_data=edf2bidsphysio.edfevents2bids
+        get_event_data=edf2bidsphysio.edfevents2bids,
         get_physio_acq_time=_get_physio_acq_time,
         overwrite=args.overwrite,
     )
