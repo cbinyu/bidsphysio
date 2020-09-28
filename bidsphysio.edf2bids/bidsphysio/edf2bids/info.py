@@ -26,13 +26,11 @@ PYTHON_REQUIRES = ">=3.6"
 REQUIRES = [
     'bidsphysio.base>=1.1.1',
     'bidsphysio.session>=1.1.1',
-    'bidsevents.session>=1.1.1',
-    'pandas',
-    'numpy >= 1.17.1',
-    'pyedfread',
-    'h5py',
-    'cython',
-    'Eyelink Developers Kit'
+    'pandas>=1.1.0',
+    'numpy>= 1.17.1',
+    'pyedfread>=0.1',
+    'h5py>=2.9.0',
+    'Cython>=0.29.13'
 ]
 
 TESTS_REQUIRES = [
