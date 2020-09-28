@@ -57,8 +57,8 @@ from pyedfread import edfread
 from bidsphysio.base.bidsphysio import (PhysioSignal,
                                         PhysioData)
 
-from bidsevents import (eventsignal,
-                        eventdata)
+from bidsevents import (EventSignal,
+                        EventData)
 
 def edf2bids( physio_edf ):
     #Read EDF data into three pandas dataframes
@@ -84,7 +84,6 @@ def edf2bids( physio_edf ):
     #Create a list of the columns we want to keep
     samples = samples.rename(columns={'input': 'trigger'})
     column_list = ["time", "gx_left", "gy_left", "gx_right", "gy_right", "pa_left", "pa_right", "hx_left", "hy_left", "hx_right", "hy_right", "buttons", "trigger"]
-    
     
     #Go through the columns and keep the signals we are interested in. Value -32768.0 indicates missing values
     for wc in range(len(column_list)):
@@ -117,7 +116,6 @@ def edf2bids( physio_edf ):
             p_signal.physiostartime = pstartime
             # we also fill with NaNs the places for which there is missing data:
             p_signal.plug_missing_data()
-
     else:
         print('No trigger channel was found')
 
@@ -163,7 +161,7 @@ def edfevents2bids(physio_edf):
     events = events.rename(columns={'start': 'onset'}) # rename start to onset
 
     # Init eventdata object to hold physio signals
-    event = eventdata()
+    event = EventData()
 
     #Create a list of the columns we want to keep
     event_column_list = ["onset", "duration", "type", "buttons", "blink"]
@@ -174,8 +172,6 @@ def edfevents2bids(physio_edf):
         es = events[events.columns[indc_e][0]].values.tolist()
     
         if not (events[events.columns[indc_e][0]]==0.0).all():
-    #       or (events[events.columns[indc_e][0]]==127.0).all(): #check if this necessary for buttons
-            
             if event_label in {'onset', 'duration'}:
                 event_units = 'seconds'
                 event_type = 'float'
@@ -189,13 +185,13 @@ def edfevents2bids(physio_edf):
                 event_description = None
                 
             event.append_event(
-                               eventsignal(
-                                           label=event_label,
-                                           units = event_units,
-                                           description = event_description,
-                                           event = es,
-                                           type = event_type
-                                           )
+                EventSignal(
+                    label=event_label,
+                    units = event_units,
+                    description = event_description,
+                    event = es,
+                    type = event_type
+                )
             )
 
     return event
