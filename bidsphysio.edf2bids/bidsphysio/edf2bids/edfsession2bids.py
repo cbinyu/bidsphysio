@@ -58,7 +58,7 @@ def main():
     # make sure input files exist:
     phys_dir = args.infolder
     if not op.exists(phys_dir):
-    raise NotADirectoryError('{} folder not found'.format(phys_dir))
+        raise NotADirectoryError('{} folder not found'.format(phys_dir))
 
     # make sure BIDS folder exists:
     bids_dir = args.bidsfolder
