@@ -56,7 +56,6 @@ from pyedfread import edfread
 
 from bidsphysio.base.bidsphysio import (PhysioSignal,
                                         PhysioData)
-
 from bidsevents import (EventSignal,
                         EventData)
 
