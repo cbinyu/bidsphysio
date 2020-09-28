@@ -30,8 +30,7 @@ REQUIRES = [
     'numpy >= 1.17.1',
     'pyedfread',
     'h5py',
-    'cython',
-    'Eyelink Developers Kit'
+    'cython'
 ]
 
 TESTS_REQUIRES = [
