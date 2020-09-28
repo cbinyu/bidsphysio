@@ -115,12 +115,10 @@ def edf2bids( physio_edf ):
             p_signal.physiostartime = pstartime
             # we also fill with NaNs the places for which there is missing data:
             p_signal.plug_missing_data()
-
     else:
         print('No trigger channel was found')
 
     return physio
-
 
 def edfevents2bids(physio_edf):
     
