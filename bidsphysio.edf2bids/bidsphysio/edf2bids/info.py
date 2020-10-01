@@ -26,6 +26,7 @@ PYTHON_REQUIRES = ">=3.6"
 REQUIRES = [
     'bidsphysio.base>=1.1.1',
     'bidsphysio.session>=1.1.1',
+    'bidsphysio.events>=1.1.1',
     'pandas>=1.1.0',
     'numpy>= 1.17.1',
     'pyedfread>=0.1',
