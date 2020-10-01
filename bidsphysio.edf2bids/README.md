@@ -8,7 +8,7 @@ Converts EDF eye-tracker data (from a SR Research Eyelink system) to BIDS eye-tr
 
 ## Usage - Single file
 ```
-edf2bidsphysio --infile <physiofiles> --bidsprefix  <Prefix> [--verbose]
+edf2bidsphysio --infile <physiofile> --bidsprefix  <Prefix> [--verbose]
 ```
 
 Example:
@@ -18,7 +18,7 @@ edf2bidsphysio --infile myEDFFile.edf      \
 ```
 
 ### Arguments
- * `<physiofiles> space-separated EDF files (<.edf>) with the eye-tracker physiological recordings.
+ * `<physiofile> EDF file (<.edf>) with the eye-tracker recordings.
  * `<Prefix>` is the prefix that will be used for the BIDS physiology files. The script will save the files: <Prefix>-eyetracker_physio.json, <Prefix>-eyetracker_physio.tsv.gz, <Prefix>-eyetracker_events.json and <Prefix>-eyetracker_events.tsv.gz
  * `--verbose` will print out some warning messages.
 
