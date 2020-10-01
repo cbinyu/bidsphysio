@@ -14,7 +14,7 @@ edf2bidsphysio --infile <physiofile> --bidsprefix  <Prefix> [--verbose]
 Example:
 ```
 edf2bidsphysio --infile myEDFFile.edf      \
-                --bidsprefix BIDSfolder/sub-01/func/sub-01_task-REST_run-1
+                --bidsprefix BIDSfolder/sub-01/func/sub-01_task-rest_acq-normal_run-01
 ```
 
 ### Arguments
