@@ -63,7 +63,8 @@ mkdir /tmp/bidsphysio && \
 After installing the module using `pip` (see [above](#installation "Installation") ), you can use it in your own Python program this way:
 ```
 from bidsphysio.edf2bids import edf2bidsphysio
-edf2bidsphysio.edf2bids( [edf_files], prefix )
+edf2bidsphysio.edf2bids( [edf_file], prefix )
+edf2bidsphysio.edfevents2bids( [edf_file], prefix )
 ```
 
 
