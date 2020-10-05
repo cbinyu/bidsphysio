@@ -16,7 +16,7 @@ def main():
     ldict = locals()
 
     # Get version and release info, which is all stored in info.py
-    info_file = op.join(thispath, 'bidsphysio', 'base', 'info.py')
+    info_file = op.join(thispath, 'bidsphysio', 'events', 'info.py')
     with open(info_file) as infofile:
         exec(infofile.read(), globals(), ldict)
 
