@@ -29,7 +29,6 @@ REQUIRES = [
     'bidsphysio.events>=1.1.1',
     'pandas>=1.1.0',
     'numpy>= 1.17.1',
-    'pyedfread==0.1',
     'h5py>=2.9.0',
     'Cython>=0.29.13'
 ]
