@@ -12,9 +12,11 @@ before_install:
   - pip install codecov pytest pytest-cov
 
 install:
-  - pip install -r dev-requirements.txt
+  - pip install Cython
+  - pip install h5py
   - git clone https://github.com/nwilming/pyedfread.git
   - cd pyedfread && python setup.py install
+  - pip install -r dev-requirements.txt
 
 # command to run tests
 script:
