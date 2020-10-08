@@ -17,7 +17,7 @@ before_install:
   - sudo apt-get -y install gcc-4.8
   - sudo apt-get install gnupg2
   - curl -L "http://download.sr-support.com/software/dists/SRResearch/SRResearch_key" | sudo apt-key add -
-  - add-apt-repository "deb http://download.sr-support.com/software SRResearch main"
+  - sudo add-apt-repository "deb http://download.sr-support.com/software SRResearch main"
   - sudo apt-get update
   - sudo apt-get install -y eyelink-display-software 
 
