@@ -22,10 +22,11 @@ before_install:
   - sudo apt-get install -y eyelink-display-software 
 
 install:
+  - pip install pandas
   - pip install Cython
   - pip install h5py
   - git clone https://github.com/nwilming/pyedfread.git
-  - cd pyedfread && python setup.py install
+  - cd pyedfread && python setup.py install && cd ..
   - pip install -r dev-requirements.txt
 
 # command to run tests
