@@ -30,7 +30,7 @@ from datetime import datetime
 
 from pyedfread import edfread
 
-import edf2bidsphysio
+from bidsphysio.edf2bids import edf2bidsphysio
 from bidsphysio.session import session2bids
 
 def main():
@@ -81,7 +81,7 @@ def main():
         get_physio_data=edf2bidsphysio.edf2bids,
         get_event_data=edf2bidsphysio.edfevents2bids,
         get_physio_acq_time=_get_physio_acq_time,
-        overwrite=args.overwrite,
+        overwrite=args.overwrite
     )
 
 
