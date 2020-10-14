@@ -175,6 +175,9 @@ def edfevents2bids(physio_edf):
         events = events.append(all_messages[cols], ignore_index=True)
         events = events.sort_values(by=['start'])
         events.type.fillna(events.message, inplace=True) #move messages to type
+    
+    #Incorporate blinks to events.type
+    events.loc[events['blink'] == True, 'type'] = 'blink'
 
     #duration = end - start
     duration = events["end"] - events["start"]
@@ -185,7 +188,7 @@ def edfevents2bids(physio_edf):
     event = EventData()
 
     #Create a list of the columns we want to keep
-    event_column_list = ["onset", "duration", "type", "buttons", "blink"]
+    event_column_list = ["onset", "duration", "type", "buttons"]
 
     for ec in range(len(event_column_list)):
         indc_e = np.where(event_column_list[ec]==events.columns)[0]
