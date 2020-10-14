@@ -480,6 +480,7 @@ def convert_edf_session(physio_files, bids_dir, sub, ses=None,
         {
             'onset': onsets_in_sec,
             'data': physio_data,
+            'event_data' : event_data,
             'filename': physio_files
         }
     )
@@ -501,7 +502,7 @@ def convert_edf_session(physio_files, bids_dir, sub, ses=None,
             outdir_ = op.join(outdir, op.dirname(prefix))
             if not op.isdir(outdir_):
                 os.makedirs(outdir_)
-                eye_prefix = op.join(outdir, prefix)
+            eye_prefix = op.join(outdir, prefix)
             for mystr in ['.gz', '.nii', '_bold', '_physio']:
                 eye_prefix =  eye_prefix [:-len(mystr)] if eye_prefix.endswith(mystr) else eye_prefix
             eye_prefix = eye_prefix + '-eyetracker'
