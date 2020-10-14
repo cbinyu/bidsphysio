@@ -7,7 +7,7 @@ It uses "pyedfread" to read the EDF file
     
 Usage
 ----
-edf2physio.py -i <EDF eyetracker Physio>
+edf2physio.py -i <EDF Eyetracker Physio> -b <BIDS file prefix>
     
 Authors
 ----
@@ -60,6 +60,18 @@ from bidsphysio.events.eventsbase import (EventSignal,
                                         EventData)
 
 def edf2bids( physio_edf ):
+    """Reads the EDF file and saves the continuous eye movement data in a PhysioData member
+    
+    Parameters
+    ----------
+    physio_edf : str
+        Path to the original EDF file
+        
+    Returns
+    -------
+    physio : PhysioData
+        PhysioData with the contents of the file
+    """
     #Read EDF data into three pandas dataframes
     samples, events, messages = edf.pread(physio_edf)
     
@@ -121,6 +133,18 @@ def edf2bids( physio_edf ):
     return physio
 
 def edfevents2bids(physio_edf):
+    """Reads the EDF file and saves the events (fixation, saccades, blinks, experiment messages) in a EventData member
+        
+    Parameters
+    ----------
+    physio_edf : str
+        Path to the original EDF file
+        
+    Returns
+    -------
+    event : EventData
+        EventData with the contents of the file
+    """
     
     # Get all the different trial marker names. The first 11 elements contain some recording information so we drop them
     trial_markers = np.unique(edfread.read_messages(physio_edf)[11:])
@@ -193,18 +217,28 @@ def edfevents2bids(physio_edf):
 
     return event
 
-def main(): 
+def main():
+    
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Convert Eyetracker EDF physiology files to BIDS-compliant physiology recording')
     parser.add_argument('-i', '--infile', required=True, help='SR research eye tracker EDF file')
+    parser.add_argument('-b', '--bidsprefix', required=True, help='Prefix of the BIDS file. It should match the _bold.nii.gz')
     args = parser.parse_args()
     
     # make sure input file exists:
     if not os.path.exists(args.infile):
         raise FileNotFoundError( '{i} file not found'.format(i=args.infile))
     
-    edf2bids( args.infile )
-    edfevents2bids ( args.infile )
+    # make sure output directory exists:
+    odir = os.path.dirname(args.bidsprefix)
+    if not os.path.exists(odir):
+        os.makedirs(odir)
+    
+    physio_data = edf2bids( args.infile )
+    event_data = edfevents2bids ( args.infile )
+    if physio_data.labels():
+        physio_data.save_to_bids_with_trigger(args.bidsprefix)
+    event_data.save_events_to_bids(args.bidsprefix)
 
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
