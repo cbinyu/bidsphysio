@@ -506,7 +506,7 @@ def convert_edf_session(physio_files, bids_dir, sub, ses=None,
             for mystr in ['.gz', '.nii', '_bold', '_physio']:
                 eye_prefix =  eye_prefix [:-len(mystr)] if eye_prefix.endswith(mystr) else eye_prefix
             eye_prefix = eye_prefix + '-eyetracker'
-            phys_data.save_to_bids_with_trigger(op.join(outdir, prefix))
+            phys_data.save_to_bids_with_trigger(eye_prefix)
             ev_data.save_events_to_bids(eye_prefix)
 #TODO: Add compressing all the files together
 
