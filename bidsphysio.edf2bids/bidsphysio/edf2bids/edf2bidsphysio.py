@@ -204,7 +204,7 @@ def edfevents2bids(physio_edf):
                 event_units = ""
 
             if event_label == 'type':
-                event_description = 'Can be saccade, fixation or the name of a sent message'
+                event_description = 'Can be saccade, fixation, blink or the name of a sent message'
             else:
                 event_description = None
                 
