@@ -1,0 +1,13 @@
+{
+    "Columns": [
+        "time",
+        "gx_left",
+        "gy_left",
+        "pa_left",
+        "hx_left",
+        "hy_left",
+        "trigger"
+    ],
+    "SamplingFrequency": 500,
+    "StartTime": -21.256
+}

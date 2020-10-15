@@ -1,0 +1,14 @@
+{
+    "Columns": [
+        "onset",
+        "duration",
+        "type",
+        "buttons"
+    ],
+    "duration": {
+        "Units": "seconds"
+    },
+    "onset": {
+        "Units": "seconds"
+    }
+}
