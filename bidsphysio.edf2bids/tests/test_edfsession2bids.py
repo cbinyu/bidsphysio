@@ -7,7 +7,7 @@ import pytest
 from bidsphysio.session import session2bids
 from bidsphysio.edf2bids import edfsession2bids
 
-MOCK_MESSAGE = 'mock_convert_session called'
+MOCK_MESSAGE = 'mock_convert_edf_session called'
 
 ###   Fixtures   ###
 
@@ -31,7 +31,7 @@ def mock_edf_conversion(monkeypatch):
 def test_main_args(
         monkeypatch,
         tmpdir,
-        mock_conversion,
+        mock_edf_conversion,
         capfd
 ):
     """ Tests for "main"

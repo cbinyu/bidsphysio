@@ -329,7 +329,7 @@ def test_convert_edf_session(
         """
         return MockEventData(path=fname)
 
-def _get_physio_acq_time(fname):
+    def _get_physio_acq_time(fname):
     """ Mock a function to retrieve the physio acquisition time:
         given the file name, it will be run number x TIME_BETWEEN_RUNS
     """
