@@ -268,7 +268,7 @@ def test_convert_session(
         monkeypatch,
         my_mocks,
 ):
-    """ Tests for "convert_session"
+    """ Tests for "load_scan_data"
     """
 
     def mock_compress_physio(*args, **kwargs):
@@ -301,11 +301,10 @@ def test_convert_session(
                         get_physio_acq_time=_get_physio_acq_time,
                         outdir='bar', overwrite=True)
 
-
 class MockEventData(object):
     """ Class that mocks an EventData class, so we can mock the class
         methods without the need to include a full dataset in the tests.
-        """
+    """
     def __init__(self, path=''):
         self.path = path
     
@@ -314,9 +313,9 @@ class MockEventData(object):
         pass
 
 def test_convert_edf_session(
-                         monkeypatch,
-                         my_mocks,
-                         ):
+                             monkeypatch,
+                             my_mocks,
+                             ):
     """ Tests for "convert_edf_session"
     """
     
@@ -324,28 +323,28 @@ def test_convert_edf_session(
         """ Function to return a MockPhysioData object
         """
         return MockPhysioData(path=fname)
-
+    
     def _get_event_data(fname):
         """ Function to return a MockEventData object
         """
-            return MockEventData(path=fname)
-        
-    def _get_physio_acq_time(fname):
-        """ Mock a function to retrieve the physio acquisition time:
-            given the file name, it will be run number x TIME_BETWEEN_RUNS
-        """
+        return MockEventData(path=fname)
+
+def _get_physio_acq_time(fname):
+    """ Mock a function to retrieve the physio acquisition time:
+        given the file name, it will be run number x TIME_BETWEEN_RUNS
+    """
         try:
             run_no = int(fname.split('_')[-1])
         except ValueError:
             raise FileNotFoundError('This is not a valid filename')
         return timedelta(seconds=run_no * TIME_BETWEEN_RUNS)
-    
+
     # run convert_session:
     phys_files = ['phys_{}'.format(i) for i in range(N_RUNS)]
     bids_dir = 'foo'
     sub = '01'
     s2b.convert_edf_session(phys_files, bids_dir, sub,
-                        get_physio_data=_get_physio_data,
-                        get_event_data=_get_event_data,
-                        get_physio_acq_time=_get_physio_acq_time,
-                        outdir='bar', overwrite=True)
+                            get_physio_data=_get_physio_data,
+                            get_event_data=_get_event_data,
+                            get_physio_acq_time=_get_physio_acq_time,
+                            outdir='bar', overwrite=True)
