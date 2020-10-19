@@ -11,7 +11,7 @@ edf2physio.py -i <EDF Eyetracker Physio> -b <BIDS file prefix>
     
 Authors
 ----
-Chrysa Papadaniil and Pablo Velasco, NYU Center for Brain Imaging
+Chrysa Papadaniil, NYU Center for Brain Imaging
     
 Dates
 ----

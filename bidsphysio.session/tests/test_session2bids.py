@@ -316,28 +316,28 @@ def test_convert_edf_session(
                             monkeypatch,
                             my_mocks,
                             ):
-   """ Tests for "convert_edf_session"
-   """
+    """ Tests for "convert_edf_session"
+    """
 
-   def _get_physio_data(fname):
+    def _get_physio_data(fname):
        """ Function to return a MockPhysioData object
        """
-       return MockPhysioData(path=fname)
+        return MockPhysioData(path=fname)
 
-   def _get_event_data(fname):
-       """ Function to return a MockEventData object
-       """
-       return MockEventData(path=fname)
+    def _get_event_data(fname):
+        """ Function to return a MockEventData object
+            """
+        return MockEventData(path=fname)
 
     def _get_physio_acq_time(fname):
-   """ Mock a function to retrieve the physio acquisition time:
-       given the file name, it will be run number x TIME_BETWEEN_RUNS
-   """
-       try:
-           run_no = int(fname.split('_')[-1])
-       except ValueError:
-           raise FileNotFoundError('This is not a valid filename')
-       return timedelta(seconds=run_no * TIME_BETWEEN_RUNS)
+    """ Mock a function to retrieve the physio acquisition time:
+        given the file name, it will be run number x TIME_BETWEEN_RUNS
+    """
+        try:
+            run_no = int(fname.split('_')[-1])
+        except ValueError:
+            raise FileNotFoundError('This is not a valid filename')
+        return timedelta(seconds=run_no * TIME_BETWEEN_RUNS)
 
    # run convert_session:
     phys_files = ['phys_{}'.format(i) for i in range(N_RUNS)]
