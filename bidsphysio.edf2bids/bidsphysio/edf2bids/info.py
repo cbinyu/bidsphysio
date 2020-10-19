@@ -2,9 +2,9 @@
 need to also bump up the version of the dependencies
 """
 
-__version__ = "1.1.1"
-__author__ = "Pablo Velasco"
-__author_email__ = "pablo.velasco@nyu.edu"
+__version__ = "1.2.0"
+__author__ = "Chrysa Papadaniil"
+__author_email__ = "chrysa@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"
 __packagename__ = 'bidsphysio.edf2bids'
 __description__ = "EDF-to-BIDS Converter"
@@ -24,9 +24,9 @@ CLASSIFIERS = [
 PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
-    'bidsphysio.base>=1.1.1',
-    'bidsphysio.session>=1.1.1',
-    'bidsphysio.events>=1.1.1',
+    'bidsphysio.base>=1.2.0',
+    'bidsphysio.session>=1.2.0',
+    'bidsphysio.events>=1.2.0',
     'h5py>=2.9.0',
     'Cython>=0.29.13',
     'pandas>=1.1.0',
