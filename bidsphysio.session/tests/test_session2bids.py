@@ -320,8 +320,8 @@ def test_convert_edf_session(
     """
 
     def _get_physio_data(fname):
-       """ Function to return a MockPhysioData object
-       """
+        """ Function to return a MockPhysioData object
+        """
         return MockPhysioData(path=fname)
 
     def _get_event_data(fname):
