@@ -415,6 +415,21 @@ def test_get_trigger_timing(
         for idx, trig in enumerate(simulated_trigger_signal) if trig == 1
     ]
 
+def test_digitize_trigger(
+        myphysiodata,
+        myphysiodata_with_trigger,
+        myphysiodata_with_edf_trigger
+):
+    """   Tests for 'digitize_trigger'   """
+
+    # try it on a PhysioData without trigger signal:
+    with pytest.raises(ValueError) as e_info:
+        myphysiodata.get_trigger_timing()
+    assert str(e_info.value) == "'trigger' is not in list"
+
+    # try with physiodata_with_trigger
+    assert myphysiodata_with_edf_trigger.digitize_trigger() == myphysiodata_with_trigger
+
 
 def test_get_scanner_onset(
         myphysiodata,
