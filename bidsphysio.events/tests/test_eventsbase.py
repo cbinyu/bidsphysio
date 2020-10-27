@@ -54,7 +54,7 @@ def myeventdata(scope="module"):
     )
     
     myeventdata[1].type = 'str'
-    myeventdataevent[1].event = [get_random_string(LENGTH) for i in range(EVENT_SAMPLES_COUNT)]
+    myeventdata[1].event = [get_random_string(LENGTH) for i in range(EVENT_SAMPLES_COUNT)]
     
     return myeventdata
 
