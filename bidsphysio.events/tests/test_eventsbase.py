@@ -1,13 +1,11 @@
 """   Tests for the module "eventsbase.py"   """
 
-#Check if I need all these
 import copy
 from glob import glob
 import gzip
 import json
 import random
 import string
-from os import remove
 from os.path import join as pjoin
 
 import numpy as np
@@ -24,8 +22,7 @@ LENGTH = 8
 def get_random_string(length):
     letters = string.ascii_lowercase
     result_str = ''.join(random.choice(letters) for i in range(length))
-    #print("Random string of length", length, "is:", result_str)
-
+    return result_str
 
 ###   TESTS FOR CLASS "EventSignal"   ###
 
@@ -36,7 +33,7 @@ def myEvent(scope="module"):
     myEvent = EventSignal(
         label='simulated',
         event=EVENT_SAMPLES_COUNT * [0],
-        type='float'
+        type=None
     )
                             
     return myEvent
