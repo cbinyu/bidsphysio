@@ -53,8 +53,8 @@ def myeventdata(scope="module"):
         ) for l in LABELS]
     )
     
-    myeventdata[1].type = 'str'
-    myeventdata[1].event = [get_random_string(LENGTH) for i in range(EVENT_SAMPLES_COUNT)]
+    myeventdata.events[1].type = 'str'
+    myeventdata.events[1].event = [get_random_string(LENGTH) for i in range(EVENT_SAMPLES_COUNT)]
     
     return myeventdata
 
