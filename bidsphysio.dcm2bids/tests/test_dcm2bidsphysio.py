@@ -52,7 +52,7 @@ def test_main_args(
     # 1) "infile" doesn't exist:
     infile = str(tmpdir / 'boo.dcm')
     args = (
-        'dcm2bidsphysio -i {infile} -b {bp}'.format(
+        'dcm2bidsphysio -b {bp} -i {infile}'.format(
             infile=infile,
             bp=tmpdir / 'mydir' / 'foo'
         )
@@ -70,6 +70,14 @@ def test_main_args(
     d2bp.main()
     assert (tmpdir / 'mydir').exists()
     assert capfd.readouterr().out == 'mock_dcm2bids called\n'
+
+    # 3) "infile" contains more than one file:
+    args.append(
+        str(TESTS_DATA_PATH / 'samplePhysio+01+physio_test_01+00002.dcm')
+    )
+    monkeypatch.setattr(sys, 'argv',args)
+    # Make sure 'main' runs without errors:
+    assert d2bp.main() is None
 
 
 def test_parse_log():
@@ -92,10 +100,9 @@ def test_parse_log():
     simulated_string += '{t} PULS {s}\n'.format(t=expected_times[0], s=expected_signals[0])
     simulated_string += '{t} RESP {s}\n'.format(t=expected_times[1], s=expected_signals[1])
 
-    # generate a binary string, and parse it:
-    log_bytes = bytearray()
-    log_bytes.extend(simulated_string.encode())
-    waveform_name, t, s, dt = d2bp.parse_log(log_bytes)
+    # generate a string, line-by-line, and parse it:
+    physio_log_lines = simulated_string.splitlines()
+    waveform_name, t, s, dt = d2bp.parse_log(physio_log_lines)
 
     assert waveform_name == expected_LogDataType
     assert all(t == expected_times)
@@ -118,10 +125,9 @@ def test_parse_log():
     # a new volume:
     simulated_string += '1     0       {t}      foo    0\n'.format(t=expected_times[2])
 
-    # generate a binary string, and parse it:
-    log_bytes = bytearray()
-    log_bytes.extend(simulated_string.encode())
-    waveform_name, t, s, dt = d2bp.parse_log(log_bytes)
+    # generate a string, line-by-line, and parse it:
+    physio_log_lines = simulated_string.splitlines()
+    waveform_name, t, s, dt = d2bp.parse_log(physio_log_lines)
 
     assert waveform_name == expected_LogDataType
     assert all(t == expected_times)

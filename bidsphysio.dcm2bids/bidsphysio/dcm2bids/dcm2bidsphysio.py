@@ -71,89 +71,101 @@ from bidsphysio.base.bidsphysio import (PhysioSignal,
 
 
 def dcm2bids( physio_dcm, bids_prefix, verbose=False ):
-    # Create DICOM object
-    d = pydicom.dcmread(physio_dcm, stop_before_pixels=True)
 
-    # Extract data from Siemens spectroscopy tag (0x7fe1, 0x1010)
-    # Yields one long byte array
-    if [0x7fe1, 0x1010] in d:
-       physio_data = d[0x7fe1, 0x1010].value
+    # Because a physio DICOM file contains all of the physio channels, we can
+    # only handle a single DICOM file per bids_prefix. So check that we have
+    # either just a single DICOM file or one or more .log files:
+    if isinstance(physio_dcm, list):
+        if len(physio_dcm) > 1:
+            if len([f for f in physio_dcm if str(f).endswith('.dcm')]) > 0:
+                raise RuntimeError('dcm2bids can only take one DICOM file, since it contains all the physiology')
+            dcm_or_logs = 'LOGS'    # at this point, we know we have ".log" files.
+        elif len(physio_dcm) == 1:
+            physio_dcm = physio_dcm[0]
+            dcm_or_logs = 'DCM'
     else:
-        raise RuntimeError('Physiological data are not available or cannot be accessed from current input data: Element tag [0x7fe1, 0x1010] is missing.')
-
-    # Extract relevant info from header
-    n_points = len(physio_data)
-    n_rows = d.AcquisitionNumber
-
-    if (n_points % n_rows):
-        print('* Points (%d) is not an integer multiple of rows (%d) - exiting' % (n_points, n_rows))
-        sys.exit(-1)
-
-    n_cols = int(n_points / n_rows)
-
-    if (n_points % 1024):
-        print('* Columns (%d) is not an integer multiple of 1024 (%d) - exiting' % (n_cols, 1024))
-        sys.exit(-1)
-
-    n_waves = int(n_cols / 1024)
-    wave_len = int(n_points / n_waves)
+        # we don't have a list. Check if we have a single DICOM, or a single ".log" file.
+        if str(physio_dcm).endswith('.dcm'):
+            dcm_or_logs = 'DCM'
+        else:
+            dcm_or_logs = 'LOGS'
+            # make it a single-element list:
+            physio_dcm = [physio_dcm]
 
     # Init PhysioData object to hold physio signals and time of first trigger:
     physio = PhysioData()
     t_first_trigger = None
 
-    for wc in range(n_waves):
-        physio_label = ''
+    if dcm_or_logs == 'DCM':
+        # Create DICOM object
+        d = pydicom.dcmread(physio_dcm, stop_before_pixels=True)
+
+        # Extract data from Siemens spectroscopy tag (0x7fe1, 0x1010)
+        # Yields one long byte array
+        if [0x7fe1, 0x1010] in d:
+           physio_data = d[0x7fe1, 0x1010].value
+        else:
+            raise RuntimeError('Physiological data are not available or cannot be accessed from current input data: Element tag [0x7fe1, 0x1010] is missing.')
+
+        # Extract relevant info from header
+        n_points = len(physio_data)
+        n_rows = d.AcquisitionNumber
+
+        if (n_points % n_rows):
+            print('* Points (%d) is not an integer multiple of rows (%d) - exiting' % (n_points, n_rows))
+            sys.exit(-1)
+
+        n_cols = int(n_points / n_rows)
+
+        if (n_points % 1024):
+            print('* Columns (%d) is not an integer multiple of 1024 (%d) - exiting' % (n_cols, 1024))
+            sys.exit(-1)
+
+        n_waves = int(n_cols / 1024)
+        wave_len = int(n_points / n_waves)
+
+        for wc in range(n_waves):
+            physio_label = ''
         
-        if verbose:
-            print('')
-            print('Parsing waveform %d' % wc)
+            if verbose:
+                print('')
+                print('Parsing waveform %d' % wc)
 
-        offset = wc * wave_len
+            offset = wc * wave_len
 
-        wave_data = physio_data[slice(offset, offset+wave_len)]
+            wave_data = physio_data[slice(offset, offset+wave_len)]
 
-        data_len = int.from_bytes(wave_data[0:4], byteorder=sys.byteorder)
-        fname_len = int.from_bytes(wave_data[4:8], byteorder=sys.byteorder)
-        fname = wave_data[slice(8, 8+fname_len)]
+            data_len = int.from_bytes(wave_data[0:4], byteorder=sys.byteorder)
+            fname_len = int.from_bytes(wave_data[4:8], byteorder=sys.byteorder)
+            fname = wave_data[slice(8, 8+fname_len)]
 
-        if verbose:
-            print('Data length     : %d' % data_len)
-            print('Filename length : %d' % fname_len)
-            print('Filename        : %s' % fname)
+            if verbose:
+                print('Data length     : %d' % data_len)
+                print('Filename length : %d' % fname_len)
+                print('Filename        : %s' % fname)
 
-        # Extract waveform log byte data
-        log_bytes = wave_data[slice(1024, 1024+data_len)]
+            # Extract waveform log byte data
+            log_bytes = wave_data[slice(1024, 1024+data_len)]
+            # Convert from a bytes literal to a UTF-8 encoded string, ignoring errors; split lines:
+            physio_log_lines = log_bytes.decode('utf-8', 'ignore').splitlines()
 
-        # Parse waveform log
-        waveform_name, t, s, dt = parse_log(log_bytes, verbose=verbose)
+            # Parse physio_log_lines
+            waveform_name, t, s, dt = parse_log(physio_log_lines, verbose=verbose)
+            physio_label, physio_signal, t_first_trigger = to_physiosignal(waveform_name, t, s, dt)
+            if physio_label:
+                physio.append_signal(physio_signal)
 
-        # specify suffix:
-        if 'PULS' in waveform_name:
-            physio_label = 'cardiac'
+    elif dcm_or_logs == 'LOGS':
 
-        elif 'RESP' in waveform_name:
-            physio_label = 'respiratory'            
+        # read the log files:
+        for f in physio_dcm:
+            physio_log_lines = [line.rstrip() for line in open(f)]
 
-        elif "ACQUISITION_INFO" in waveform_name:
-            physio_label = 'trigger'
-            # We only care about the trigger for each volume, so keep only
-            #   the timepoints for which the trigger signal is 1:
-            t = t[np.where(s==1)]
-            s = np.full( len(t), True )
-            # time for the first trigger:
-            t_first_trigger = t[0]/1000
-
-        if physio_label:
-            physio.append_signal(
-                PhysioSignal(
-                    label=physio_label,
-                    samples_per_second=1000/dt,         # dt is in ms.
-                    sampling_times=t/1000,
-                    physiostarttime=t[0]/1000,
-                    signal=s
-                )
-            )
+            # Parse physio_log_lines
+            waveform_name, t, s, dt = parse_log(physio_log_lines, verbose=verbose)
+            physio_label, physio_signal, t_first_trigger = to_physiosignal(waveform_name, t, s, dt)
+            if physio_label:
+                physio.append_signal(physio_signal)
 
     # We do this after we have read all signals to make sure we have read the trigger
     #   (if present in the file)
@@ -166,16 +178,9 @@ def dcm2bids( physio_dcm, bids_prefix, verbose=False ):
     physio.save_to_bids_with_trigger( bids_prefix )
 
     return
-    
 
 
-def parse_log(log_bytes, verbose=False):
-
-    # Convert from a bytes literal to a UTF-8 encoded string, ignoring errors
-    physio_string = log_bytes.decode('utf-8', 'ignore')
-
-    # CMRR DICOM physio log has \n separated lines
-    physio_lines = physio_string.splitlines()
+def parse_log(physio_log, verbose=False):
 
     # Init parameters and lists
     uuid = "UNKNOWN"
@@ -186,7 +191,7 @@ def parse_log(log_bytes, verbose=False):
     header_read = False
     vol = ''
 
-    for line in physio_lines:
+    for line in physio_log:
 
         # Divide the line at whitespace
         parts = line.split()
@@ -232,7 +237,6 @@ def parse_log(log_bytes, verbose=False):
                         vol = parts[0]
                         s_list.append(1)
 
-
     if verbose:
         print('UUID            : %s' % uuid)
         print('Scan date       : %s' % scan_date)
@@ -242,25 +246,59 @@ def parse_log(log_bytes, verbose=False):
     return waveform_name, np.array(t_list), np.array(s_list), dt
 
 
+def to_physiosignal(waveform_name, t, s, dt):
+
+    t_first_trigger = None
+
+    # specify suffix:
+    if 'PULS' in waveform_name:
+        physio_label = 'cardiac'
+
+    elif 'RESP' in waveform_name:
+        physio_label = 'respiratory'
+
+    elif "ACQUISITION_INFO" in waveform_name:
+        physio_label = 'trigger'
+        # We only care about the trigger for each volume, so keep only
+        #   the timepoints for which the trigger signal is 1:
+        t = t[np.where(s == 1)]
+        s = np.full(len(t), True)
+        # time for the first trigger:
+        t_first_trigger = t[0] / 1000
+
+    physio_signal = PhysioSignal(
+                label=physio_label,
+                samples_per_second=1000 / dt,  # dt is in ms.
+                sampling_times=t / 1000,
+                physiostarttime=t[0] / 1000,
+                signal=s
+            )
+    return physio_label, physio_signal, t_first_trigger
+
+
 def main():
 
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Convert DICOM physiology files to BIDS-compliant physiology recording')
-    parser.add_argument('-i', '--infile', required=True, help='CMRR physio DICOM file')
-    parser.add_argument('-b', '--bidsprefix', required=True, help='Prefix of the BIDS file. It should match the _bold.nii.gz')
+    parser.add_argument('-i', '--infiles', nargs='+', required=True, help='CMRR physio DICOM file or log files')
+    parser.add_argument('-b', '--bidsprefix', required=True,
+                        help='Prefix of the BIDS file. It should match the _bold.nii.gz')
     parser.add_argument('-v', '--verbose', action="store_true", default=False, help='verbose screen output')
     args = parser.parse_args()
 
-    # make sure input file exists:
-    if not os.path.exists(args.infile):
-        raise FileNotFoundError( '{i} file not found'.format(i=args.infile))
+    # make sure input files exist:
+    for infile in args.infiles:
+        if not os.path.exists(infile):
+            raise FileNotFoundError( '{i} file not found'.format(i=infile))
 
     # make sure output directory exists:
     odir = os.path.dirname(args.bidsprefix)
-    if not os.path.exists(odir):
-        os.makedirs(odir)
+    if odir:
+        if not os.path.exists(odir):
+            os.makedirs(odir)
 
-    dcm2bids( args.infile, args.bidsprefix, verbose=args.verbose )
+    dcm2bids( args.infiles, args.bidsprefix, verbose=args.verbose )
+
 
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
