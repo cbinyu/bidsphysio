@@ -24,7 +24,7 @@ CLASSIFIERS = [
 PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
-    'bidsphysio.base >= 1.2.0',
+    'bidsphysio.base >= 1.1.1',
 ]
 
 TESTS_REQUIRES = [
