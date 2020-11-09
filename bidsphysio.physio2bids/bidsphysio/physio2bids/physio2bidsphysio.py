@@ -75,7 +75,7 @@ def main():
             raise FileNotFoundError( '{i} file not found'.format(i=infile))
 
     # check that the input file is recognized (check extension):
-    knownExtensions = ['dcm', 'puls', 'resp', 'acq']
+    knownExtensions = ['dcm', 'puls', 'resp', 'acq', 'log']
     allowedExtensions = knownExtensions
     for infile in args.infiles:
         fileExtension = infile.split('.')[-1]
