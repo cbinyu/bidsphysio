@@ -160,7 +160,7 @@ class PhysioSignal(object):
                 (self.signal[:i+1], [missing_value], self.signal[i+1:])
             )
             # check to see if we are done:
-            i = np.argmax( np.ediff1d(self.sampling_times) > dt )
+            i = np.argmax( np.ediff1d(self.sampling_times) > dt*(1.001) )
 
         self.samples_count = len( self.signal )
 
