@@ -202,6 +202,31 @@ def simulated_trigger_signal(scope="module"):
 
     return trigger_signal
 
+@pytest.fixture
+def simulated_edf_trigger_signal(scope="module"):
+    """
+    Simulates some recordings for the scanner trigger, as parsed by pyedfread
+    """
+    #TODO: Simulate an analog signal
+    
+    trigger_samples_per_tr = TRIGGER_SAMPLES_PER_SECOND * SCANNER_TR
+    physio_recoding_delay = PHYSIO_START_TIME - TRIGGER_START_TIME
+    first_trigger_delay = physio_recoding_delay + SCANNER_DELAY  # w.r.t. beginning of trigger recording
+    first_trigger_delay_in_samples = first_trigger_delay * TRIGGER_SAMPLES_PER_SECOND
+    # supposing the trigger recording ends at the same time as the physio recording:
+    trigger_recording_duration = physio_recoding_delay + PHYSIO_DURATION
+    trigger_samples_count = round(trigger_recording_duration * TRIGGER_SAMPLES_PER_SECOND)
+    
+    trigger_signal = trigger_samples_count * [4]  # initialize to fours
+    for i in range(trigger_samples_count):
+        sample_offset = i - first_trigger_delay_in_samples
+        if (sample_offset >= 0) and (sample_offset % trigger_samples_per_tr < 1):
+            trigger_signal[i] = 127
+
+    # Adding some noise (even though edf-recorded scanner triggers don't have it)
+    y = trigger_signal + np.random.random(trigger_samples_count) * 0.2
+
+    return trigger_signal
 
 @pytest.fixture
 def myphysiodata_with_trigger(
@@ -223,6 +248,25 @@ def myphysiodata_with_trigger(
     )
     return myphysiodata_with_trigger
 
+@pytest.fixture
+def myphysiodata_with_edf_trigger(
+        myphysiodata,
+        simulated_edf_trigger_signal,
+        scope="module"
+):
+    myphysiodata_with_edf_trigger = copy.deepcopy(myphysiodata)
+    
+    # add a trigger signal to the physiodata_with_trigger:
+    myphysiodata_with_edf_trigger.append_signal(
+        PhysioSignal(
+            label='trigger',
+            samples_per_second=TRIGGER_SAMPLES_PER_SECOND,
+            physiostarttime=TRIGGER_START_TIME,
+            neuralstarttime=TRIGGER_START_TIME,
+            signal=simulated_edf_trigger_signal
+        )
+    )
+    return myphysiodata_with_edf_trigger
 
 def test_physiodata_labels(
         myphysiodata
@@ -370,6 +414,21 @@ def test_get_trigger_timing(
         TRIGGER_START_TIME + idx / TRIGGER_SAMPLES_PER_SECOND
         for idx, trig in enumerate(simulated_trigger_signal) if trig == 1
     ]
+
+def test_digitize_trigger(
+        myphysiodata,
+        myphysiodata_with_trigger,
+        myphysiodata_with_edf_trigger
+):
+    """   Tests for 'digitize_trigger'   """
+
+    # try it on a PhysioData without trigger signal:
+    with pytest.raises(ValueError) as e_info:
+        myphysiodata.get_trigger_timing()
+    assert str(e_info.value) == "'trigger' is not in list"
+
+    # try with physiodata_with_trigger
+    assert myphysiodata_with_edf_trigger.digitize_trigger() == myphysiodata_with_trigger
 
 
 def test_get_scanner_onset(
