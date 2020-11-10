@@ -1,0 +1,7 @@
+# Travis-CI writes the paths in the coverage reports as:
+#     codecov.io/gh/cbinyu/bidsphysio/src/<commit_sha>/...
+# However, the path in GitHub is:
+#     github.com/cbinyu/bidsphysio/blob/<commit_sha>/...
+
+fixes:
+  - "src/::blob/"  # move path 
