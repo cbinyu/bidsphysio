@@ -24,8 +24,8 @@ CLASSIFIERS = [
 PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
-    'bidsphysio.base>=1.2.0',
-    'bidsphysio.session>=1.2.0',
+    'bidsphysio.base>=1.1.1',
+    'bidsphysio.session>=1.1.1',
     'bioread[mat]>=2.0.0',
 ]
 
