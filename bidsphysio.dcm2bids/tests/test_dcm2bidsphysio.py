@@ -151,9 +151,10 @@ def test_dcm2bids(
     import json
     import gzip
 
-    infile = str(TESTS_DATA_PATH / 'samplePhysio+02+physio_test+00001.dcm')
     outbids = str(tmpdir / 'mydir' / 'bids')
 
+    # 1) Single DICOM infile:
+    infile = str(TESTS_DATA_PATH / 'samplePhysio+02+physio_test+00001.dcm')
     args = (
         'dcm2bidsphysio -i {infile} -b {bp} -v'.format(
             infile=str(infile),
@@ -195,3 +196,35 @@ def test_dcm2bids(
                 for expected_line, written_line in zip (expected, f):
                     assert expected_line == written_line
 
+    # 2) Two DICOM infiles: It should give an error:
+    infiles = [str(TESTS_DATA_PATH / 'samplePhysio+02+physio_test+00001.dcm'),
+               str(TESTS_DATA_PATH / 'samplePhysio+01+physio_test_01+00002.dcm')]
+    args = (
+        'dcm2bidsphysio -i {infile} -b {bp} -v'.format(
+            infile=" ".join(infiles),
+            bp=outbids
+        )
+    ).split(' ')
+    monkeypatch.setattr(sys, 'argv',args)
+
+    with pytest.raises(RuntimeError) as e_info:
+        d2bp.main()
+    assert 'dcm2bids can only take one DICOM file' in str(e_info.value)
+
+    # 3) Multiple .log infiles:
+    infiles = [str(TESTS_DATA_PATH / 'Physio_Info.log'),
+               str(TESTS_DATA_PATH / 'Physio_RESP.log'),
+               str(TESTS_DATA_PATH / 'Physio_PULS.log')]
+    args = (
+        'dcm2bidsphysio -i {infile} -b {bp} -v'.format(
+            infile=" ".join(infiles),
+            bp=outbids
+        )
+    ).split(' ')
+    monkeypatch.setattr(sys, 'argv',args)
+    d2bp.main()
+    # Check that we have as many signals as expected (2 in this case):
+    json_files = sorted(Path(tmpdir / 'mydir').glob('*.json'))
+    data_files = sorted(Path(tmpdir / 'mydir').glob('*.tsv*'))
+    assert len(json_files) == 2
+    assert len(data_files) == 2

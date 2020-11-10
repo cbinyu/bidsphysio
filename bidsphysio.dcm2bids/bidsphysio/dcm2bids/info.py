@@ -24,7 +24,7 @@ CLASSIFIERS = [
 PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
-    'bidsphysio.base >= 1.1.1',
+    'bidsphysio.base >= 1.3.0',
     'numpy >= 1.17.1',
     'pydicom >= 1.4.1',
 ]

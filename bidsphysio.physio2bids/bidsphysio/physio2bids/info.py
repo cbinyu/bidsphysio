@@ -2,7 +2,7 @@
 need to also bump up the version of the dependencies
 """
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 __author__ = "Pablo Velasco"
 __author_email__ = "pablo.velasco@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"
