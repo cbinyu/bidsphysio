@@ -19,5 +19,4 @@ script:
   - for d in bidsphysio.*; do pytest --cov=$d --cov-append $d; done
 
 after_success:
-  - [ -f $d ] && cat $d
   - codecov
