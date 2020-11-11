@@ -6,7 +6,7 @@ from pathlib import Path
 def check_bidsphysio_outputs(outPrefix,
                              expectedPhysioLabels,
                              expectedFrequencies,
-                             expectedDelay,
+                             expectedDelays,
                              expectedDataFilePrefix,
                              ):
     """
@@ -19,10 +19,12 @@ def check_bidsphysio_outputs(outPrefix,
         E.g.: '/tmp/mydir/sub-01_task-rest'
     expectedPhysioLabels : list
         List with the expected physio labels
-    expectedFrequencies : list
-        List of the expected frequencies for the recordings (in Hz.)
-    expectedDelay : float
-        Expected delay for the physio signals (in sec.)
+    expectedFrequencies : list or float
+        List with the expected frequencies for the recordings (in Hz.)
+        If it is the same for all expectedPhysioLabels, it can be a float
+    expectedDelays : list or float
+        List with the expected delay for the physio signals (in sec.)
+        If it is the same for all expectedPhysioLabels, it can be a float
     expectedDataFilePrefix : Path or str or None
         Prefix of the path to the file with the expected data
         (If we don't need to check the results, set to None)
@@ -37,17 +39,19 @@ def check_bidsphysio_outputs(outPrefix,
     if not isinstance(expectedPhysioLabels, list):
         expectedPhysioLabels = [expectedPhysioLabels]
     if not isinstance(expectedFrequencies, list):
-        expectedFrequencies = [expectedFrequencies]
+        expectedFrequencies = [expectedFrequencies] * len(expectedPhysioLabels)
+    if not isinstance(expectedDelays, list):
+        expectedDelays = [expectedDelays] * len(expectedPhysioLabels)
 
     json_files = sorted(outPrefix.parent.glob('*.json'))
     data_files = sorted(outPrefix.parent.glob('*.tsv*'))
     assert len(json_files) == len(data_files) == len(expectedPhysioLabels)
 
-    for label, expFreq in zip(expectedPhysioLabels, expectedFrequencies):
+    for label, expFreq, expDelay in zip(expectedPhysioLabels, expectedFrequencies, expectedDelays):
         if len(expectedPhysioLabels) == 1:
             expectedFileBaseName = Path(outPrefix).name + '_physio'
         else:
-            expectedFileBaseName = Path(str(outPrefix) + '_recording-' + label + '_physio').name
+            expectedFileBaseName = Path(str(outPrefix) + '_recording-' + ''.join(label) + '_physio').name
         expectedFileName = outPrefix.parent / expectedFileBaseName
         assert expectedFileName.with_suffix('.json') in json_files
         assert expectedFileName.with_suffix('.tsv.gz') in data_files
@@ -60,7 +64,7 @@ def check_bidsphysio_outputs(outPrefix,
                     assert c in label or c == 'trigger'
             else:
                 assert d['Columns'] == [label, 'trigger']
-            assert d['StartTime'] == expectedDelay
+            assert d['StartTime'] == expDelay
             assert d['SamplingFrequency'] == expFreq
 
         # check content of the tsv file:
@@ -68,7 +72,7 @@ def check_bidsphysio_outputs(outPrefix,
             if len(expectedPhysioLabels) == 1:
                 expectedDataFile = expectedDataFilePrefix
             else:
-                expectedDataFile = str(expectedDataFilePrefix) + label + '.tsv'
+                expectedDataFile = str(expectedDataFilePrefix) + ''.join(label) + '.tsv'
             with open(expectedDataFile, 'rt') as expected, \
                     gzip.open(expectedFileName.with_suffix('.tsv.gz'), 'rt') as f:
                 for expected_line, written_line in zip(expected, f):

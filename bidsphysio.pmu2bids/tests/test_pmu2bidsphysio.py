@@ -8,6 +8,7 @@ import sys
 import pytest
 
 from bidsphysio.pmu2bids import pmu2bidsphysio as p2bp
+from bidsphysio.base.utils import check_bidsphysio_outputs
 from .utils import TESTS_DATA_PATH
 
 '''
@@ -396,28 +397,8 @@ def test_pmu2bids(
     assert capfd.readouterr().out != 'mock_pmu2bids called\n'
 
     # Check that we have as many signals as expected (2 in this case):
-    json_files = sorted(Path(tmpdir / 'mydir').glob('*.json'))
-    data_files = sorted(Path(tmpdir / 'mydir').glob('*.tsv*'))
-    assert len(json_files) == len(data_files) == 2
-
-    for s in ['respiratory', 'cardiac']:
-        expectedFileBaseName = Path(outbids).name + '_recording-' + s + '_physio'
-        expectedFileName = tmpdir / 'mydir' / expectedFileBaseName
-        assert (expectedFileName + '.json') in json_files
-        assert (expectedFileName + '.tsv.gz') in data_files
-
-        # check content of the json file:
-        with open(expectedFileName + '.json') as f:
-            d = json.load(f)
-            assert d['Columns'] == [s]
-            if s == 'respiratory':
-                assert d['StartTime'] == 38973660
-            elif s == 'cardiac':
-                assert d['StartTime'] == 39008572
-            assert d['SamplingFrequency'] == 400
-
-        # check content of the tsv file:
-        with open(TESTS_DATA_PATH / ('pmu_VE11C_' + s + '.tsv'), 'rt') as expected, \
-                gzip.open(expectedFileName + '.tsv.gz', 'rt') as f:
-            for expected_line, written_line in zip(expected, f):
-                assert expected_line == written_line
+    check_bidsphysio_outputs(outbids,
+                             [['cardiac'], ['respiratory']],
+                             400,
+                             [39008572, 38973660],
+                             TESTS_DATA_PATH / 'pmu_VE11C_')

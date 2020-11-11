@@ -9,6 +9,7 @@ import pytest
 
 from bidsphysio.acq2bids import acq2bidsphysio as a2bp
 from bidsphysio.base.bidsphysio import PhysioData
+from bidsphysio.base.utils import check_bidsphysio_outputs
 from .utils import TESTS_DATA_PATH
 
 '''
@@ -105,30 +106,15 @@ def test_acq2bids(
     assert capfd.readouterr().out != 'mock_acq2bids called\n'
 
     # Check that we have as many signals as expected (1, for this file):
-    json_files = sorted(Path(tmpdir / 'mydir').glob('*.json'))
-    data_files = sorted(Path(tmpdir / 'mydir').glob('*.tsv*'))
-    assert len(json_files) == len(data_files) == 1
-
-    expectedFileBaseName = Path(outbids).name + '_physio'
-    expectedFileName = tmpdir / 'mydir' / expectedFileBaseName
-    assert (expectedFileName + '.json') in json_files
-    assert (expectedFileName + '.tsv.gz') in data_files
-
-    # check content of the json file:
-    expectedSignals = ['cardiac', 'respiratory', 'GSR', 'trigger']
-    with open(expectedFileName + '.json') as f:
-        d = json.load(f)
-        assert d['Columns'] == expectedSignals
-        for s in expectedSignals:
-            if s == 'GSR':
-                assert d[s]['Units'] == 'microsiemens'
-            else:
-                assert d[s]['Units'] == 'Volts'
-        assert d['StartTime'] == 1583762929.924
-        assert d['SamplingFrequency'] == 500
-
-    # check content of the tsv file:
-    with open(TESTS_DATA_PATH / ('acq_physio.tsv'), 'rt') as expected, \
-            gzip.open(expectedFileName + '.tsv.gz', 'rt') as f:
-        for expected_line, written_line in zip(expected, f):
-            assert expected_line == written_line
+    check_bidsphysio_outputs(outbids,
+                             [['cardiac', 'respiratory', 'GSR']],
+                             500,
+                             1583762929.924,
+                             TESTS_DATA_PATH / 'acq_physio.tsv')
+    # with open(expectedFileName + '.json') as f:
+    #     d = json.load(f)
+    #     for s in expectedSignals:
+    #         if s == 'GSR':
+    #             assert d[s]['Units'] == 'microsiemens'
+    #         else:
+    #             assert d[s]['Units'] == 'Volts'
