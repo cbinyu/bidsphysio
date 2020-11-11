@@ -468,6 +468,7 @@ class PhysioData(object):
         # find the unique pairs of sampling rate and t_start (and indices),
         #   excluding the "trigger" signal (since we'll be interpolating the
         #   trigger to the other signals, if it has different sampling):
+        labels_no_trigger = [l for l in self.labels() if not l.lower() == 'trigger']
         unique_sr_ts, idx_un = np.unique(
             [[s.samples_per_second,s.t_start()] for s in self.signals if not s.label.lower() == 'trigger'],
             axis=0,
@@ -487,7 +488,7 @@ class PhysioData(object):
                 print('Saving physio data')
 
             else:
-                rec_label = self.signals[idx_un[idx]].label
+                rec_label = labels_no_trigger[idx_un[idx]]
                 rec_fName = '{0}_recording-{1}_physio'.format(self.bidsPrefix, rec_label)
                 print('Saving {0} waveform'.format(rec_label))
 
