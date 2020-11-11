@@ -9,6 +9,7 @@ from bidsphysio.acq2bids import acqsession2bids
 
 MOCK_MESSAGE = 'mock_convert_session called'
 
+
 ###   Fixtures   ###
 
 @pytest.fixture
@@ -19,6 +20,7 @@ def mock_conversion(monkeypatch):
        actually running anything: just the instructions in the runner
        before the call to session2bids.convert_session
     """
+
     def mock_convert_session(*args, **kwargs):
         print(MOCK_MESSAGE)
         pass
@@ -48,23 +50,23 @@ def test_main_args(
             sub='01'
         )
     ).split(' ')
-    monkeypatch.setattr(sys, 'argv',args)
+    monkeypatch.setattr(sys, 'argv', args)
     with pytest.raises(NotADirectoryError) as e_info:
         acqsession2bids.main()
     assert str(e_info.value).endswith(' folder not found')
     assert str(e_info.value).split(' folder not found')[0] == infolder
 
     # 2) "infolder" does exist, but output directory doesn't exist:
-    args[ args.index('-i')+1 ] = str(tmpdir)
-    monkeypatch.setattr(sys, 'argv',args)
+    args[args.index('-i') + 1] = str(tmpdir)
+    monkeypatch.setattr(sys, 'argv', args)
     with pytest.raises(NotADirectoryError) as e_info:
         acqsession2bids.main()
     assert str(e_info.value).endswith(' folder not found')
     assert str(e_info.value).split(' folder not found')[0] == bidsfolder
 
     # 3) both "infolder" and "bidsfolder" exist:
-    args[ args.index('-b')+1 ] = str(tmpdir)
-    monkeypatch.setattr(sys, 'argv',args)
+    args[args.index('-b') + 1] = str(tmpdir)
+    monkeypatch.setattr(sys, 'argv', args)
     acqsession2bids.main()
 
     # make sure we are not calling the mock_dcm2bidds, but the real one:

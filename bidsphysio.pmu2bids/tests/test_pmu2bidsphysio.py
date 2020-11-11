@@ -50,6 +50,7 @@ def mock_pmu2bidsphysio(monkeypatch):
        actually running anything: just the instructions in the runner
        before the call to pmu2bids
     """
+
     def mock_pmu2bids(*args, **kwargs):
         print('mock_pmu2bids called')
         return
@@ -62,6 +63,7 @@ def mock_readXXXXpmu_caller(monkeypatch):
     """
     Pretend we run readVE11Cpmu, readVB15Apmu or readVBXpmu, but do nothing
     """
+
     def mock_readXXXXpmu(*args, **kwargs):
         return
 
@@ -125,12 +127,12 @@ def test_getPMUtiming():
     """
 
     # 1) If the keywords are missing, the outputs should be 0
-    assert p2bp.getPMUtiming([]) == ([0,0], [0,0])
-    
+    assert p2bp.getPMUtiming([]) == ([0, 0], [0, 0])
+
     # 1) If the keywords are present, we should get them back (as int)
     LogStartMPCUTime = 39009937
     LogStopMPCUTime = 39019125
-    
+
     lines = [
         'LogStartMDHTime:  {0}'.format(STARTMDHTIME),
         'LogStopMDHTime:   {0}'.format(STOPMDHTIME),
@@ -140,8 +142,8 @@ def test_getPMUtiming():
     ]
 
     assert p2bp.getPMUtiming(lines) == (
-        [LogStartMPCUTime,LogStopMPCUTime],
-        [STARTMDHTIME,STOPMDHTIME]
+        [LogStartMPCUTime, LogStopMPCUTime],
+        [STARTMDHTIME, STOPMDHTIME]
     )
 
 
@@ -160,7 +162,7 @@ def test_readVE11Cpmu():
             physio_file
         )
     )
-    
+
     # 2) With the correct file format, you get the expected results:
     physio_file = str(TESTS_DATA_PATH / PMUVE11CFILE)
 
@@ -168,8 +170,8 @@ def test_readVE11Cpmu():
     assert physio_type == 'PULS'
     assert MDHTime == [STARTMDHTIME, STOPMDHTIME]
     assert sampling_rate == 400
-    with open( TESTS_DATA_PATH / ('pmu_VE11C_cardiac.tsv'),'rt' ) as expected:
-        for expected_line, returned_signal in zip (expected, physio_signal):
+    with open(TESTS_DATA_PATH / ('pmu_VE11C_cardiac.tsv'), 'rt') as expected:
+        for expected_line, returned_signal in zip(expected, physio_signal):
             assert float(expected_line) == returned_signal
 
 
@@ -196,8 +198,8 @@ def test_readVB15Apmu():
     assert physio_type == 'RESP'
     assert MDHTime == [57335095, 60647840]
     assert sampling_rate == 50
-    with open( TESTS_DATA_PATH / ('pmu_VB15A_respiratory.tsv'),'rt' ) as expected:
-        for expected_line, returned_signal in zip (expected, physio_signal):
+    with open(TESTS_DATA_PATH / ('pmu_VB15A_respiratory.tsv'), 'rt') as expected:
+        for expected_line, returned_signal in zip(expected, physio_signal):
             assert float(expected_line) == returned_signal
 
 
@@ -216,7 +218,7 @@ def test_readVBXpmu():
             physio_file
         )
     )
-    
+
     # 2) With the correct file format, you get the expected results:
     physio_file = str(TESTS_DATA_PATH / PMUVBXFILE)
 
@@ -224,8 +226,8 @@ def test_readVBXpmu():
     assert physio_type == 'PULSE'
     assert MDHTime == [47029710, 47654452]
     assert sampling_rate == 50
-    with open( TESTS_DATA_PATH / ('pmu_VBX_cardiac.tsv'),'rt' ) as expected:
-        for expected_line, returned_signal in zip (expected, physio_signal):
+    with open(TESTS_DATA_PATH / ('pmu_VBX_cardiac.tsv'), 'rt') as expected:
+        for expected_line, returned_signal in zip(expected, physio_signal):
             assert float(expected_line) == returned_signal
 
 
@@ -249,7 +251,7 @@ def test_main_args(
             bp=tmpdir / 'mydir' / 'foo'
         )
     ).split(' ')
-    monkeypatch.setattr(sys, 'argv',args)
+    monkeypatch.setattr(sys, 'argv', args)
     with pytest.raises(FileNotFoundError) as e_info:
         p2bp.main()
     assert str(e_info.value).endswith(' file not found')
@@ -257,8 +259,8 @@ def test_main_args(
 
     # 2) "infile" does exist, but output directory doesn't exist:
     #    The output directory should be created and the "pmu2bids" function should be called
-    args[ args.index('-i')+1 ] = str(TESTS_DATA_PATH / PMUVE11CFILE)
-    monkeypatch.setattr(sys, 'argv',args)
+    args[args.index('-i') + 1] = str(TESTS_DATA_PATH / PMUVE11CFILE)
+    monkeypatch.setattr(sys, 'argv', args)
     p2bp.main()
     assert (tmpdir / 'mydir').exists()
     assert capfd.readouterr().out == 'mock_pmu2bids called\n'
@@ -267,7 +269,7 @@ def test_main_args(
     args.append(
         str(TESTS_DATA_PATH / PMUVBXFILE)
     )
-    monkeypatch.setattr(sys, 'argv',args)
+    monkeypatch.setattr(sys, 'argv', args)
     # Make sure 'main' runs without errors:
     assert p2bp.main() is None
 
@@ -276,7 +278,7 @@ def test_testSamplingRate():
     """   Tests for testSamplingRate   """
 
     # 1) If the tolerance is wrong, we should get an error
-    for t in [ -0.5, 5]:
+    for t in [-0.5, 5]:
         with pytest.raises(ValueError) as err_info:
             p2bp.testSamplingRate(tolerance=t)
         assert str(err_info.value) == 'tolerance has to be between 0 and 1. Got ' + str(t)
@@ -286,18 +288,18 @@ def test_testSamplingRate():
     #    Note that the logTimes are in ms, and the sampling rate in samples per sec
     with pytest.raises(ValueError) as err_info:
         p2bp.testSamplingRate(
-            sampling_rate = 1,
-            Nsamples = 100,
-            logTimes = [0, 10000]
+            sampling_rate=1,
+            Nsamples=100,
+            logTimes=[0, 10000]
         )
     assert 'sampling rate' in str(err_info.value)
 
     # 3) If the sampling rate is correct (within the default tolerance),
     #    we should NOT get an error:
     assert p2bp.testSamplingRate(
-        sampling_rate = 10,
-        Nsamples = 99,
-        logTimes = [0, 10000]
+        sampling_rate=10,
+        Nsamples=99,
+        logTimes=[0, 10000]
     ) is None
 
 
@@ -385,7 +387,7 @@ def test_pmu2bids(
             bp=outbids
         )
     ).split(' ')
-    monkeypatch.setattr(sys, 'argv',args)
+    monkeypatch.setattr(sys, 'argv', args)
 
     # call "main" (which will create the output dir and call "pmu2bids"):
     p2bp.main()
@@ -396,9 +398,9 @@ def test_pmu2bids(
     # Check that we have as many signals as expected (2 in this case):
     json_files = sorted(Path(tmpdir / 'mydir').glob('*.json'))
     data_files = sorted(Path(tmpdir / 'mydir').glob('*.tsv*'))
-    assert len(json_files)==len(data_files)==2
+    assert len(json_files) == len(data_files) == 2
 
-    for s in ['respiratory','cardiac']:
+    for s in ['respiratory', 'cardiac']:
         expectedFileBaseName = Path(outbids).name + '_recording-' + s + '_physio'
         expectedFileName = tmpdir / 'mydir' / expectedFileBaseName
         assert (expectedFileName + '.json') in json_files
@@ -415,8 +417,7 @@ def test_pmu2bids(
             assert d['SamplingFrequency'] == 400
 
         # check content of the tsv file:
-        with open( TESTS_DATA_PATH / ('pmu_VE11C_' + s + '.tsv'),'rt' ) as expected, \
-            gzip.open(expectedFileName + '.tsv.gz','rt') as f:
-                for expected_line, written_line in zip (expected, f):
-                    assert expected_line == written_line
-
+        with open(TESTS_DATA_PATH / ('pmu_VE11C_' + s + '.tsv'), 'rt') as expected, \
+                gzip.open(expectedFileName + '.tsv.gz', 'rt') as f:
+            for expected_line, written_line in zip(expected, f):
+                assert expected_line == written_line

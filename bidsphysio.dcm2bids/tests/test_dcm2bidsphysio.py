@@ -117,7 +117,7 @@ def test_main_args(
             bp=tmpdir / 'mydir' / 'foo'
         )
     ).split(' ')
-    monkeypatch.setattr(sys, 'argv',args)
+    monkeypatch.setattr(sys, 'argv', args)
     with pytest.raises(FileNotFoundError) as e_info:
         d2bp.main()
     assert str(e_info.value).endswith(' file not found')
@@ -125,8 +125,8 @@ def test_main_args(
 
     # 2) "infile" does exist, but output directory doesn't exist:
     #    The output directory should be created and the "dcm2bids" function should be called
-    args[ args.index('-i')+1 ] = str(TESTS_DATA_PATH / 'samplePhysio+02+physio_test+00001.dcm')
-    monkeypatch.setattr(sys, 'argv',args)
+    args[args.index('-i') + 1] = str(TESTS_DATA_PATH / 'samplePhysio+02+physio_test+00001.dcm')
+    monkeypatch.setattr(sys, 'argv', args)
     d2bp.main()
     assert (tmpdir / 'mydir').exists()
     assert capfd.readouterr().out == 'mock_dcm2bids called\n'
@@ -135,7 +135,7 @@ def test_main_args(
     args.append(
         str(TESTS_DATA_PATH / 'samplePhysio+01+physio_test_01+00002.dcm')
     )
-    monkeypatch.setattr(sys, 'argv',args)
+    monkeypatch.setattr(sys, 'argv', args)
     # Make sure 'main' runs without errors:
     assert d2bp.main() is None
 
@@ -219,7 +219,7 @@ def test_dcm2bids(
             bp=outbids
         )
     ).split(' ')
-    monkeypatch.setattr(sys, 'argv',args)
+    monkeypatch.setattr(sys, 'argv', args)
 
     # call "main" (which will create the output dir and call "dcm2bids"):
     d2bp.main()
@@ -240,7 +240,7 @@ def test_dcm2bids(
             bp=outbids
         )
     ).split(' ')
-    monkeypatch.setattr(sys, 'argv',args)
+    monkeypatch.setattr(sys, 'argv', args)
 
     with pytest.raises(RuntimeError) as e_info:
         d2bp.main()
@@ -257,7 +257,7 @@ def test_dcm2bids(
             bp=outbids
         )
     ).split(' ')
-    monkeypatch.setattr(sys, 'argv',args)
+    monkeypatch.setattr(sys, 'argv', args)
     d2bp.main()
 
     # Check that we have as many signals as expected (2 in this case)

@@ -21,6 +21,7 @@ TO-DO:
   changing the tests in this file
 '''
 
+
 ###   Fixtures   ###
 
 @pytest.fixture
@@ -31,12 +32,12 @@ def mock_acq2bidsphysio(monkeypatch):
        actually running anything: just the instructions in the runner
        before the call to acq2bids
     """
+
     def mock_acq2bids(*args, **kwargs):
         print('mock_acq2bids called')
         return PhysioData()
 
     monkeypatch.setattr(a2bp, "acq2bids", mock_acq2bids)
-
 
 
 ###   Tests   ###
@@ -60,7 +61,7 @@ def test_main_args(
             bp=tmpdir / 'mydir' / 'foo'
         )
     ).split(' ')
-    monkeypatch.setattr(sys, 'argv',args)
+    monkeypatch.setattr(sys, 'argv', args)
     with pytest.raises(FileNotFoundError) as e_info:
         a2bp.main()
     assert str(e_info.value).endswith(' file not found')
@@ -68,8 +69,8 @@ def test_main_args(
 
     # 2) "infile" does exist, but output directory doesn't exist:
     #    The output directory should be created and the "acq2bids" function should be called
-    args[ args.index('-i')+1 ] = str(TESTS_DATA_PATH / 'sample.acq')
-    monkeypatch.setattr(sys, 'argv',args)
+    args[args.index('-i') + 1] = str(TESTS_DATA_PATH / 'sample.acq')
+    monkeypatch.setattr(sys, 'argv', args)
     a2bp.main()
     assert (tmpdir / 'mydir').exists()
     assert capfd.readouterr().out.startswith('mock_acq2bids called\n')
@@ -95,7 +96,7 @@ def test_acq2bids(
             tl='digital',
         )
     ).split(' ')
-    monkeypatch.setattr(sys, 'argv',args)
+    monkeypatch.setattr(sys, 'argv', args)
 
     # call "main" (which will create the output dir and call "acq2bids"):
     a2bp.main()
@@ -106,7 +107,7 @@ def test_acq2bids(
     # Check that we have as many signals as expected (1, for this file):
     json_files = sorted(Path(tmpdir / 'mydir').glob('*.json'))
     data_files = sorted(Path(tmpdir / 'mydir').glob('*.tsv*'))
-    assert len(json_files)==len(data_files)==1
+    assert len(json_files) == len(data_files) == 1
 
     expectedFileBaseName = Path(outbids).name + '_physio'
     expectedFileName = tmpdir / 'mydir' / expectedFileBaseName
@@ -127,8 +128,7 @@ def test_acq2bids(
         assert d['SamplingFrequency'] == 500
 
     # check content of the tsv file:
-    with open( TESTS_DATA_PATH / ('acq_physio.tsv'),'rt' ) as expected, \
-        gzip.open(expectedFileName + '.tsv.gz','rt') as f:
-            for expected_line, written_line in zip (expected, f):
-                assert expected_line == written_line
-
+    with open(TESTS_DATA_PATH / ('acq_physio.tsv'), 'rt') as expected, \
+            gzip.open(expectedFileName + '.tsv.gz', 'rt') as f:
+        for expected_line, written_line in zip(expected, f):
+            assert expected_line == written_line

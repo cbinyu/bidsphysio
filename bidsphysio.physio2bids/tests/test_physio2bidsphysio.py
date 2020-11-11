@@ -10,7 +10,6 @@ from bidsphysio.dcm2bids import dcm2bidsphysio as d2bp
 from bidsphysio.pmu2bids import pmu2bidsphysio as p2bp
 from .utils import TESTS_DATA_PATH
 
-
 ###   Globals   ###
 
 ACQFILE = 'sample.acq'
@@ -27,6 +26,7 @@ def mock_physio2bidsphysio_calls(monkeypatch):
     This allows us to test physio2bidsphysio.main without actually running
     the conversions
     """
+
     def mock_acq2bids(*args, **kwargs):
         print('mock_acq2bids called')
         for a in args:
@@ -72,29 +72,27 @@ def test_main(
             bp=bidsPrefix
         )
     ).split(' ')
-    monkeypatch.setattr(sys, 'argv',args)
+    monkeypatch.setattr(sys, 'argv', args)
 
     with pytest.raises(Exception) as e_info:
         physio2bidsphysio.main()
     assert str(e_info.value).endswith(' is not a known physio file extension.')
 
-
     # 2) "infile" doesn't exist:
     infile = str(tmpdir / 'boo.dcm')
-    args[ args.index('-i')+1 ] = infile         # use the new infile
-    monkeypatch.setattr(sys, 'argv',args)
+    args[args.index('-i') + 1] = infile  # use the new infile
+    monkeypatch.setattr(sys, 'argv', args)
 
     with pytest.raises(FileNotFoundError) as e_info:
         physio2bidsphysio.main()
     assert str(e_info.value).endswith(' file not found')
     assert str(e_info.value).split(' file not found')[0] == infile
 
-
     # 3) test all different known file types:
     for f in [ACQFILE, DCMFILE, PMUVE11CFILE]:
         infile = str(TESTS_DATA_PATH / f)
-        args[ args.index('-i')+1 ] = infile
-        monkeypatch.setattr(sys, 'argv',args)
+        args[args.index('-i') + 1] = infile
+        monkeypatch.setattr(sys, 'argv', args)
         physio2bidsphysio.main()
         out = capfd.readouterr().out
         printout, inarg, bidsarg, _ = out.split('\n')
@@ -105,30 +103,28 @@ def test_main(
     # also, check that the output folder is created:
     assert (tmpdir / 'mydir').exists()
 
-
     # 4) "infile" contains more than one file:
     # 4.1) It should fail for '.dcm' files:
-    args[ args.index('-i')+1 ] = str(TESTS_DATA_PATH / DCMFILE)
+    args[args.index('-i') + 1] = str(TESTS_DATA_PATH / DCMFILE)
     args.append(
         str(TESTS_DATA_PATH / DCMFILE)
     )
     # Note: we need to use the same file twice, because the extra file has to exist
-    monkeypatch.setattr(sys, 'argv',args)
+    monkeypatch.setattr(sys, 'argv', args)
     with pytest.raises(Exception) as e_info:
         physio2bidsphysio.main()
     assert 'Only one input file' in str(e_info.value)
-    
+
     # 4.2) It should work for '.acq' and PMU files:
     for multifile in [
-            [str(TESTS_DATA_PATH / ACQFILE), str(TESTS_DATA_PATH / ACQFILE)],
-            [str(TESTS_DATA_PATH / PMUVE11CFILE), str(TESTS_DATA_PATH / PMUVE11CFILE)]
+        [str(TESTS_DATA_PATH / ACQFILE), str(TESTS_DATA_PATH / ACQFILE)],
+        [str(TESTS_DATA_PATH / PMUVE11CFILE), str(TESTS_DATA_PATH / PMUVE11CFILE)]
     ]:
-        args[ args.index('-i')+1: ] = multifile
-        monkeypatch.setattr(sys, 'argv',args)
+        args[args.index('-i') + 1:] = multifile
+        monkeypatch.setattr(sys, 'argv', args)
         physio2bidsphysio.main()
         out = capfd.readouterr().out
         printout, inarg, bidsarg, _ = out.split('\n')
         assert 'mock_' in printout and '2bids called' in printout
         assert inarg == str(multifile)
         assert bidsarg == bidsPrefix
-
