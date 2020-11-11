@@ -1,5 +1,7 @@
 """   Tests for the module "dcm2bidsphysio.py"   """
 
+import gzip
+import json
 from pathlib import Path
 import sys
 
@@ -18,6 +20,7 @@ TO-DO:
   changing the tests in this file
 '''
 
+
 ###   Fixtures   ###
 
 @pytest.fixture
@@ -28,12 +31,69 @@ def mock_dcm2bidsphysio(monkeypatch):
        actually running anything: just the instructions in the runner
        before the call to dcm2bids
     """
+
     def mock_dcm2bids(*args, **kwargs):
         print('mock_dcm2bids called')
         return
 
     monkeypatch.setattr(d2bp, "dcm2bids", mock_dcm2bids)
 
+
+def check_outputs(outPrefix,
+                  expectedDelay,
+                  expectedCardiacFreq,
+                  expectedRespFreq,
+                  expectedFilePrefix,
+                  ):
+    """
+    Auxiliary function to check the output of running dcm2bids
+
+    Parameters
+    ----------
+    outPrefix : Path or str
+        Prefix of the path of the output of dcm2bids (the bidsprefix arg).
+        E.g.: '/tmp/mydir/sub-01_task-rest'
+    expectedDelay : float
+        Expected delay for the physio signals (in sec.)
+    expectedCardiacFreq : float
+        Expected frequency of the cardiac recording (in Hz.)
+    expectedRespFreq : float
+        Expected frequency of the respiratory recording (in Hz.)
+    expectedFilePrefix : Path or str or None
+        Prefix of the path to the file with the expected results
+        (If we don't need to check the results, set to None)
+
+    Returns
+    -------
+
+    """
+    outPrefix = Path(outPrefix)
+    json_files = sorted(outPrefix.parent.glob('*.json'))
+    data_files = sorted(outPrefix.parent.glob('*.tsv*'))
+    assert len(json_files) == len(data_files) == 2
+
+    for s in ['respiratory', 'cardiac']:
+        expectedFileBaseName = Path(str(outPrefix) + '_recording-' + s + '_physio')
+        expectedFileName = outPrefix.parent / expectedFileBaseName
+        assert expectedFileName.with_suffix('.json') in json_files
+        assert expectedFileName.with_suffix('.tsv.gz') in data_files
+
+        # check content of the json file:
+        with open(expectedFileName.with_suffix('.json')) as f:
+            d = json.load(f)
+            assert d['Columns'] == [s, 'trigger']
+            assert d['StartTime'] == expectedDelay
+            if s == 'respiratory':
+                assert d['SamplingFrequency'] == expectedRespFreq
+            elif s == 'cardiac':
+                assert d['SamplingFrequency'] == expectedCardiacFreq
+
+        # check content of the tsv file:
+        if expectedFilePrefix:
+            with open(str(expectedFilePrefix) + s + '.tsv', 'rt') as expected, \
+                    gzip.open(expectedFileName.with_suffix('.tsv.gz'), 'rt') as f:
+                for expected_line, written_line in zip(expected, f):
+                    assert expected_line == written_line
 
 
 ###   Tests   ###
@@ -148,9 +208,6 @@ def test_dcm2bids(
     We will call it by calling "main" to make sure the output directory
     is created, etc.
     """
-    import json
-    import gzip
-
     outbids = str(tmpdir / 'mydir' / 'bids')
 
     # 1) Single DICOM infile:
@@ -171,31 +228,7 @@ def test_dcm2bids(
     assert capfd.readouterr().out != 'mock_dcm2bids called\n'
 
     # Check that we have as many signals as expected (2, for this file):
-    json_files = sorted(Path(tmpdir / 'mydir').glob('*.json'))
-    data_files = sorted(Path(tmpdir / 'mydir').glob('*.tsv*'))
-    assert len(json_files) == len(data_files) == 2
-
-    for s in ['respiratory','cardiac']:
-        expectedFileBaseName = Path(outbids).name + '_recording-' + s + '_physio'
-        expectedFileName = tmpdir / 'mydir' / expectedFileBaseName
-        assert (expectedFileName + '.json') in json_files
-        assert (expectedFileName + '.tsv.gz') in data_files
-
-        # check content of the json file:
-        with open(expectedFileName + '.json') as f:
-            d = json.load(f)
-            assert d['Columns'] == [ s, 'trigger']
-            assert d['StartTime'] == -1.632
-            if s == 'respiratory':
-                assert d['SamplingFrequency'] == 125
-            elif s == 'cardiac':
-                assert d['SamplingFrequency'] == 500
-
-        # check content of the tsv file:
-        with open( TESTS_DATA_PATH / ('dcm_' + s + '.tsv'),'rt' ) as expected, \
-            gzip.open(expectedFileName + '.tsv.gz','rt') as f:
-                for expected_line, written_line in zip (expected, f):
-                    assert expected_line == written_line
+    check_outputs(outbids, -1.632, 500, 125, TESTS_DATA_PATH / 'dcm_')
 
     # 2) Two DICOM infiles: It should give an error:
     print('Testing two DICOM files...')
@@ -227,23 +260,6 @@ def test_dcm2bids(
     monkeypatch.setattr(sys, 'argv',args)
     d2bp.main()
 
-    # Check that we have as many signals as expected (2 in this case):
-    json_files = sorted(Path(tmpdir / 'mydir').glob('*.json'))
-    data_files = sorted(Path(tmpdir / 'mydir').glob('*.tsv*'))
-    assert len(json_files) == len(data_files) == 2
-
-    for s in ['respiratory','cardiac']:
-        expectedFileBaseName = Path(outbids).name + '_recording-' + s + '_physio'
-        expectedFileName = tmpdir / 'mydir' / expectedFileBaseName
-        assert (expectedFileName + '.json') in json_files
-        assert (expectedFileName + '.tsv.gz') in data_files
-
-        # check content of the json file:
-        with open(expectedFileName + '.json') as f:
-            d = json.load(f)
-            assert d['Columns'] == [s, 'trigger']
-            assert d['StartTime'] == -2.83
-            if s == 'respiratory':
-                assert d['SamplingFrequency'] == 125
-            elif s == 'cardiac':
-                assert d['SamplingFrequency'] == 500
+    # Check that we have as many signals as expected (2 in this case)
+    # (we don't check the content of the .tsv file):
+    check_outputs(outbids, -2.83, 500, 125, None)
