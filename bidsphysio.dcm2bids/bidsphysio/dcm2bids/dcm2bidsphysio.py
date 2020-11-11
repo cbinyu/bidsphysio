@@ -151,7 +151,8 @@ def dcm2bids( physio_dcm, bids_prefix, verbose=False ):
 
             # Parse physio_log_lines
             waveform_name, t, s, dt = parse_log(physio_log_lines, verbose=verbose)
-            physio_label, physio_signal, t_first_trigger = to_physiosignal(waveform_name, t, s, dt)
+            physio_label, physio_signal, first_trigger_this_waveform = to_physiosignal(waveform_name, t, s, dt)
+            t_first_trigger = t_first_trigger or first_trigger_this_waveform
             if physio_label:
                 physio.append_signal(physio_signal)
 
@@ -163,7 +164,8 @@ def dcm2bids( physio_dcm, bids_prefix, verbose=False ):
 
             # Parse physio_log_lines
             waveform_name, t, s, dt = parse_log(physio_log_lines, verbose=verbose)
-            physio_label, physio_signal, t_first_trigger = to_physiosignal(waveform_name, t, s, dt)
+            physio_label, physio_signal, first_trigger_this_waveform = to_physiosignal(waveform_name, t, s, dt)
+            t_first_trigger = t_first_trigger or first_trigger_this_waveform
             if physio_label:
                 physio.append_signal(physio_signal)
 
