@@ -154,6 +154,7 @@ def test_dcm2bids(
     outbids = str(tmpdir / 'mydir' / 'bids')
 
     # 1) Single DICOM infile:
+    print('Testing a single DICOM file...')
     infile = str(TESTS_DATA_PATH / 'samplePhysio+02+physio_test+00001.dcm')
     args = (
         'dcm2bidsphysio -i {infile} -b {bp} -v'.format(
@@ -172,7 +173,7 @@ def test_dcm2bids(
     # Check that we have as many signals as expected (2, for this file):
     json_files = sorted(Path(tmpdir / 'mydir').glob('*.json'))
     data_files = sorted(Path(tmpdir / 'mydir').glob('*.tsv*'))
-    assert len(json_files)==len(data_files)==2
+    assert len(json_files) == len(data_files) == 2
 
     for s in ['respiratory','cardiac']:
         expectedFileBaseName = Path(outbids).name + '_recording-' + s + '_physio'
@@ -197,6 +198,7 @@ def test_dcm2bids(
                     assert expected_line == written_line
 
     # 2) Two DICOM infiles: It should give an error:
+    print('Testing two DICOM files...')
     infiles = [str(TESTS_DATA_PATH / 'samplePhysio+02+physio_test+00001.dcm'),
                str(TESTS_DATA_PATH / 'samplePhysio+01+physio_test_01+00002.dcm')]
     args = (
@@ -212,19 +214,36 @@ def test_dcm2bids(
     assert 'dcm2bids can only take one DICOM file' in str(e_info.value)
 
     # 3) Multiple .log infiles:
+    print('Testing multiple ".log" files...')
     infiles = [str(TESTS_DATA_PATH / 'Physio_Info.log'),
                str(TESTS_DATA_PATH / 'Physio_RESP.log'),
                str(TESTS_DATA_PATH / 'Physio_PULS.log')]
     args = (
-        'dcm2bidsphysio -i {infile} -b {bp} -v'.format(
+        'dcm2bidsphysio -i {infile} -b {bp}'.format(
             infile=" ".join(infiles),
             bp=outbids
         )
     ).split(' ')
     monkeypatch.setattr(sys, 'argv',args)
     d2bp.main()
+
     # Check that we have as many signals as expected (2 in this case):
     json_files = sorted(Path(tmpdir / 'mydir').glob('*.json'))
     data_files = sorted(Path(tmpdir / 'mydir').glob('*.tsv*'))
-    assert len(json_files) == 2
-    assert len(data_files) == 2
+    assert len(json_files) == len(data_files) == 2
+
+    for s in ['respiratory','cardiac']:
+        expectedFileBaseName = Path(outbids).name + '_recording-' + s + '_physio'
+        expectedFileName = tmpdir / 'mydir' / expectedFileBaseName
+        assert (expectedFileName + '.json') in json_files
+        assert (expectedFileName + '.tsv.gz') in data_files
+
+        # check content of the json file:
+        with open(expectedFileName + '.json') as f:
+            d = json.load(f)
+            assert d['Columns'] == [s, 'trigger']
+            assert d['StartTime'] == -2.83
+            if s == 'respiratory':
+                assert d['SamplingFrequency'] == 125
+            elif s == 'cardiac':
+                assert d['SamplingFrequency'] == 500
