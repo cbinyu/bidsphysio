@@ -79,7 +79,7 @@ def main():
     allowedExtensions = knownExtensions
     for infile in args.infiles:
         fileExtension = infile.split('.')[-1]
-        if not fileExtension in allowedExtensions:
+        if fileExtension not in allowedExtensions:
             raise Exception("{fe} is not a known physio file extension.".format(fe=fileExtension))
         else:
             # For now, all files need to be of the same type. To do that,
@@ -91,14 +91,17 @@ def main():
 
     # make sure output directory exists:
     odir = os.path.dirname(args.bidsprefix)
-    if not os.path.exists(odir):
-        os.makedirs(odir)
+    if odir:
+        if not os.path.exists(odir):
+            os.makedirs(odir)
 
     # depending on the allowedExtension, call the XXX2bids method of corresponding module:
     if allowedExtensions == 'dcm':
         if len(args.infiles) > 1:
             raise Exception('Only one input file is allowed for DICOM physio files')
-        d2bp.dcm2bids( args.infiles[0], args.bidsprefix, verbose=args.verbose )
+        d2bp.dcm2bids( args.infiles, args.bidsprefix, verbose=args.verbose )
+    elif allowedExtensions == 'log':
+        d2bp.dcm2bids(args.infiles, args.bidsprefix, verbose=args.verbose)
     elif allowedExtensions == 'acq':
         a2bp.acq2bids( args.infiles, args.bidsprefix )
     elif allowedExtensions == ['puls','resp']:
