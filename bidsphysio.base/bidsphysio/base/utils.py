@@ -7,7 +7,7 @@ def check_bidsphysio_outputs(outPrefix,
                              expectedPhysioLabels,
                              expectedFrequencies,
                              expectedDelay,
-                             expectedFilePrefix,
+                             expectedDataFilePrefix,
                              ):
     """
     Auxiliary function to check the output of running dcm2bids
@@ -19,15 +19,15 @@ def check_bidsphysio_outputs(outPrefix,
         E.g.: '/tmp/mydir/sub-01_task-rest'
     expectedPhysioLabels : list
         List with the expected physio labels
+    expectedFrequencies : list
+        List of the expected frequencies for the recordings (in Hz.)
     expectedDelay : float
         Expected delay for the physio signals (in sec.)
-    expectedCardiacFreq : float
-        Expected frequency of the cardiac recording (in Hz.)
-    expectedRespFreq : float
-        Expected frequency of the respiratory recording (in Hz.)
-    expectedFilePrefix : Path or str or None
-        Prefix of the path to the file with the expected results
+    expectedDataFilePrefix : Path or str or None
+        Prefix of the path to the file with the expected data
         (If we don't need to check the results, set to None)
+        If there is only one expectedPhysioLabel, the expectedDataFilePrefix
+        must be the whols file path (including extension)
 
     Returns
     -------
@@ -44,7 +44,10 @@ def check_bidsphysio_outputs(outPrefix,
     assert len(json_files) == len(data_files) == len(expectedPhysioLabels)
 
     for label, expFreq in zip(expectedPhysioLabels, expectedFrequencies):
-        expectedFileBaseName = Path(str(outPrefix) + '_recording-' + label + '_physio')
+        if len(expectedPhysioLabels) == 1:
+            expectedFileBaseName = Path(outPrefix).name + '_physio'
+        else:
+            expectedFileBaseName = Path(str(outPrefix) + '_recording-' + label + '_physio').name
         expectedFileName = outPrefix.parent / expectedFileBaseName
         assert expectedFileName.with_suffix('.json') in json_files
         assert expectedFileName.with_suffix('.tsv.gz') in data_files
@@ -52,13 +55,21 @@ def check_bidsphysio_outputs(outPrefix,
         # check content of the json file:
         with open(expectedFileName.with_suffix('.json')) as f:
             d = json.load(f)
-            assert d['Columns'] == [label, 'trigger']
+            if isinstance(label, list):
+                for c in d['Columns']:
+                    assert c in label or c == 'trigger'
+            else:
+                assert d['Columns'] == [label, 'trigger']
             assert d['StartTime'] == expectedDelay
             assert d['SamplingFrequency'] == expFreq
 
         # check content of the tsv file:
-        if expectedFilePrefix:
-            with open(str(expectedFilePrefix) + label + '.tsv', 'rt') as expected, \
+        if expectedDataFilePrefix:
+            if len(expectedPhysioLabels) == 1:
+                expectedDataFile = expectedDataFilePrefix
+            else:
+                expectedDataFile = str(expectedDataFilePrefix) + label + '.tsv'
+            with open(expectedDataFile, 'rt') as expected, \
                     gzip.open(expectedFileName.with_suffix('.tsv.gz'), 'rt') as f:
                 for expected_line, written_line in zip(expected, f):
                     assert expected_line == written_line
