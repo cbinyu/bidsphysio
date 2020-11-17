@@ -213,10 +213,13 @@ def parse_log(physio_log, verbose=False):
                 waveform_name = p3
 
             if 'SampleTime' in p1:
-                dt = float(p3)
+                # 'SampleTime' is in units of 2.5 ms
+                # 'dt' is in ms:
+                dt = 2.5 * float(p3)
 
             if 'PULS' in p2 or 'RESP' in p2:
-                t_list.append(int(p1))
+                # The times are in multiples of 2.5 ms
+                t_list.append(2.5 * int(p1))
                 # in principle, these will also be int, but let's make them
                 #  float to support more general signals:
                 s_list.append(float(p3))
@@ -230,7 +233,8 @@ def parse_log(physio_log, verbose=False):
                     header_read = True
                 elif parts[4] == '0':
                     # (we only save trigger data for the first echo: the other echoes are the same)
-                    t_list.append(int(parts[2]))
+                    # The times are in multiples of 2.5 ms
+                    t_list.append(2.5 * int(parts[2]))
                     if parts[0] == vol:
                         # same volume as before:
                         s_list.append(0)

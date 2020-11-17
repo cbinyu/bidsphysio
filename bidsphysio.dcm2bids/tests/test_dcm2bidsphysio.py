@@ -106,9 +106,9 @@ def test_parse_log():
     waveform_name, t, s, dt = d2bp.parse_log(physio_log_lines)
 
     assert waveform_name == expected_LogDataType
-    assert all(t == expected_times)
+    assert all(t == [2.5 * e for e in expected_times])    # the "SampleTime" is in units of 2.5 ms
     assert all(s == expected_signals)
-    assert dt == expected_SampleTime
+    assert dt == 2.5 * expected_SampleTime   # the "SampleTime" is in units of 2.5 ms
 
     ###   Test trigger signal   ###
     expected_LogDataType = 'ACQUISITION_INFO'
@@ -131,9 +131,9 @@ def test_parse_log():
     waveform_name, t, s, dt = d2bp.parse_log(physio_log_lines)
 
     assert waveform_name == expected_LogDataType
-    assert all(t == expected_times)
+    assert all(t == [2.5 * e for e in expected_times])    # the "SampleTime" is in units of 2.5 ms
     assert all(s == expected_signals)
-    assert dt == expected_SampleTime
+    assert dt == 2.5 * expected_SampleTime   # the "SampleTime" is in units of 2.5 ms
 
     # Note: if parse_log tried to incorrectly add the "don't log this: repeated echo"
     #       as time, it would give a "ValueError: invalid literal for int() with base 10"
@@ -171,8 +171,8 @@ def test_dcm2bids(
     # Check that we have as many signals as expected (2, for this file):
     check_bidsphysio_outputs(outbids,
                              ['cardiac', 'respiratory'],
-                             [500, 125],
-                             -1.632,
+                             [200, 50],
+                             -4.082,
                              TESTS_DATA_PATH / 'dcm_')
 
     # 2) Two DICOM infiles: It should give an error:
@@ -209,6 +209,6 @@ def test_dcm2bids(
     # (we don't check the content of the .tsv file):
     check_bidsphysio_outputs(outbids,
                              ['cardiac', 'respiratory'],
-                             [500, 125],
-                             -2.83,
+                             [200, 50],
+                             -7.077,
                              None)
