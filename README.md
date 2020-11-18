@@ -23,8 +23,8 @@ physio2bidsphysio --infile 07+epi_MB4_2mm_Physio+00001.dcm      \
  * `<physiofiles>` space-separated files with the physiological recordings.
  
     Supported file types:
-	 * `<.dcm>`: DICOM file with physiological recording from a CMRR
-     Multi-Band sequence (only a single file for this file type).
+	 * `<.dcm>` or `<.log>`: DICOM or log file with physiological recording from a CMRR
+     Multi-Band sequence (only a single file for `<.dcm>`).
 	 * `<.acq>`: AcqKnowledge file (BioPac).
 	 * `<.puls>` or `<.resp>`: Siemens PMU file (VB15A, VBX, VE11C).
 	 * (`<.edf>` (SR-Research) support coming soon...)
@@ -64,7 +64,7 @@ If you don't want to install the whole package, you can install individual subpa
 pip install bidsphysio.<sub-package>
 ```
 Available sub-packages are `acq2bids` (for `.acq` files),
-`dcm2bids` (for `.dcm` CMRR physiology files)
+`dcm2bids` (for `.dcm` and `.log` CMRR physiology files)
  and `pmu2bids` (for Siemens PMU files). 
 You can also install the base classes with the `bidsphysio.base` sub-package.
 
@@ -103,6 +103,8 @@ After installing the module using `pip` (see [above](https://github.com/cbinyu/b
 ```
 from bidsphysio.dcm2bids import dcm2bidsphysio
 dcm2bidsphysio.dcm2bids( dicom_file, prefix )
+# or:
+dcm2bidsphysio.dcm2bids( [log_files], prefix )
 ```
 or:
 ```
