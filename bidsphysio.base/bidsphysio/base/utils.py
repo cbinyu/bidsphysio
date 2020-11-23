@@ -2,6 +2,8 @@ import gzip
 import json
 from pathlib import Path
 
+import numpy as np
+
 
 def check_bidsphysio_outputs(outPrefix,
                              expectedPhysioLabels,
@@ -77,3 +79,44 @@ def check_bidsphysio_outputs(outPrefix,
                     gzip.open(expectedFileName.with_suffix('.tsv.gz'), 'rt') as f:
                 for expected_line, written_line in zip(expected, f):
                     assert expected_line == written_line
+
+
+def get_physio_TRs(bids_prefix):
+    """
+    Get the TRs from the triggers of BIDS physiology files
+
+    Parameters
+    ----------
+    outPrefix : Path or str
+        Prefix of the path of the BIDS physio files.
+        E.g.: '/tmp/mydir/sub-01_task-rest'
+
+    Returns
+    -------
+    TRs : list
+        List with the TRs of the files found
+
+    """
+    bids_prefix = Path(bids_prefix)
+
+    json_files = sorted(bids_prefix.parent.glob('*.json'))
+    data_files = sorted(bids_prefix.parent.glob('*.tsv*'))
+
+    TRs = []
+    for j_file, d_file in zip(json_files, data_files):
+        # check that we have a trigger column:
+        with open(j_file) as f:
+            d = json.load(f)
+            if 'trigger' not in d['Columns']:
+                pass
+            else:
+                trig_column = d['Columns'].index('trigger')
+                freq = d['SamplingFrequency']
+
+        # we have a trigger column:
+        # get the triggers from the data itself:
+        trigger = np.genfromtxt(fname=d_file, delimiter="\t")[:, trig_column]
+        tr = np.mean(np.diff(np.nonzero(trigger)) / freq)
+        TRs.append(tr)
+
+    return TRs

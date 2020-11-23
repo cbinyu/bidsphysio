@@ -1,11 +1,13 @@
 """   Tests for the module "dcm2bidsphysio.py"   """
 
 import sys
+import re
 
 import pytest
 
 from bidsphysio.dcm2bids import dcm2bidsphysio as d2bp
-from bidsphysio.base.utils import check_bidsphysio_outputs
+from bidsphysio.base.utils import (check_bidsphysio_outputs,
+                                   get_physio_TRs)
 from .utils import TESTS_DATA_PATH
 
 '''
@@ -212,3 +214,38 @@ def test_dcm2bids(
                              [200, 50],
                              -7.077,
                              None)
+
+
+def test_timing(
+        monkeypatch,
+        tmpdir,
+        capfd
+):
+    """
+    This test checks that the timing is OK.
+    It will read the physio signals from a DICOM file and save them as BIDS.
+    Then, from the trigger signal in the physio bids files, we'll estimate
+    the TR, and compare it with the actual TR.
+    """
+    outbids = str(tmpdir / 'mydir' / 'bids')
+
+    infile = str(TESTS_DATA_PATH / 'samplePhysio+02+physio_test+00001.dcm')
+    args = (
+        'dcm2bidsphysio -i {infile} -b {bp} -v'.format(
+            infile=str(infile),
+            bp=outbids
+        )
+    ).split(' ')
+    monkeypatch.setattr(sys, 'argv', args)
+
+    # call "main" (which will create the output dir and call "dcm2bids"):
+    d2bp.main()
+
+    # now, read the TR from the Siemens private header in the physio DICOM file:
+    d = d2bp.pydicom.dcmread(infile, stop_before_pixels=True)
+    header = d.get((0x0029, 0x1120)).value.decode(encoding='ISO-8859-1')
+    # TR in the private header is in micro-seconds
+    expected_TR = int(re.findall(r'alTR\[0\]\s+=\s+(\d+)', header)[0])/1000000
+
+    TRs = get_physio_TRs(outbids)
+    assert  all(TRs) == expected_TR
