@@ -92,6 +92,12 @@ class PhysioSignal(object):
         self.signal = signal
         self.samples_count = len( signal ) if signal is not [] else None
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        else:
+            return False
+
     def t_start( self ):
         """
         Computes the BIDS t_start (offset between the beginning of the neural signal and the beginning
@@ -200,11 +206,27 @@ class PhysioData(object):
         self.signals = signals if signals is not None else []
         self.bidsPrefix = bidsPrefix
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.signals == other.signals
+        else:
+            return False
+
     def labels(self):
         """
         Returns a list with the labels of all the object signals
         """
         return [ item.label for item in self.signals ]
+
+    def get_trigger_physiosignal(self):
+        """
+        Returns the Physiosignal for the trigger
+        """
+        # list all the signal labels:
+        signal_labels = [l.lower() for l in self.labels()]
+
+        # physiosignal object corresponding to the trigger:
+        return self.signals[signal_labels.index('trigger')]
 
     def append_signal(self, signal):
         """
@@ -356,11 +378,7 @@ class PhysioData(object):
         ------
         """
 
-        # list all the signal labels:
-        signal_labels = [l.lower() for l in self.labels()]
-
-        # physiosignal object corresponding to the trigger:
-        trig_physiosignal = self.signals[ signal_labels.index('trigger') ]
+        trig_physiosignal = self.get_trigger_physiosignal()
 
         # make sure we have the timing of the trigger samples; otherwise, calculate:
         if len(trig_physiosignal.sampling_times) == 0:
@@ -403,7 +421,7 @@ class PhysioData(object):
 
         # assign the digitized trigger signal back to the physiosignal object
         trig_physiosignal.signal = tmp_signal.tolist()
-        self.signals[ signal_labels.index('trigger') ] = trig_physiosignal
+        self.signals[ self.labels().index('trigger') ] = trig_physiosignal
 
     def get_trigger_timing(self):
         """
@@ -412,11 +430,7 @@ class PhysioData(object):
         the times for which the trigger signal is 1
         """
 
-        # list all the signal labels:
-        signal_labels = [l.lower() for l in self.labels()]
-
-        # PhysioSignal object corresponding to the trigger:
-        trig_physiosignal = self.signals[ signal_labels.index('trigger') ]
+        trig_physiosignal = self.get_trigger_physiosignal()
 
         # make sure we have the timing of the trigger samples; otherwise, calculate:
         if len(trig_physiosignal.sampling_times) == 0:
@@ -462,9 +476,6 @@ class PhysioData(object):
             if not self.bidsPrefix:
                 raise Exception('fileName was not a known provided')
 
-        # list all the signal labels:
-        signal_labels = [l.lower() for l in self.labels()]
-
         # Sanity check: make sure we have a "trigger" signal
         if 'trigger' not in self.labels():
             print("We cannot save with trigger because we found no trigger.")
@@ -473,7 +484,7 @@ class PhysioData(object):
 
         # From now on, we do have a trigger
         # PhysioSignal object corresponding to the trigger:
-        trig_physiosignal = self.signals[ signal_labels.index('trigger') ]
+        trig_physiosignal = self.get_trigger_physiosignal()
         t_trig = self.get_trigger_timing()
 
         # find the unique pairs of sampling rate and t_start (and indices),
