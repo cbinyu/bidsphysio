@@ -349,16 +349,19 @@ class PhysioData(object):
 
     def digitize_trigger(self, ignore_values=None):
         """
-        Finds the high and low states of a trigger channel and returns the timing of the received triggers.
-        It finds the first physiosignal labeled 'trigger' in the object and returns the times for which the trigger signal is high (a value of 1 means high, a value of 0 means low).
+        Finds the high and low states of a trigger channel and converts them
+        to ones (high) and zeros (low).
+
+        Return:
+        ------
         """
-        
+
         # list all the signal labels:
         signal_labels = [l.lower() for l in self.labels()]
-        
+
         # physiosignal object corresponding to the trigger:
         trig_physiosignal = self.signals[ signal_labels.index('trigger') ]
-        
+
         # make sure we have the timing of the trigger samples; otherwise, calculate:
         if len(trig_physiosignal.sampling_times) == 0:
             try:
@@ -366,31 +369,39 @@ class PhysioData(object):
             except Exception as e:
                 print(e)
                 return None
-        
+
         # check if we have any ignore_values, and if we do set them to NaN
         if ignore_values:
             for i in ignore_values:
                 trig_physiosignal.signal[trig_physiosignal.signal == i] = np.nan
-        
-        #make a histogram of trigger values with 10 bins between the min and max values
+
+        # make a histogram of trigger values with 10 bins between the min and
+        # max values
         tmp = np.array(trig_physiosignal.signal)
-        counts, bin_edges = np.histogram(tmp[~np.isnan(tmp)], bins=10, range=[min(trig_physiosignal.signal), max(trig_physiosignal.signal)])
-        
-        # find the middle values of the two bins with the most counts, we consider these two bins to contain the low a and high trigger values
+        counts, bin_edges = np.histogram(
+            tmp[~np.isnan(tmp)],
+            bins=10,
+            range=[min(trig_physiosignal.signal), max(trig_physiosignal.signal)]
+        )
+
+        # find the middle values of the two bins with the most counts, we
+        # consider these two bins to contain the low a and high trigger values
         first_bin = bin_edges[np.argmax(counts)] + (bin_edges[1]-bin_edges[0])/2
         counts[np.argmax(counts)]=0
         second_bin = bin_edges[np.argmax(counts)] + (bin_edges[1]-bin_edges[0])/2
-        
-        # define the cuttoff threshold as the mean value between the low and high values (the middle of the corresponding bins), and convert the high states to 1s and the low states to 0s
-        threshold=(first_bin + second_bin)/2
-        
-        #digitize
+
+        # define the cuttoff threshold as the mean value between the low and
+        # high values (the middle of the corresponding bins), and convert the
+        # high states to 1s and the low states to 0s
+        threshold = (first_bin + second_bin)/2
+
+        # digitize
         tmp_signal = tmp
         tmp_signal[tmp<threshold] = 0
         tmp_signal[tmp>threshold] = 1
         tmp_signal[np.isnan(tmp)] = 0
-        
-        #assign the digitized trigger signal back to the physiosignal object
+
+        # assign the digitized trigger signal back to the physiosignal object
         trig_physiosignal.signal = tmp_signal.tolist()
         self.signals[ signal_labels.index('trigger') ] = trig_physiosignal
 
