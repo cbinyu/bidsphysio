@@ -34,6 +34,7 @@ def main():
         namespace_packages=['bidsphysio'],
         entry_points={'console_scripts': [
             'dcm2bidsphysio=bidsphysio.dcm2bids.dcm2bidsphysio:main',
+            'dcmsession2bids=bidsphysio.dcm2bids.dcmsession2bids:main',
         ]},
         python_requires=ldict['PYTHON_REQUIRES'],
         install_requires=ldict['REQUIRES'],
@@ -41,6 +42,7 @@ def main():
         package_data={
             'bidsphysio.dcm2bids.tests': [
                         op.join('data', '*.dcm'),
+                        op.join('data', '*.log'),
                         op.join('data', '*.tsv')
             ],
         }

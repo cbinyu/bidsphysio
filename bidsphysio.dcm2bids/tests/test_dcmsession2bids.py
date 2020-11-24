@@ -1,11 +1,11 @@
-"""   Tests for the module "acqsession2bids.py"   """
+"""   Tests for the module "dcmsession2bids.py"   """
 
 import sys
 
 import pytest
 
 from bidsphysio.session import session2bids
-from bidsphysio.acq2bids import acqsession2bids
+from bidsphysio.dcm2bids import dcmsession2bids
 
 MOCK_MESSAGE = 'mock_convert_session called'
 
@@ -44,7 +44,7 @@ def test_main_args(
     infolder = str(tmpdir / 'boo')
     bidsfolder = str(tmpdir / 'mybidsdir')
     args = (
-        'acqsession2bids -i {infolder} -b {bf} -s {sub} --overwrite'.format(
+        'dcmsession2bids -i {infolder} -b {bf} -s {sub} --overwrite'.format(
             infolder=infolder,
             bf=bidsfolder,
             sub='01'
@@ -52,7 +52,7 @@ def test_main_args(
     ).split(' ')
     monkeypatch.setattr(sys, 'argv', args)
     with pytest.raises(NotADirectoryError) as e_info:
-        acqsession2bids.main()
+        dcmsession2bids.main()
     assert str(e_info.value).endswith(' folder not found')
     assert str(e_info.value).split(' folder not found')[0] == infolder
 
@@ -60,14 +60,14 @@ def test_main_args(
     args[args.index('-i') + 1] = str(tmpdir)
     monkeypatch.setattr(sys, 'argv', args)
     with pytest.raises(NotADirectoryError) as e_info:
-        acqsession2bids.main()
+        dcmsession2bids.main()
     assert str(e_info.value).endswith(' folder not found')
     assert str(e_info.value).split(' folder not found')[0] == bidsfolder
 
     # 3) both "infolder" and "bidsfolder" exist:
     args[args.index('-b') + 1] = str(tmpdir)
     monkeypatch.setattr(sys, 'argv', args)
-    acqsession2bids.main()
+    dcmsession2bids.main()
 
     # make sure we are calling the mock_conversion:
     assert capfd.readouterr().out == MOCK_MESSAGE + '\n'
