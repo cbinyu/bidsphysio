@@ -82,6 +82,7 @@ class MockPhysioData(object):
     def __init__(self, path=''):
         self.path = path
         self.scanner_onset = JITTER_FACTOR * random.random()
+        self.signals = []
 
     def get_scanner_onset(self):
         return self.scanner_onset
