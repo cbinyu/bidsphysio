@@ -8,7 +8,7 @@ The module is file type agnostic, so it can be used for AcqKnowledge
 files, Eye-link files (.edf), etc. The module relies on the calling
 function extracting the timing of the onsets of the different
 scanner runs. The module will then find the best time delay between
-the physilogical files and the imaging files.
+the physiological files and the imaging files.
 
 Methods related to saving the physiological files (either as BIDS or
 just compressed) are part of this module too, since the call can be
@@ -27,6 +27,8 @@ import pandas as pd
 import numpy as np
 import nibabel as nib
 import matplotlib.pyplot as plt
+
+from bidsphysio.base.bidsphysio import PhysioData
 
 
 def compress_physio(physio_file, out_prefix, get_physio_acq_time, overwrite):
@@ -390,6 +392,22 @@ def convert_session(physio_files, bids_dir, sub, ses=None,
     rel_file_times = [(f - min(file_times)).total_seconds() for f in file_times]
 
     physio_data = [get_physio_data(f) for f in physio_files]
+
+    # It might happen that different log files correspond to the same run. To
+    # group all the PhysioData corresponding to the same run into a single
+    # one, we check the UUID.
+    # Note: use set comprehension to keep just unique elements. Then, make
+    # it a list to be able to use the "index" method.
+    uuids = list({s.uuid for d in physio_data for s in d.signals if s.uuid})
+    if len(uuids):
+        # if there are no s.uuid (they are all None), uuids will be an empty
+        # list, and we don't need to run the following
+        grouped_physio_data = [PhysioData()] * len(uuids)
+        for d in physio_data:
+            for s in d.signals:
+                idx = uuids.index(s.uuid)
+                grouped_physio_data[idx].append_signal(s)
+        physio_data = grouped_physio_data
 
     onsets_in_sec = [
         p.get_scanner_onset() + rt for p, rt in zip(physio_data, rel_file_times)

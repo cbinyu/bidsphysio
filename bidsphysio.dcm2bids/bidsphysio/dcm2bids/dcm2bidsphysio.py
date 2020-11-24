@@ -312,12 +312,12 @@ def to_physiosignal(uuid, waveform_name, t, s, dt):
 
     physio_signal = PhysioSignal(
                 label=physio_label,
+                uuid=uuid,
                 samples_per_second=1000 / dt,  # dt is in ms.
                 sampling_times=t / 1000,
                 physiostarttime=t[0] / 1000,
                 signal=s
             )
-    physio_signal.uuid = uuid
     return physio_label, physio_signal, t_first_trigger
 
 

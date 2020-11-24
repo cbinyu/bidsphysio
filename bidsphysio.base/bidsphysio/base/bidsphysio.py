@@ -54,6 +54,8 @@ class PhysioSignal(object):
     --------
     label : str
         physiological recording label (e.g., 'cardiac', 'respiratory', 'pulse', etc.)
+    uuid : str or None
+        Universally unique identifier (for the run which the signal comes from)
     units : str
     samples_per_second : number
     sampling_times : list of numbers
@@ -76,6 +78,7 @@ class PhysioSignal(object):
     def __init__(
             self,
             label=None,
+            uuid=None,
             units="",
             samples_per_second=None,
             sampling_times=[],
@@ -84,6 +87,7 @@ class PhysioSignal(object):
             signal=[]
             ):
         self.label = label
+        self.uuid = uuid
         self.units = units
         self.samples_per_second = samples_per_second
         self.sampling_times = sampling_times
