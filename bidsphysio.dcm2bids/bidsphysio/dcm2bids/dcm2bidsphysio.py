@@ -70,7 +70,23 @@ from bidsphysio.base.bidsphysio import (PhysioSignal,
                                         PhysioData)
 
 
-def dcm2bids( physio_dcm, bids_prefix, verbose=False ):
+def dcm2bids( physio_dcm, verbose=False ):
+    """Reads the physiological data from either a CMRR DICOM file or
+    from a series of CMRR .log files and stores it in a PhysioData
+    member.
+
+    Parameters
+    ----------
+    physio_dcm : list of str
+        List of paths of the original physio files (or single path)
+    verbose : bool
+        Verbose output flag.
+
+    Returns
+    -------
+    physio : PhysioData
+        PhysioData with the contents of the file
+    """
 
     # Because a physio DICOM file contains all of the physio channels, we can
     # only handle a single DICOM file per bids_prefix. So check that we have
@@ -176,10 +192,7 @@ def dcm2bids( physio_dcm, bids_prefix, verbose=False ):
         # we also fill with NaNs the places for which there is missing data:
         p_signal.plug_missing_data()
 
-    # Save files:
-    physio.save_to_bids_with_trigger( bids_prefix )
-
-    return
+    return physio
 
 
 def parse_log(physio_log, verbose=False):
@@ -328,7 +341,9 @@ def main():
         if not os.path.exists(odir):
             os.makedirs(odir)
 
-    dcm2bids( args.infiles, args.bidsprefix, verbose=args.verbose )
+    physio_data = dcm2bids(args.infiles, verbose=args.verbose)
+    if physio_data.labels():
+        physio_data.save_to_bids_with_trigger(args.bidsprefix)
 
 
 # This is the standard boilerplate that calls the main() function.

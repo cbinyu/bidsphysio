@@ -6,6 +6,7 @@ import re
 import pytest
 
 from bidsphysio.dcm2bids import dcm2bidsphysio as d2bp
+from bidsphysio.base.bidsphysio import PhysioData
 from bidsphysio.base.utils import (check_bidsphysio_outputs,
                                    get_physio_TRs)
 from .utils import (TESTS_DATA_PATH,
@@ -35,7 +36,7 @@ def mock_dcm2bidsphysio(monkeypatch):
 
     def mock_dcm2bids(*args, **kwargs):
         print('mock_dcm2bids called')
-        return
+        return PhysioData()
 
     monkeypatch.setattr(d2bp, "dcm2bids", mock_dcm2bids)
 
