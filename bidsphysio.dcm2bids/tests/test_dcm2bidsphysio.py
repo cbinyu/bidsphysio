@@ -113,8 +113,9 @@ def test_parse_log():
 
     # generate a string, line-by-line, and parse it:
     physio_log_lines = simulated_string.splitlines()
-    waveform_name, t, s, dt = d2bp.parse_log(physio_log_lines)
+    uuid, waveform_name, t, s, dt = d2bp.parse_log(physio_log_lines)
 
+    assert uuid == expected_uuid
     assert waveform_name == expected_LogDataType
     assert all(t == [2.5 * e for e in expected_times])    # the "SampleTime" is in units of 2.5 ms
     assert all(s == expected_signals)
@@ -138,7 +139,7 @@ def test_parse_log():
 
     # generate a string, line-by-line, and parse it:
     physio_log_lines = simulated_string.splitlines()
-    waveform_name, t, s, dt = d2bp.parse_log(physio_log_lines)
+    uuid, waveform_name, t, s, dt = d2bp.parse_log(physio_log_lines)
 
     assert waveform_name == expected_LogDataType
     assert all(t == [2.5 * e for e in expected_times])    # the "SampleTime" is in units of 2.5 ms

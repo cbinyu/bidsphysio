@@ -166,8 +166,8 @@ def dcm2bids( physio_dcm, verbose=False ):
             physio_log_lines = log_bytes.decode('utf-8', 'ignore').splitlines()
 
             # Parse physio_log_lines
-            waveform_name, t, s, dt = parse_log(physio_log_lines, verbose=verbose)
-            physio_label, physio_signal, first_trigger_this_waveform = to_physiosignal(waveform_name, t, s, dt)
+            uuid, waveform_name, t, s, dt = parse_log(physio_log_lines, verbose=verbose)
+            physio_label, physio_signal, first_trigger_this_waveform = to_physiosignal(uuid, waveform_name, t, s, dt)
             t_first_trigger = t_first_trigger or first_trigger_this_waveform
             if physio_label:
                 physio.append_signal(physio_signal)
@@ -179,8 +179,8 @@ def dcm2bids( physio_dcm, verbose=False ):
             physio_log_lines = [line.rstrip() for line in open(f)]
 
             # Parse physio_log_lines
-            waveform_name, t, s, dt = parse_log(physio_log_lines, verbose=verbose)
-            physio_label, physio_signal, first_trigger_this_waveform = to_physiosignal(waveform_name, t, s, dt)
+            uuid, waveform_name, t, s, dt = parse_log(physio_log_lines, verbose=verbose)
+            physio_label, physio_signal, first_trigger_this_waveform = to_physiosignal(uuid, waveform_name, t, s, dt)
             t_first_trigger = t_first_trigger or first_trigger_this_waveform
             if physio_label:
                 physio.append_signal(physio_signal)
@@ -262,7 +262,7 @@ def parse_log(physio_log, verbose=False):
         print('Waveform type   : %s' % waveform_name)
 
     # Return numpy arrays
-    return waveform_name, np.array(t_list), np.array(s_list), dt
+    return uuid, waveform_name, np.array(t_list), np.array(s_list), dt
 
 
 def get_acq_time(physio_file):
@@ -290,7 +290,7 @@ def get_acq_time(physio_file):
     return acq_time
 
 
-def to_physiosignal(waveform_name, t, s, dt):
+def to_physiosignal(uuid, waveform_name, t, s, dt):
 
     t_first_trigger = None
 
@@ -317,6 +317,7 @@ def to_physiosignal(waveform_name, t, s, dt):
                 physiostarttime=t[0] / 1000,
                 signal=s
             )
+    physio_signal.uuid = uuid
     return physio_label, physio_signal, t_first_trigger
 
 
