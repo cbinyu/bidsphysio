@@ -8,7 +8,8 @@ import pytest
 from bidsphysio.dcm2bids import dcm2bidsphysio as d2bp
 from bidsphysio.base.utils import (check_bidsphysio_outputs,
                                    get_physio_TRs)
-from .utils import TESTS_DATA_PATH
+from .utils import (TESTS_DATA_PATH,
+                    EXPECTED_ACQ_TIME)
 
 '''
 TO-DO:
@@ -81,6 +82,12 @@ def test_main_args(
     monkeypatch.setattr(sys, 'argv', args)
     # Make sure 'main' runs without errors:
     assert d2bp.main() is None
+
+
+def test_get_acq_time():
+    """   Test for get_acq_time   """
+    for f in TESTS_DATA_PATH.glob('*.log'):
+        assert d2bp.get_acq_time(f) == EXPECTED_ACQ_TIME
 
 
 def test_parse_log():

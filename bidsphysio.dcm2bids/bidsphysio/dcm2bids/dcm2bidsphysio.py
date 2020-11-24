@@ -252,6 +252,31 @@ def parse_log(physio_log, verbose=False):
     return waveform_name, np.array(t_list), np.array(s_list), dt
 
 
+def get_acq_time(physio_file):
+    """
+    Function to get the acquisition time of a '.log' file
+    Inputs:
+    ------
+    physio_file : str or Path
+        Name of the physio file
+
+    Returns:
+    -------
+    acq_time : float or None
+        Time of the beginning of the physiological acquisition
+    """
+    with open(physio_file,'r') as f:
+        for line in f:
+            if line.startswith('ScanDate'):
+                acq_date_time = line.rsplit()[-1]
+                break
+    if acq_date_time:
+        acq_time = float(acq_date_time.split('_')[-1])
+    else:
+        acq_time = None
+    return acq_time
+
+
 def to_physiosignal(waveform_name, t, s, dt):
 
     t_first_trigger = None
@@ -295,7 +320,7 @@ def main():
     # make sure input files exist:
     for infile in args.infiles:
         if not os.path.exists(infile):
-            raise FileNotFoundError( '{i} file not found'.format(i=infile))
+            raise FileNotFoundError('{i} file not found'.format(i=infile))
 
     # make sure output directory exists:
     odir = os.path.dirname(args.bidsprefix)
