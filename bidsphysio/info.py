@@ -1,14 +1,15 @@
 import os.path as op
 from os import scandir
 
-__version__ = "4.2.0"
+__version__ = "4.3.0"
 __author__ = "Pablo Velasco"
 __author_email__ = "pablo.velasco@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"
 __packagename__ = 'bidsphysio'
 __description__ = "Physio-to-BIDS Converter"
 __license__ = "MIT"
-__longdesc__ = """Converts physio data from either CMRR DICOM, Siemens PMU or AcqKnowledge file to BIDS physiological recording."""
+__longdesc__ = """Converts physio data from either CMRR DICOM, CMRR log, Siemens PMU
+ or AcqKnowledge file to BIDS physiological recording."""
 
 CLASSIFIERS = [
     'Environment :: Console',

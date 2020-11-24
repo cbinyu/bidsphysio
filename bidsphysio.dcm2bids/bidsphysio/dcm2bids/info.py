@@ -2,14 +2,14 @@
 need to also bump up the version of the dependencies
 """
 
-__version__ = "1.3.3"
+__version__ = "1.4.0"
 __author__ = "Pablo Velasco"
 __author_email__ = "pablo.velasco@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"
 __packagename__ = 'bidsphysio.dcm2bids'
 __description__ = "Physio-DICOM-to-BIDS Converter"
 __license__ = "MIT"
-__longdesc__ = """Converts physio data from a CMRR physiology DICOM file to BIDS physiological recording."""
+__longdesc__ = """Converts physio data from a CMRR physiology DICOM file or log file to BIDS physiological recording."""
 
 CLASSIFIERS = [
     'Environment :: Console',
@@ -24,7 +24,7 @@ CLASSIFIERS = [
 PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
-    'bidsphysio.base >= 1.3.3',
+    'bidsphysio.base >= 1.4.0',
     'numpy >= 1.17.1',
     'pydicom >= 1.4.1',
 ]

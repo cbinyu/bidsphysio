@@ -4,7 +4,7 @@ Purpose
 ----
 Read physio data and save as BIDS physiology recording file.
 Currently supported:
-- CMRR Multiband generated DICOM file
+- CMRR Multiband generated DICOM or log file
 - Acqknowledge file (BioPac)
 - Siemens PMU file (VB15A, VBX, VE11C)
 
@@ -20,6 +20,7 @@ Pablo Velasco, NYU Center for Brain Imaging
 Dates
 ----
 2020-04-08 PJV First version
+2020-11-24 PJV Adds support for CMRR log files
 
 References
 ----
