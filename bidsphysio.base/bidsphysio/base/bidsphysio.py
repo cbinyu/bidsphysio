@@ -120,7 +120,7 @@ class PhysioSignal(object):
         Calculate the recording timing, based on the physiostarttime
         and the sampling rate
         """
-        if self.samples_per_second == None or self.physiostarttime == None:
+        if self.samples_per_second is None or self.physiostarttime is None:
             raise ValueError('Unable to calculate the recording timing')
         else:
             self.sampling_times = [self.physiostarttime + i/self.samples_per_second for i in range(len(self.signal))]
@@ -141,7 +141,7 @@ class PhysioSignal(object):
         sampling_times = np.array(self.sampling_times)
         trig_signal = np.full( np.shape(self.signal), False )    # initialize to "False"
         for t in t_trig:
-            if t >= self.sampling_times[0] and t <= self.sampling_times[-1]:
+            if self.sampling_times[0] <= t <= self.sampling_times[-1]:
                 trig_signal[np.argmax( sampling_times >= t )] = True
         return trig_signal
 

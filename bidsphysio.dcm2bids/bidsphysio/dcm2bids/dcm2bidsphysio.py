@@ -70,7 +70,7 @@ from bidsphysio.base.bidsphysio import (PhysioSignal,
                                         PhysioData)
 
 
-def dcm2bids( physio_dcm, verbose=False ):
+def dcm2bids(physio_dcm, verbose=False):
     """Reads the physiological data from either a CMRR DICOM file or
     from a series of CMRR .log files and stores it in a PhysioData
     member.

@@ -101,10 +101,10 @@ def test_calculate_trigger_events(
     assert PhysioSignal(
         label='simulated',
         physiostarttime=PHYSIO_START_TIME
-    ).calculate_trigger_events(trigger_timing) == None
+    ).calculate_trigger_events(trigger_timing) is None
     assert capfd.readouterr().out == "Unable to calculate the recording timing\n"
 
-    # 2) Run it succesfully:
+    # 2) Run it successfully:
     # calculate trigger events:
     trig_signal = mySignal.calculate_trigger_events(trigger_timing)
 
