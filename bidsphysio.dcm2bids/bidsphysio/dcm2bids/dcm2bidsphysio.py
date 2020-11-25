@@ -141,8 +141,6 @@ def dcm2bids( physio_dcm, verbose=False ):
         wave_len = int(n_points / n_waves)
 
         for wc in range(n_waves):
-            physio_label = ''
-        
             if verbose:
                 print('')
                 print('Parsing waveform %d' % wc)
@@ -292,6 +290,7 @@ def get_acq_time(physio_file):
 
 def to_physiosignal(uuid, waveform_name, t, s, dt):
 
+    physio_label = ''
     t_first_trigger = None
 
     # specify suffix:
@@ -300,6 +299,9 @@ def to_physiosignal(uuid, waveform_name, t, s, dt):
 
     elif 'RESP' in waveform_name:
         physio_label = 'respiratory'
+
+    elif 'EXT' in waveform_name:
+        physio_label = 'external_trigger'
 
     elif "ACQUISITION_INFO" in waveform_name:
         physio_label = 'trigger'

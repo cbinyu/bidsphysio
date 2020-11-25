@@ -2,7 +2,7 @@
 need to also bump up the version of the dependencies
 """
 
-__version__ = "1.4.0"
+__version__ = "1.4.1"
 __author__ = "Pablo Velasco"
 __author_email__ = "pablo.velasco@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"
@@ -25,6 +25,7 @@ PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
     'bidsphysio.base >= 1.4.0',
+    'bidsphysio.session >= 1.4.0',
     'numpy >= 1.17.1',
     'pydicom >= 1.4.1',
 ]
