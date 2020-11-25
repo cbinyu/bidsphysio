@@ -24,7 +24,10 @@ RUN pip install pydicom==1.4.1 \
 ### copy module:
 ENV INSTALL_FOLDER=/src/bidsphysio
 COPY . ${INSTALL_FOLDER}
-RUN pip install ${INSTALL_FOLDER}[all]
+# Installing in the first place all the subpackages from source ensures that
+# they take precedence over versions in PyPI:
+RUN pip install ${INSTALL_FOLDER}/bidsphysio.* \
+    && pip install ${INSTALL_FOLDER}
 
 ENTRYPOINT ["/bin/bash"]
 
