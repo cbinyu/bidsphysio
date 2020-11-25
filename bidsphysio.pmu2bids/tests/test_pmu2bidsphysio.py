@@ -8,6 +8,7 @@ import sys
 import pytest
 
 from bidsphysio.pmu2bids import pmu2bidsphysio as p2bp
+from bidsphysio.base.bidsphysio import PhysioData
 from bidsphysio.base.utils import check_bidsphysio_outputs
 from .utils import TESTS_DATA_PATH
 
@@ -54,7 +55,7 @@ def mock_pmu2bidsphysio(monkeypatch):
 
     def mock_pmu2bids(*args, **kwargs):
         print('mock_pmu2bids called')
-        return
+        return PhysioData()
 
     monkeypatch.setattr(p2bp, "pmu2bids", mock_pmu2bids)
 

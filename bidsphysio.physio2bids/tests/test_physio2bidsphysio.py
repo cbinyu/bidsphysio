@@ -5,6 +5,7 @@ import sys
 import pytest
 
 from bidsphysio.physio2bids import physio2bidsphysio
+from bidsphysio.base.bidsphysio import PhysioData
 from bidsphysio.acq2bids import acq2bidsphysio as a2bp
 from bidsphysio.dcm2bids import dcm2bidsphysio as d2bp
 from bidsphysio.pmu2bids import pmu2bidsphysio as p2bp
@@ -31,16 +32,19 @@ def mock_physio2bidsphysio_calls(monkeypatch):
         print('mock_acq2bids called')
         for a in args:
             print(a)
+        return PhysioData()
 
     def mock_dcm2bids(*args, **kwargs):
         print('mock_dcm2bids called')
         for a in args:
             print(a)
+        return PhysioData()
 
     def mock_pmu2bids(*args, **kwargs):
         print('mock_pmu2bids called')
         for a in args:
             print(a)
+        return PhysioData()
 
     monkeypatch.setattr(a2bp, "acq2bids", mock_acq2bids)
     monkeypatch.setattr(d2bp, "dcm2bids", mock_dcm2bids)
@@ -95,10 +99,9 @@ def test_main(
         monkeypatch.setattr(sys, 'argv', args)
         physio2bidsphysio.main()
         out = capfd.readouterr().out
-        printout, inarg, bidsarg, _ = out.split('\n')
+        printout, inarg, _ = out.split('\n')
         assert 'mock_' in printout and '2bids called' in printout
         assert infile in inarg
-        assert bidsarg == bidsPrefix
 
     # also, check that the output folder is created:
     assert (tmpdir / 'mydir').exists()
@@ -124,7 +127,6 @@ def test_main(
         monkeypatch.setattr(sys, 'argv', args)
         physio2bidsphysio.main()
         out = capfd.readouterr().out
-        printout, inarg, bidsarg, _ = out.split('\n')
+        printout, inarg, _ = out.split('\n')
         assert 'mock_' in printout and '2bids called' in printout
         assert inarg == str(multifile)
-        assert bidsarg == bidsPrefix

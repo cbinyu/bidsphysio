@@ -73,7 +73,7 @@ def main():
     # make sure input files exist:
     for infile in args.infiles:
         if not os.path.exists(infile):
-            raise FileNotFoundError( '{i} file not found'.format(i=infile))
+            raise FileNotFoundError('{i} file not found'.format(i=infile))
 
     # check that the input file is recognized (check extension):
     knownExtensions = ['dcm', 'puls', 'resp', 'acq', 'log']
@@ -97,17 +97,20 @@ def main():
             os.makedirs(odir)
 
     # depending on the allowedExtension, call the XXX2bids method of corresponding module:
+    physio_data = None
     if allowedExtensions == 'dcm':
         if len(args.infiles) > 1:
             raise Exception('Only one input file is allowed for DICOM physio files')
-        d2bp.dcm2bids( args.infiles, args.bidsprefix, verbose=args.verbose )
+        physio_data = d2bp.dcm2bids(args.infiles, verbose=args.verbose)
     elif allowedExtensions == 'log':
-        d2bp.dcm2bids(args.infiles, args.bidsprefix, verbose=args.verbose)
+        physio_data = d2bp.dcm2bids(args.infiles, verbose=args.verbose)
     elif allowedExtensions == 'acq':
-        a2bp.acq2bids( args.infiles, args.bidsprefix )
-    elif allowedExtensions == ['puls','resp']:
-        p2bp.pmu2bids( args.infiles, args.bidsprefix, verbose=args.verbose )
+        physio_data = a2bp.acq2bids(args.infiles)
+    elif allowedExtensions == ['puls', 'resp']:
+        physio_data = p2bp.pmu2bids(args.infiles, verbose=args.verbose)
 
+    if physio_data.labels():
+        physio_data.save_to_bids_with_trigger(args.bidsprefix)
 
 
 # This is the standard boilerplate that calls the main() function.
