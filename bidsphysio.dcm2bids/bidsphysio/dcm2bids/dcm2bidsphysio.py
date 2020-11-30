@@ -209,31 +209,32 @@ def parse_log(physio_log, verbose=False):
         # Divide the line at whitespace
         parts = line.split()
 
-        # Data lines have the form "<tag> = <value>" or "<time> <name> <signal>"
-        if len(parts) == 3:
+        # Data lines have the form "<tag> = <value>" or "<time> <name/channel> <value>"
+        # Data lines with trigger have a forth column with "PULS_TRIGGER", which we can ignore
+        if len(parts) >= 3:
 
-            p1, p2, p3 = parts
+            p1, p2, p3 = parts[:3]
 
-            if 'UUID' in p1:
-                uuid = p3
-
-            if 'ScanDate' in p1:
-                scan_date = p3
-
-            if 'LogDataType' in p1:
-                waveform_name = p3
-
-            if 'SampleTime' in p1:
-                # 'SampleTime' is in units of 2.5 ms
-                # 'dt' is in ms:
-                dt = 2.5 * float(p3)
-
-            if 'PULS' in p2 or 'RESP' in p2:
+            if 'PULS' in p2 or 'RESP' in p2 or 'EXT' in p2:
                 # The times are in multiples of 2.5 ms
                 t_list.append(2.5 * int(p1))
                 # in principle, these will also be int, but let's make them
                 #  float to support more general signals:
                 s_list.append(float(p3))
+
+            elif 'UUID' in p1:
+                uuid = p3
+
+            elif 'ScanDate' in p1:
+                scan_date = p3
+
+            elif 'LogDataType' in p1:
+                waveform_name = p3
+
+            elif 'SampleTime' in p1:
+                # 'SampleTime' is in units of 2.5 ms
+                # 'dt' is in ms:
+                dt = 2.5 * float(p3)
 
         # Detect the scanner trigger by going through the ACQUISITION_INFO
         # and detecting when a new volume has been started:

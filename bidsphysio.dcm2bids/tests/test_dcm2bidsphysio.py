@@ -257,4 +257,4 @@ def test_timing(
     expected_TR = int(re.findall(r'alTR\[0\]\s+=\s+(\d+)', header)[0])/1000000
 
     TRs = get_physio_TRs(outbids)
-    assert  all(TRs) == expected_TR
+    assert all(TRs) == expected_TR
