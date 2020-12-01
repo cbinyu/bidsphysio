@@ -57,6 +57,7 @@ def check_bidsphysio_outputs(outPrefix,
 
         # check content of the tsv file:
         if expectedDataFilePrefix:
+            expectedDataFilePrefix = Path(expectedDataFilePrefix)
             if len(expectedPhysioLabels) == 1:
                 expectedDataFile = expectedDataFilePrefix.with_suffix('.tsv')
                 expectedJsonFile = expectedDataFilePrefix.with_suffix('.json')
