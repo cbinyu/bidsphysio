@@ -1,0 +1,8 @@
+{
+    "Columns": [
+        "external_trigger",
+        "trigger"
+    ],
+    "SamplingFrequency": 50.0,
+    "StartTime": -0.024
+}

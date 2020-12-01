@@ -70,15 +70,15 @@ def test_main_args(
 
     # 2) "infile" does exist, but output directory doesn't exist:
     #    The output directory should be created and the "dcm2bids" function should be called
-    args[args.index('-i') + 1] = str(TESTS_DATA_PATH / 'samplePhysio+02+physio_test+00001.dcm')
+    args[args.index('-i') + 1] = str(TESTS_DATA_PATH / 'samplePhysioCMRR.dcm')
     monkeypatch.setattr(sys, 'argv', args)
     d2bp.main()
     assert (tmpdir / 'mydir').exists()
     assert capfd.readouterr().out == 'mock_dcm2bids called\n'
 
-    # 3) "infile" contains more than one file:
+    # 3) "infile" contains more than one file (repeated, in this case):
     args.append(
-        str(TESTS_DATA_PATH / 'samplePhysio+01+physio_test_01+00002.dcm')
+        str(TESTS_DATA_PATH / 'samplePhysioCMRR.dcm')
     )
     monkeypatch.setattr(sys, 'argv', args)
     # Make sure 'main' runs without errors:
@@ -160,11 +160,11 @@ def test_dcm2bids(
     We will call it by calling "main" to make sure the output directory
     is created, etc.
     """
-    outbids = str(tmpdir / 'mydir' / 'bids')
+    outbids = str(tmpdir / 'dcm' / 'bids')
 
     # 1) Single DICOM infile:
     print('Testing a single DICOM file...')
-    infile = str(TESTS_DATA_PATH / 'samplePhysio+02+physio_test+00001.dcm')
+    infile = str(TESTS_DATA_PATH / 'samplePhysioCMRR.dcm')
     args = (
         'dcm2bidsphysio -i {infile} -b {bp} -v'.format(
             infile=str(infile),
@@ -181,15 +181,15 @@ def test_dcm2bids(
 
     # Check that we have as many signals as expected (2, for this file):
     check_bidsphysio_outputs(outbids,
-                             ['cardiac', 'respiratory'],
-                             [200, 50],
-                             -4.082,
+                             ['cardiac', 'respiratory', 'external_trigger'],
+                             [200, 50, 50],
+                             [-12.082, -12.082, -0.024],
                              TESTS_DATA_PATH / 'dcm_')
 
     # 2) Two DICOM infiles: It should give an error:
     print('Testing two DICOM files...')
-    infiles = [str(TESTS_DATA_PATH / 'samplePhysio+02+physio_test+00001.dcm'),
-               str(TESTS_DATA_PATH / 'samplePhysio+01+physio_test_01+00002.dcm')]
+    infiles = [str(TESTS_DATA_PATH / 'samplePhysioCMRR.dcm'),
+               str(TESTS_DATA_PATH / 'samplePhysioCMRR.dcm')]
     args = (
         'dcm2bidsphysio -i {infile} -b {bp} -v'.format(
             infile=" ".join(infiles),
@@ -207,6 +207,8 @@ def test_dcm2bids(
     infiles = [str(TESTS_DATA_PATH / 'Physio_Info.log'),
                str(TESTS_DATA_PATH / 'Physio_RESP.log'),
                str(TESTS_DATA_PATH / 'Physio_PULS.log')]
+    # use a different output dir, to make sure it's empty:
+    outbids = str(tmpdir / 'log' / 'bids')
     args = (
         'dcm2bidsphysio -i {infile} -b {bp}'.format(
             infile=" ".join(infiles),
@@ -238,7 +240,7 @@ def test_timing(
     """
     outbids = str(tmpdir / 'mydir' / 'bids')
 
-    infile = str(TESTS_DATA_PATH / 'samplePhysio+02+physio_test+00001.dcm')
+    infile = str(TESTS_DATA_PATH / 'samplePhysioCMRR.dcm')
     args = (
         'dcm2bidsphysio -i {infile} -b {bp} -v'.format(
             infile=str(infile),
@@ -257,4 +259,4 @@ def test_timing(
     expected_TR = int(re.findall(r'alTR\[0\]\s+=\s+(\d+)', header)[0])/1000000
 
     TRs = get_physio_TRs(outbids)
-    assert all(TRs) == expected_TR
+    assert TRs == [expected_TR]*len(TRs)

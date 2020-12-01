@@ -14,7 +14,7 @@ from .utils import TESTS_DATA_PATH
 ###   Globals   ###
 
 ACQFILE = 'sample.acq'
-DCMFILE = 'samplePhysio+02+physio_test+00001.dcm'
+DCMFILE = 'samplePhysioCMRR.dcm'
 PMUVE11CFILE = 'sample_VE11C.puls'
 
 
