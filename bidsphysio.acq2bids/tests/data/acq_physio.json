@@ -1,0 +1,22 @@
+{
+    "Columns": [
+        "cardiac",
+        "respiratory",
+        "GSR",
+        "trigger"
+    ],
+    "GSR": {
+        "Units": "microsiemens"
+    },
+    "SamplingFrequency": 500.0,
+    "StartTime": -0.6,
+    "cardiac": {
+        "Units": "Volts"
+    },
+    "respiratory": {
+        "Units": "Volts"
+    },
+    "trigger": {
+        "Units": "Volts"
+    }
+}

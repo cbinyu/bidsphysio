@@ -108,9 +108,7 @@ def test_acq2bids(
     # Check that we have as many signals as expected (1, for this file):
     check_bidsphysio_outputs(outbids,
                              [['cardiac', 'respiratory', 'GSR']],
-                             500,
-                             1583762929.924,
-                             TESTS_DATA_PATH / 'acq_physio.tsv')
+                             TESTS_DATA_PATH / 'acq_physio')
     # with open(expectedFileName + '.json') as f:
     #     d = json.load(f)
     #     for s in expectedSignals:

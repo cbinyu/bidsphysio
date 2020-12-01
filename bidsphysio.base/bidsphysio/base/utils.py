@@ -7,8 +7,6 @@ import numpy as np
 
 def check_bidsphysio_outputs(outPrefix,
                              expectedPhysioLabels,
-                             expectedFrequencies,
-                             expectedDelays,
                              expectedDataFilePrefix,
                              ):
     """
@@ -21,12 +19,6 @@ def check_bidsphysio_outputs(outPrefix,
         E.g.: '/tmp/mydir/sub-01_task-rest'
     expectedPhysioLabels : list
         List with the expected physio labels
-    expectedFrequencies : list or float
-        List with the expected frequencies for the recordings (in Hz.)
-        If it is the same for all expectedPhysioLabels, it can be a float
-    expectedDelays : list or float
-        List with the expected delay for the physio signals (in sec.)
-        If it is the same for all expectedPhysioLabels, it can be a float
     expectedDataFilePrefix : Path or str or None
         Prefix of the path to the file with the expected data
         (If we don't need to check the results, set to None)
@@ -40,16 +32,12 @@ def check_bidsphysio_outputs(outPrefix,
     outPrefix = Path(outPrefix)
     if not isinstance(expectedPhysioLabels, list):
         expectedPhysioLabels = [expectedPhysioLabels]
-    if not isinstance(expectedFrequencies, list):
-        expectedFrequencies = [expectedFrequencies] * len(expectedPhysioLabels)
-    if not isinstance(expectedDelays, list):
-        expectedDelays = [expectedDelays] * len(expectedPhysioLabels)
 
     json_files = sorted(outPrefix.parent.glob('*.json'))
     data_files = sorted(outPrefix.parent.glob('*.tsv*'))
     assert len(json_files) == len(data_files) == len(expectedPhysioLabels)
 
-    for label, expFreq, expDelay in zip(expectedPhysioLabels, expectedFrequencies, expectedDelays):
+    for label in expectedPhysioLabels:
         if len(expectedPhysioLabels) == 1:
             expectedFileBaseName = Path(outPrefix).name + '_physio'
         else:
@@ -66,15 +54,21 @@ def check_bidsphysio_outputs(outPrefix,
                     assert c in label or c == 'trigger'
             else:
                 assert d['Columns'] == [label, 'trigger']
-            assert d['StartTime'] == expDelay
-            assert d['SamplingFrequency'] == expFreq
 
         # check content of the tsv file:
         if expectedDataFilePrefix:
             if len(expectedPhysioLabels) == 1:
-                expectedDataFile = expectedDataFilePrefix
+                expectedDataFile = expectedDataFilePrefix.with_suffix('.tsv')
+                expectedJsonFile = expectedDataFilePrefix.with_suffix('.json')
             else:
                 expectedDataFile = str(expectedDataFilePrefix) + ''.join(label) + '.tsv'
+                expectedJsonFile = str(expectedDataFilePrefix) + ''.join(label) + '.json'
+            with open(expectedJsonFile) as f:
+                expected_d = json.load(f)
+            assert d['SamplingFrequency'] == expected_d['SamplingFrequency']
+            if 'StartTime' in d:
+                assert d['StartTime'] == expected_d['StartTime']
+
             with open(expectedDataFile, 'rt') as expected, \
                     gzip.open(expectedFileName.with_suffix('.tsv.gz'), 'rt') as f:
                 for expected_line, written_line in zip(expected, f):
@@ -87,7 +81,7 @@ def get_physio_TRs(bids_prefix):
 
     Parameters
     ----------
-    outPrefix : Path or str
+    bids_prefix : Path or str
         Prefix of the path of the BIDS physio files.
         E.g.: '/tmp/mydir/sub-01_task-rest'
 
@@ -107,16 +101,19 @@ def get_physio_TRs(bids_prefix):
         # check that we have a trigger column:
         with open(j_file) as f:
             d = json.load(f)
-            if 'trigger' not in d['Columns']:
-                pass
-            else:
-                trig_column = d['Columns'].index('trigger')
-                freq = d['SamplingFrequency']
+        if 'trigger' not in d['Columns']:
+            pass
 
         # we have a trigger column:
         # get the triggers from the data itself:
+        trig_column = d['Columns'].index('trigger')
+        freq = d['SamplingFrequency']
         trigger = np.genfromtxt(fname=d_file, delimiter="\t")[:, trig_column]
-        tr = np.mean(np.diff(np.nonzero(trigger)) / freq)
+        trigger_indices = np.nonzero(trigger)
+        if not trigger_indices:
+            tr = float('NaN')
+        else:
+            tr = np.mean(np.diff(trigger_indices) / freq)
         TRs.append(tr)
 
     return TRs

@@ -182,8 +182,6 @@ def test_dcm2bids(
     # Check that we have as many signals as expected (2, for this file):
     check_bidsphysio_outputs(outbids,
                              ['cardiac', 'respiratory', 'external_trigger'],
-                             [200, 50, 50],
-                             [-12.082, -12.082, -0.024],
                              TESTS_DATA_PATH / 'dcm_')
 
     # 2) Two DICOM infiles: It should give an error:
@@ -222,8 +220,6 @@ def test_dcm2bids(
     # (we don't check the content of the .tsv file):
     check_bidsphysio_outputs(outbids,
                              ['cardiac', 'respiratory'],
-                             [200, 50],
-                             -7.077,
                              None)
 
 

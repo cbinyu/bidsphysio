@@ -400,6 +400,4 @@ def test_pmu2bids(
     # Check that we have as many signals as expected (2 in this case):
     check_bidsphysio_outputs(outbids,
                              [['cardiac'], ['respiratory']],
-                             400,
-                             [39008572, 38973660],
                              TESTS_DATA_PATH / 'pmu_VE11C_')
