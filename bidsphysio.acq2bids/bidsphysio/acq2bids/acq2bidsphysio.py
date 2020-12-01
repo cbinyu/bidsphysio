@@ -131,8 +131,10 @@ def acq2bids(physio_acq_files, trigger_label='trigger'):
     # and not something else (e.g., stimulus trigger). So we print a warning.
     neuralstarttime = ''
     if trigger_channel:
-        print('Warning: Assuming {} channel corresponds to the scanner trigger'.format(trigger_channel))
-        neuralstarttime = physio.get_scanner_onset()
+        print('Warning: Assuming "{}" channel corresponds to the scanner trigger'.format(trigger_channel))
+        # The sampling_times are w.r.t. the start of the recording, so we need
+        # to also add the 'physiostarttime' (time when file was created):
+        neuralstarttime = physio.get_scanner_onset() + physiostarttime.timestamp()
     for p_signal in physio.signals:
         p_signal.neuralstarttime = neuralstarttime or p_signal.physiostarttime
         # we also fill with NaNs the places for which there is missing data:
