@@ -278,19 +278,35 @@ class PhysioData(object):
             json_fName = json_fName[:-len(myStr)] if json_fName.endswith( myStr ) else json_fName
         json_fName = json_fName + '_physio.json'
 
-        with open( json_fName, 'w') as f:
-            json.dump({
-                "SamplingFrequency": self.signals[0].samples_per_second,
-                "StartTime": self.signals[0].t_start(),
-                "Columns": [item.label for item in self.signals],
-                **{            # this syntax allows us to add the elements of this dictionary to the one we are creating
-                    item.label: {
-                        "Units": item.units
+        if not hasattr(self, 'RecordedEye'):
+            with open( json_fName, 'w') as f:
+                json.dump({
+                    "SamplingFrequency": self.signals[0].samples_per_second,
+                    "StartTime": self.signals[0].t_start(),
+                    "Columns": [item.label for item in self.signals],
+                    **{            # this syntax allows us to add the elements of this dictionary to the one we are creating
+                        item.label: {
+                            "Units": item.units
+                        }
+                        for item in self.signals if item.units != ""
                     }
-                    for item in self.signals if item.units != ""
-                }
-            }, f, sort_keys = True, indent = 4, ensure_ascii = False)
-            f.write('\n')
+                }, f, sort_keys = True, indent = 4, ensure_ascii = False)
+                f.write('\n')
+        else: # Eyetracking data case
+            with open( json_fName, 'w') as f:
+                json.dump({
+                    "SamplingFrequency": self.signals[0].samples_per_second,
+                    "StartTime": self.signals[0].t_start(),
+                    "RecordedEye": self.RecordedEye,
+                    "Columns": [item.label for item in self.signals],
+                    **{           # this syntax allows us to add the elements of this dictionary to the one we are creating
+                        item.label: {
+                          "Units": item.units
+                        }
+                        for item in self.signals if item.units != ""
+                    }
+                }, f, sort_keys = True, indent = 4, ensure_ascii = False)
+                f.write('\n')
 
     def save_bids_data(self, data_fName):
         """
@@ -312,8 +328,12 @@ class PhysioData(object):
         data_fName = data_fName + '_physio.tsv.gz'
 
         # Save the data:
-        # Format: 4 decimals in general, unsigned integer if 'trigger':
-        myFmt=['% 1d' if item.label == 'trigger' else '%.4f' for item in self.signals]
+        if not hasattr(self, 'RecordedEye'):
+            # Format: 4 decimals in general, unsigned integer if 'trigger':
+            myFmt=['% 1d' if item.label == 'trigger' else '%.4f' for item in self.signals]
+        else: # Eyetracking data case
+            myFmt=['% d' if item.label in {'trigger','fixation', 'saccade', 'blink', 'samples'} else '%.1f' for item in self.signals]
+        
         np.savetxt(
             data_fName,
             np.transpose( [item.signal for item in self.signals] ),

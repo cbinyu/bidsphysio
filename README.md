@@ -27,7 +27,7 @@ physio2bidsphysio --infile 07+epi_MB4_2mm_Physio+00001.dcm      \
      Multi-Band sequence (only a single file for `<.dcm>`).
 	 * `<.acq>`: AcqKnowledge file (BioPac).
 	 * `<.puls>` or `<.resp>`: Siemens PMU file (VB15A, VBX, VE11C).
-	 * (`<.edf>` (SR-Research) support coming soon...)
+	 *`<.edf>` SR Research .edf file
  * `<Prefix>` is the prefix that will be used for the BIDS physiology files.  If all physiological recordings have the same sampling rate and starting time, the script will save the files: `<Prefix>_physio.json` and `<Prefix>_physio.tsv.gz`.  If the physiological signals have different sampling rates and/or starting times, the script will save the files: `<Prefix>_recording-<label>_physio.json` and `<Prefix>_recording-<label>_physio.tsv.gz`, with the corresponding labels (e.g., `cardiac`, `respiratory`, etc.).
  * `--verbose` will print out some warning messages.
 
@@ -37,10 +37,12 @@ Note: If desired, you can use the corresponding `_bold.nii.gz` BIDS file as `--b
 
 ## Usage - Full session
 
-Alternatively, you can convert a whole session worth of physiology files automatically naming them. Currently, only AcqKnowledge files are supported:
+Alternatively, you can convert a whole session worth of physiology files automatically naming them. Currently,  AcqKnowledge and eyetracking .edf files are supported:
 
 ```
 acqsession2bids --infolder <physiofolder> --bidsfolder <bidsfolder> --subject <subID>
+
+edfsession2bids --infolder <physiofolder> --bidsfolder <bidsfolder> --subject <subID>
 ```
 The tool will find which physiological file corresponds to which functional image file and will name it accordingly.
 
@@ -65,7 +67,7 @@ pip install bidsphysio.<sub-package>
 ```
 Available sub-packages are `acq2bids` (for `.acq` files),
 `dcm2bids` (for `.dcm` and `.log` CMRR physiology files)
- and `pmu2bids` (for Siemens PMU files). 
+, `pmu2bids` (for Siemens PMU files) and `edf2bids` (for SR Research eyetracking .edf files). 
 You can also install the base classes with the `bidsphysio.base` sub-package.
 
 Alternatively, you can download the package and install it with `pip`:
@@ -96,6 +98,7 @@ and `pmu2bidsphysio`, to extract a specific file type:
 dcm2bidsphysio --infile <DCMfile> --bidsprefix <Prefix>
 acq2bidsphysio --infile <acqfiles> --bidsprefix <Prefix>
 pmu2bidsphysio --infile <pmufiles> --bidsprefix <Prefix>
+edf2bidsphysio --infile <edffile> --bidsprefix <Prefix> 
 ```
 
 ## How to use in your own Python program
@@ -116,4 +119,9 @@ or:
 from bidsphysio.pmu2bids import pmu2bidsphysio
 pmu2bidsphysio.pmu2bids( [pmu_files], prefix )
 ```
-
+or:
+```
+from bidsphysio.edf2bids import edf2bidsphysio
+edf2bidsphysio.edf2bids( edf_file, prefix )
+edf2bidsphysio.edfevents2bids( edf_file, prefix )
+```
