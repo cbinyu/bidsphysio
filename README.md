@@ -27,7 +27,7 @@ physio2bidsphysio --infile 07+epi_MB4_2mm_Physio+00001.dcm      \
      Multi-Band sequence (only a single file for `<.dcm>`).
 	 * `<.acq>`: AcqKnowledge file (BioPac).
 	 * `<.puls>` or `<.resp>`: Siemens PMU file (VB15A, VBX, VE11C).
-	 *`<.edf>` SR Research .edf file
+	 * `<.edf>` SR Research .edf file
  * `<Prefix>` is the prefix that will be used for the BIDS physiology files.  If all physiological recordings have the same sampling rate and starting time, the script will save the files: `<Prefix>_physio.json` and `<Prefix>_physio.tsv.gz`.  If the physiological signals have different sampling rates and/or starting times, the script will save the files: `<Prefix>_recording-<label>_physio.json` and `<Prefix>_recording-<label>_physio.tsv.gz`, with the corresponding labels (e.g., `cardiac`, `respiratory`, etc.).
  * `--verbose` will print out some warning messages.
 
