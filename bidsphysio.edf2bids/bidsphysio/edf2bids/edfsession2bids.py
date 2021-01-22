@@ -83,7 +83,7 @@ def main():
         get_physio_data=edf2bidsphysio.edf2bids,
         get_event_data=edf2bidsphysio.edfevents2bids,
         get_physio_acq_time=_get_physio_acq_time,
-        save_eye_events=args.save_eye_events
+        save_eye_events=args.save_eye_events,
         overwrite=args.overwrite,
     )
 
