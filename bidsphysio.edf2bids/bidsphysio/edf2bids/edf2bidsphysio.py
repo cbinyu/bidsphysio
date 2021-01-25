@@ -213,7 +213,9 @@ def edfevents2bids(physio_edf):
         samples, events, messages = edf.pread(physio_edf, trial_marker = tm)
         all_messages = all_messages.append(messages, ignore_index = True)
 
-    if not all_messages.empty:
+    if all_messages.empty:
+        event = []
+    else:    
         all_messages = all_messages.dropna(subset=['trialid '])
         #Create a new column to hold the original samples
         all_messages['sample'] = all_messages['trialid_time']
@@ -258,7 +260,7 @@ def edfevents2bids(physio_edf):
                 )
             )
 
-        return event
+    return event
 
 def main():
     
