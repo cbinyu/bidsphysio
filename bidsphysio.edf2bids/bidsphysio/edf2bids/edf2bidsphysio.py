@@ -235,7 +235,7 @@ def edfevents2bids(physio_edf):
         for ec in range(len(event_column_list)):
             indc_e = np.where(event_column_list[ec]==all_messages.columns)[0]
             event_label = all_messages.columns[indc_e][0]
-            es = all_messages[all_messages.columns[indc_e][0]].values.tolist()
+            es = all_messages[all_messages.columns[indc_e][0]]
     
             if not (all_messages[all_messages.columns[indc_e][0]]==0.0).all():
                 if event_label in {'onset', 'duration'}:
