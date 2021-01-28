@@ -216,6 +216,7 @@ def edfevents2bids(physio_edf):
 
     if all_messages.empty:
         event = []
+        print('No task events were found')
     else:    
         all_messages = all_messages.dropna(subset=['trialid '])
         #Create a new column to hold the original samples
@@ -228,6 +229,28 @@ def edfevents2bids(physio_edf):
 
         #Create duration column and make it equal to 0 for now
         all_messages['duration']=0
+        
+        #If a trigger channel is available in the edf recording, adjust onset to be measured after the first trigger
+        samples=samples.loc[~(samples==0).all(axis=1)]
+        samples.time = (samples.time - samples.time[0])/1000
+        if not ((samples['input']==0.0).all()
+                or (samples['input']==127.0).all()
+                or (samples['input']==32768.0).all()
+                or (samples['input']==-32768.0).all()):
+            tmp = np.array(samples.input)
+            counts, bin_edges = np.histogram( tmp[~np.isnan(tmp)],bins=10, range=[min(tmp), max(tmp)])
+            first_bin = bin_edges[np.argmax(counts)] + (bin_edges[1]-bin_edges[0])/2
+            counts[np.argmax(counts)]=0
+            second_bin = bin_edges[np.argmax(counts)] + (bin_edges[1]-bin_edges[0])/2
+            threshold = (first_bin + second_bin)/2
+            dg_signal = tmp
+            dg_signal[tmp<threshold] = 0
+            dg_signal[tmp>threshold] = 1
+            dg_signal[np.isnan(tmp)] = 0
+            ind_trig=(dg_signal != 0.).argmax()
+            all_messages['onset']= all_messages['onset']-samples.time[ind_trig]
+        else:
+            print('No trigger channel was found and the onsets are not trigger-adjusted')
 
         # Init eventdata object to hold event signals
         event = EventData()
