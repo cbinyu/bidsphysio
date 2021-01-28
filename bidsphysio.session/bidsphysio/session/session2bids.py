@@ -29,6 +29,8 @@ import nibabel as nib
 import matplotlib.pyplot as plt
 
 from bidsphysio.base.bidsphysio import PhysioData
+from bidsphysio.events.eventsbase import EventData
+
 
 
 def compress_physio(physio_file, out_prefix, get_physio_acq_time, overwrite):
@@ -490,7 +492,7 @@ def convert_edf_session(physio_files, bids_dir, sub, ses=None,
     # relative to the first one:
     rel_file_times = [(f - min(file_times)).total_seconds() for f in file_times]
     
-    physio_data = [get_physio_data(f, saveevents) for f in physio_files]
+    physio_data = [get_physio_data(f, save_eye_events) for f in physio_files]
     event_data = [get_event_data(f) for f in physio_files]
     
     onsets_in_sec = [
@@ -523,5 +525,8 @@ def convert_edf_session(physio_files, bids_dir, sub, ses=None,
             outdir_ = op.join(outdir, op.dirname(prefix))
             if not op.isdir(outdir_):
                 os.makedirs(outdir_)
-            phys_data.save_to_bids_with_trigger(eye_prefix)
-            ev_data.save_events_bids_data(eye_prefix)
+            phys_data.save_to_bids_with_trigger(op.join(outdir, prefix))
+            if ev_data:
+                ev_data.save_events_bids_data(op.join(outdir, prefix))
+            else:
+                print('No task events were found')

@@ -118,7 +118,7 @@ def edf2bids( physio_edf, save_eye_events=True ):
         recorded_eye = 'Both'
 
     #If wanted, save fixations, saccades and blinks in additional columns
-    if save_events==True:
+    if save_eye_events==True:
         samples['fixation']=0
         samples['saccade']=0
         samples['blink']=0
@@ -135,9 +135,9 @@ def edf2bids( physio_edf, save_eye_events=True ):
                         gaze_with_sacc = samples.gx_right[int(ind_s):int(ind_e)]
                     else:
                         gaze_with_sacc = samples.gx_left[int(ind_s):int(ind_e)]
-                        ind_bs = gaze_with_sacc[gaze_with_sacc==100000000.0].first_valid_index()
-                        ind_be = gaze_with_sacc[gaze_with_sacc==100000000.0].last_valid_index()
-                        samples.blink[int(ind_bs):int(ind_be)]=1
+                    ind_bs = gaze_with_sacc[gaze_with_sacc==100000000.0].first_valid_index()
+                    ind_be = gaze_with_sacc[gaze_with_sacc==100000000.0].last_valid_index()
+                    samples.blink[int(ind_bs):int(ind_be)]=1
 
         optional_columns = ["fixation", "saccade", "blink"]
         column_list.extend(optional_columns)
@@ -153,6 +153,7 @@ def edf2bids( physio_edf, save_eye_events=True ):
         
         if not ((samples[samples.columns[indc][0]]==0.0).all()
                 or (samples[samples.columns[indc][0]]==127.0).all()
+                or (samples[samples.columns[indc][0]]==32768.0).all()
                 or (samples[samples.columns[indc][0]]==-32768.0).all()):
            
             physio.append_signal(
@@ -170,7 +171,7 @@ def edf2bids( physio_edf, save_eye_events=True ):
     # Define neuralstarttime and physiostartime as the first trigger time and first sample time, respectively.
     signal_labels = [l.lower() for l in physio.labels()]
     
-    if physio.signals[ signal_labels.index('trigger')]:
+    if 'trigger' in signal_labels:
         physio.digitize_trigger()
         nstarttime = physio.get_trigger_timing()[0]
         pstartime = samples.time[0]
@@ -248,13 +249,13 @@ def edfevents2bids(physio_edf):
                 elif event_label == 'trial_type':
                     event_type = 'str'
                     event_units = ""
-                    event_description = 'String sent to eyetracker to identify event of interest'
+                    #event_description = 'String sent to eyetracker to identify event of interest'
                 
             event.append_event(
                 EventSignal(
                     label=event_label,
                     units = event_units,
-                    description = event_description,
+                    #description = event_description,
                     event = es,
                     type = event_type
                 )
@@ -280,12 +281,18 @@ def main():
     if not os.path.exists(odir):
         os.makedirs(odir)
     
-    physio_data = edf2bids( args.infile, args.saveevents )
+    physio_data = edf2bids( args.infile, args.save_eye_events )
     event_data = edfevents2bids ( args.infile )
-    if physio_data.labels():
+
+    signal_labels = [l.lower() for l in physio_data.labels()]
+    if 'trigger' in signal_labels:
         physio_data.save_to_bids_with_trigger(args.bidsprefix)
-    if event_data.labels():
+    else:
+        physio_data.save_to_bids(args.bidsprefix)
+    if event_data:
         event_data.save_events_bids_data(args.bidsprefix)
+    else:
+        print('No task events were found')
 
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':

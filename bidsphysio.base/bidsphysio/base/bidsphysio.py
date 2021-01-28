@@ -565,6 +565,10 @@ class PhysioData(object):
 
                 # Append this new signal to "physiodata_group":
                 physiodata_group.append_signal( trigger_for_this_group )
+                    
+            # If the original PhysioData object had a "RecordedEye" attribute, add it to the new PhysioData object
+            if hasattr(self, 'RecordedEye'):
+                setattr(physiodata_group, 'RecordedEye', self.RecordedEye)
 
             ###   Save the data   ###
 

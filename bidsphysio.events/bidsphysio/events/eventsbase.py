@@ -115,7 +115,7 @@ class EventData(object):
         """
 
         # make sure the file name ends with "_events.tsv.gz":
-        for myStr in ['.gz','.tsv','_events']:
+        for myStr in ['.gz','.tsv','_bold','_events']:
             if data_fName.endswith( myStr ):
                 data_fName = data_fName[:-len(myStr)]
         
@@ -142,6 +142,7 @@ class EventData(object):
                        fmt=myFmt,
                        delimiter='\t'
             )
+        print('Saving task events')
 
     def save_events_to_bids(self, bids_fName=None):
         """
