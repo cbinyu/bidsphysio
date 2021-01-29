@@ -50,8 +50,8 @@ def main():
                              'label corresponds to sub-<participant_label> '
                              'from the BIDS spec (so it does not include '
                              '"sub-").')
-    parser.add_argument('-e', '--save_eye_events', default=True,
-                        help='Saves eye-motion events (fixations, saccades and blinks) as estimated by Eyelink algorithms')
+    parser.add_argument('-e', '--skip_eye_events', default=True,
+                        help='Skip saving eye-motion events (fixations, saccades and blinks) as estimated by Eyelink algorithms')
     parser.add_argument('--overwrite', action='store_true', default=False,
                         help='flag to allow overwriting existing converted '
                              'files')
@@ -83,7 +83,7 @@ def main():
         get_physio_data=edf2bidsphysio.edf2bids,
         get_event_data=edf2bidsphysio.edfevents2bids,
         get_physio_acq_time=_get_physio_acq_time,
-        save_eye_events=args.save_eye_events,
+        skip_eye_events=args.skip_eye_events,
         overwrite=args.overwrite,
     )
 

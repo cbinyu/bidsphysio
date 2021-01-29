@@ -69,14 +69,14 @@ def find_line_with_string(input_text, input_string):
 
     return found_line
 
-def edf2bids( physio_edf, save_eye_events=True ):
+def edf2bids( physio_edf, skip_eye_events=False ):
     """Reads the EDF file and saves the continuous eye movement data in a PhysioData member
     
     Parameters
     ----------
     physio_edf : str
         Path to the original EDF file
-    save_eye_events : bool
+    skip_eye_events : bool
         Option to save eye motion events (fixations, saccades and blinks). Default is True.
         
     Returns
@@ -118,7 +118,7 @@ def edf2bids( physio_edf, save_eye_events=True ):
         recorded_eye = 'Both'
 
     #If wanted, save fixations, saccades and blinks in additional columns
-    if save_eye_events==True:
+    if skip_eye_events==False:
         samples['fixation']=0
         samples['saccade']=0
         samples['blink']=0
@@ -292,7 +292,7 @@ def main():
     parser = argparse.ArgumentParser(description='Convert Eyetracker EDF physiology files to BIDS-compliant physiology recording')
     parser.add_argument('-i', '--infile', required=True, help='SR research eye tracker EDF file')
     parser.add_argument('-b', '--bidsprefix', required=True, help='Prefix of the BIDS file. It should match the _bold.nii.gz')
-    parser.add_argument('-e', '--save_eye_events', default=True, help='Saves eye-motion events (fixations, saccades and blinks) as estimated by Eyelink algorithms')
+    parser.add_argument('-e', '--skip_eye_events', action='store_true', help='Skips saving eye-motion events (fixations, saccades and blinks) as estimated by Eyelink algorithms')
     args = parser.parse_args()
     
     # make sure input file exists:
@@ -304,7 +304,7 @@ def main():
     if not os.path.exists(odir):
         os.makedirs(odir)
     
-    physio_data = edf2bids( args.infile, args.save_eye_events )
+    physio_data = edf2bids( args.infile, args.skip_eye_events )
     event_data = edfevents2bids ( args.infile )
 
     signal_labels = [l.lower() for l in physio_data.labels()]

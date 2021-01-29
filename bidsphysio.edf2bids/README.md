@@ -1,5 +1,7 @@
 # bidsphysio.edf2bids
-Converts eyetracking data from a SR Research Eyelink system (.edf file) to BIDS eye-tracker physiological recording and task events files.
+Converts eyetracking data from a SR Research Eyelink system (.edf file) to BIDS eye-tracker physiological recordings (_physio.tsv) and task events files (_events.tsv). 
+The physiological recordings file includes the samples, x and y gaze positions, pupil area for the recorded eye(s) and trigger values (if available). By default, the file will also include eye-motion events (fixations, saccades, blinks), unless specified otherwise.
+The task events file includes the messages sent by the experimental code to the Eyelink. If no messages have been recorded, then no events file will be created. If trigger information is available, the onset of the events is adjusted to be measured after the first trigger. 
 
 [![Docker image](https://img.shields.io/badge/docker-cbinyu/bidsphysio:latest-brightgreen.svg?logo=docker&style=flat)](https://hub.docker.com/r/cbinyu/bidsphysio/tags/)
 [![TravisCI](https://travis-ci.com/cbinyu/bidsphysio.svg?branch=master)](https://travis-ci.com/cbinyu/bidsphysio)
@@ -15,6 +17,7 @@ Example:
 ```
 edf2bidsphysio --infile myEDFFile.edf      \
                 --bidsprefix BIDSfolder/sub-01/func/sub-01_task-rest_acq-normal_run-01
+                --skip_eye_events (optional)
 ```
 
 ### Arguments
