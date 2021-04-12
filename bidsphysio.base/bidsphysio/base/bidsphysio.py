@@ -366,8 +366,15 @@ class PhysioData(object):
                                )
 
         print('')
-
-        if len(unique_sr_ts) == 1:
+        
+        if hasattr(self, 'RecordedEye'):
+            #eyetracking case
+            rec_fName = '{0}_recording-eyetracking_physio'.format(self.bidsPrefix)
+            print('Saving eyetracking physio data')
+            self.save_bids_json(rec_fName)
+            self.save_bids_data(rec_fName)
+                
+        elif len(unique_sr_ts) == 1:
             # All the physio signals have the same sampling rate and t_start, so
             #   there will be just one _physio file and we don't need to add "_recording-"
 
@@ -525,8 +532,14 @@ class PhysioData(object):
         for idx, [sr,ts] in enumerate( unique_sr_ts ):
 
             ###   Get filename   ###
-
-            if len(unique_sr_ts) == 1:
+            if hasattr(self, 'RecordedEye'):
+                #eyetracking case
+                rec_fName = '{0}_recording-eyetracking_physio'.format(self.bidsPrefix)
+                print('Saving eyetracking physio data')
+                self.save_bids_json(rec_fName)
+                self.save_bids_data(rec_fName)
+            
+            elif len(unique_sr_ts) == 1:
                 # All the physio signals (except, potentially, the "trigger") have the
                 #   same sampling rate and t_start, there will be just one _physio file
                 #   and we don't need to add "_recording-":

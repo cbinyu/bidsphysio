@@ -230,7 +230,7 @@ def edfevents2bids(physio_edf):
         #Create duration column and make it equal to 0 for now
         all_messages['duration']=0
         
-        #If a trigger channel is available in the edf recording, adjust onset to be measured after the first trigger
+        #If a trigger channel is available in the edf recording, adjust onset to be measured with respect to the first trigger
         samples=samples.loc[~(samples==0).all(axis=1)]
         samples.time = (samples.time - samples.time[0])/1000
         if not ((samples['input']==0.0).all()

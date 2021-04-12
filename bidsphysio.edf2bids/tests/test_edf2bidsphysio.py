@@ -119,7 +119,7 @@ def test_edf2bids(
         assert d['StartTime'] == -21.256
     
     # check content of the tsv file:
-    with open( TESTS_DATA_PATH / ('testeye_physio.tsv'),'rt' ) as expected, \
+    with open( TESTS_DATA_PATH / ('testeye_recording-eyetracking_physio.tsv'),'rt' ) as expected, \
         gzip.open(expectedFileName + '.tsv.gz','rt') as f:
             for expected_line, written_line in zip (expected, f):
                 assert expected_line == written_line
