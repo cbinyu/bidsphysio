@@ -59,7 +59,7 @@ RUN mkdir -p ${INSTALL_FOLDER} \
 
 ## install required python packages for bidsphysio:
 RUN pip install pydicom==1.4.1 \
-		numpy==1.18.1  \
+		numpy==1.20.3  \
 		etelemetry==0.1.2 \
         bioread>=1.0.4 \
     	pytest \
