@@ -42,7 +42,7 @@ def test_main_args(
     infolder = str(tmpdir / 'boo')
     bidsfolder = str(tmpdir / 'mybidsdir')
     args = (
-        'edfsession2bids -i {infolder} -b {bf} -s {sub} --overwrite'.format(
+        'edfsession2bids -i {infolder} -b {bf} -s {sub}'.format(
             infolder=infolder,
             bf=bidsfolder,
             sub='01'

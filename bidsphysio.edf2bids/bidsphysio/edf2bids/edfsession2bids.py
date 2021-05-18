@@ -52,9 +52,6 @@ def main():
                              '"sub-").')
     parser.add_argument('-e', '--skip_eye_events', default=True,
                         help='Skip saving eye-motion events (fixations, saccades and blinks) as estimated by Eyelink algorithms')
-    parser.add_argument('--overwrite', action='store_true', default=False,
-                        help='flag to allow overwriting existing converted '
-                             'files')
     args = parser.parse_args()
                                      
     # make sure input files exist:
@@ -84,7 +81,6 @@ def main():
         get_event_data=edf2bidsphysio.edfevents2bids,
         get_physio_acq_time=_get_physio_acq_time,
         skip_eye_events=args.skip_eye_events,
-        overwrite=args.overwrite,
     )
 
 

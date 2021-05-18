@@ -3,6 +3,7 @@
 import json
 
 import numpy as np
+import pandas as pd
 
 
 class EventSignal(object):
@@ -11,13 +12,13 @@ class EventSignal(object):
     Members:
     --------
     label : str
-        Event label (e.g., 'eyetracker', 'task')
+        Event label (e.g., 'onset', 'duration', 'trial_type')
     units : str
     description : str
-    events : list of numbers or strings
-        The events information. Columns onset and duration are floats in milliseconds and are mandatory. Other columns may include type of event
+    event : list of numbers or strings
+        The events information. Columns onset and duration are floats in seconds and are mandatory.
     type : str
-        Describes whether the type of event ( str, int or float)
+        Describes the type of event ( str, int or float)
     """
 
     def __init__(

@@ -1,4 +1,4 @@
-__version__ = "21.4.12"
+__version__ = "21.05.18"
 __author__ = "Chrysa Papadaniil, Pablo Velasco"
 __author_email__ = "chrysa@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"

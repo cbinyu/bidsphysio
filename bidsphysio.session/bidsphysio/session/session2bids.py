@@ -453,7 +453,7 @@ def convert_edf_session(physio_files, bids_dir, sub, ses=None,
                         get_physio_data=None,
                         get_event_data=None,
                         get_physio_acq_time=None,
-                        outdir=None, skip_eye_events=False, overwrite=False):
+                        outdir=None, skip_eye_events=False):
     """Function to save the EDF data in a given folder as BIDS physiology and events files, matching the filenames from the study imaging files
         
     Parameters
@@ -481,8 +481,6 @@ def convert_edf_session(physio_files, bids_dir, sub, ses=None,
         Default: bids_dir
     skip_eye_events : bool
         Skip saving eye motion events (fixations, saccades and blinks) as estimated by Eyelink algorithms
-    overwrite : bool
-        Overwrite existing tarfiles
     """
     
     # Default out_dir is bids_dir:

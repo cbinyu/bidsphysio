@@ -55,6 +55,8 @@ def myeventdata(scope="module"):
     
     myeventdata.events[1].type = 'str'
     myeventdata.events[1].event = [get_random_string(LENGTH) for i in range(EVENT_SAMPLES_COUNT)]
+    myeventdata.events[1].event = np.array(myeventdata.events[1].event)
+    myeventdata.events[1].event = myeventdata.events[1].event.astype('O')
     
     return myeventdata
 
@@ -118,17 +120,17 @@ def test_save_events_bids_data(
     """
     data_file_name = pjoin(tmpdir.strpath, 'foo.tsv')
     
-    # make sure the filename ends with "_events.tsv.gz"
+    # make sure the filename ends with "_events.tsv"
     myeventdata.save_events_bids_data(data_file_name)
     data_files = glob(pjoin(tmpdir, '*.tsv*'))
     assert len(data_files) == 1
     data_file = data_files[0]
-    assert data_file.endswith('_events.tsv.gz')
+    assert data_file.endswith('_events.tsv')
     
     # read the data file and check the content vs. the EventData:
-    with gzip.open(data_file, 'rt') as f:
-        for idx, line in enumerate(f):
-            assert [float(s) for s in line.split('\t')] == [s.signal[idx] for s in myeventdata.events]
+    with open(data_file, 'rt') as f:
+        first_line = f.readline()
+        assert [s for s in first_line.strip().split('\t')] == LABELS
 
 def test_save_events_to_bids(
         tmpdir,
@@ -149,4 +151,4 @@ def test_save_events_to_bids(
     data_files = glob(pjoin(tmpdir, '*.tsv*'))
     assert len(data_files) == 1
     data_file = data_files[0]
-    assert data_file.endswith('_events.tsv.gz')
+    assert data_file.endswith('_events.tsv')
