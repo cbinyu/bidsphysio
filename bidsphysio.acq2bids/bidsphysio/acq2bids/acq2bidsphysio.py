@@ -60,7 +60,7 @@ from bidsphysio.base.bidsphysio import (PhysioSignal,
                                         PhysioData)
 
 
-def acq2bids(physio_acq_files, trigger_label='trigger'):
+def acq2bids(physio_acq_files, trigger_labels=['trigger', 'digital input']):
     """Reads the physiological data from a series of AcqKnowledge
     files and stores it in a PhysioData member
 
@@ -68,8 +68,8 @@ def acq2bids(physio_acq_files, trigger_label='trigger'):
     ----------
     physio_acq_files : list of str
         List of paths of the original physio files
-    trigger_label : str
-        Label of the channel that carries the scanner trigger.
+    trigger_labels : list of str
+        List with labels of the channel that carries the scanner trigger.
         Just one word from the channel name is enough
 
     Returns
@@ -80,6 +80,8 @@ def acq2bids(physio_acq_files, trigger_label='trigger'):
     # In case we are handled just a single file, make it a one-element list:
     if isinstance(physio_acq_files, str):
         physio_acq_files = [physio_acq_files]
+    if not isinstance(trigger_labels, list):
+        trigger_labels = [trigger_labels]
 
     # Init PhysioData object to hold physio signals:
     physio = PhysioData()
@@ -103,7 +105,7 @@ def acq2bids(physio_acq_files, trigger_label='trigger'):
             elif 'resp' in item.name.lower():
                 physio_label = 'respiratory'
 
-            elif trigger_label.lower() in item.name.lower():
+            elif any([tl.lower() in item.name.lower() for tl in trigger_labels]):
                 physio_label = 'trigger'
                 trigger_channel = item.name
 
