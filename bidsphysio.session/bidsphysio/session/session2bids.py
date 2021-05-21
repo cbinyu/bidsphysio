@@ -525,6 +525,13 @@ def convert_edf_session(physio_files, bids_dir, sub, ses=None,
                 os.makedirs(outdir_)
             phys_data.save_to_bids_with_trigger(op.join(outdir, prefix))
             if ev_data:
-                ev_data.save_events_bids_data(op.join(outdir, prefix))
+                if not os.path.exists(op.join(outdir, prefix) + '_events.tsv'):
+                    ev_data.save_events_bids_data(op.join(outdir, prefix))
+                else:
+                    pre_file = pd.read_csv(op.join(outdir, prefix) + '_events.tsv', sep='\t')
+                    if pre_file.columns[0]=='onset' and pre_file.columns[1]=='duration':
+                        event_data.append_events_bids_data(p.join(outdir, prefix))
+                    else:
+                        print('Task events file already exists and is not a valid BIDS file')
             else:
                 print('No task events were found')
