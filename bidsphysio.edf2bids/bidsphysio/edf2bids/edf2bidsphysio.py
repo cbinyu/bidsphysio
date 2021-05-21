@@ -316,7 +316,8 @@ def main():
     if event_data:
         if os.path.exists(args.bidsprefix + '_events.tsv'):  #If file already exists, see if it has onset and duration entries
             pre_file = pd.read_csv(args.bidsprefix + '_events.tsv', sep='\t')
-            if pre_file.columns[0]=='onset' and pre_file.columns[1]=='duration':  #seems to be a valid BIDS events file
+            if pre_file.columns[0]=='onset' and pre_file.columns[1]=='duration':  #check for a valid BIDS events file
+                setattr(event_data, 'Eyetracker', 'eyetracker')           # so as to know that these task events are from the eyetracker
                 event_data.append_events_bids_data(args.bidsprefix)             #append the new data and order by "onset" and save
             else:
                 print('Task events file already exists and is not a valid BIDS file')

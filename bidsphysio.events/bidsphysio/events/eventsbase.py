@@ -157,6 +157,16 @@ class EventData(object):
     
         data_fName = data_fName + '_events.tsv'
         
+        #If there is an 'eyetracker label' in self, append a new EventSignal to self
+        if hasattr(self, 'Eyetracker'):
+            self.append_event(
+                EventSignal(
+                            label = 'source',
+                            event = np.array(['eyetracker']*len(self.events[0].event)),
+                            type = 'str'
+                )
+        )
+        
         # Save the data:
         myFmt=[]
         for item in self.events:
