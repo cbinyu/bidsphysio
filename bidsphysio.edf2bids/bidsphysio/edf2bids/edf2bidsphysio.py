@@ -322,7 +322,6 @@ def main():
                 print('Task events file already exists and is not a valid BIDS file')
         else:   #else just save the data
             event_data.save_events_bids_data(args.bidsprefix)
-
     else:
         print('No task events were found')
 

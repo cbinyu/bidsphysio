@@ -178,28 +178,24 @@ class EventData(object):
                        fmt=myFmt,
                        delimiter='\t'
             )
+        
+        #Open file with appended data
         df = pd.read_csv(data_fName, sep='\t')
-        ind = df.index[df['onset'] == 'onset'].tolist()
+        ind = df.index[df['onset'] == 'onset'].tolist() #check if there's a second onset in the file
         if ind:
-            
             #split in two dataframes
             df1 = df.iloc[:ind[0],:]
             df2 = df.iloc[ind[0]:,:]
             df2.columns = df2.iloc[0] # make new header
-            df2 = df2[1:]
-            
+            df2 = df2[1:]   #drop header
             df1 = df1.append(df2) #merge two dataframes
-            #df1.reset_index(drop=True).  #maybe not here or maybe no need to reindex if after saving it resets indexes
-            
             df1 = df1.dropna(axis=1, how='all') #drop columns that only have NaNs
-            df1 = df1.replace(np.NaN, 'n/a')
-            
+            df1 = df1.replace(np.NaN, 'n/a') #drop columns that contain only NaNs
             df1.onset = df1.onset.astype(float)
             df1.duration = df1.duration.astype(float)
-            df1 = df1.sort_values(by=['onset'], ascending=True)
-            df1 = df1.drop_duplicates(ignore_index=False)
-            df1.to_csv(data_fName,sep='\t', index=False)
-        
+            df1 = df1.sort_values(by=['onset'], ascending=True) #sort based on onset
+            df1 = df1.drop_duplicates(ignore_index=False) #drop duplicates
+            df1.to_csv(data_fName,sep='\t', index=False)  #save to file
         
         print('Saving task events')
         
