@@ -1,4 +1,4 @@
-__version__ = "21.05.18"
+__version__ = "21.05.26"
 __author__ = "Chrysa Papadaniil, Pablo Velasco"
 __author_email__ = "chrysa@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"
@@ -21,6 +21,7 @@ PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
     'numpy >= 1.20.1',
+    'pandas>=1.1.0',
 ]
 
 TESTS_REQUIRES = [
