@@ -38,6 +38,13 @@ RUN curl -L "http://download.sr-support.com/software/dists/SRResearch/SRResearch
     && apt-get install -y eyelink-display-software \
     && apt-get clean -y && apt-get autoclean -y && apt-get autoremove -y
 
+# Pip install prefers that you install packages using venv:
+RUN pip install --upgrade virtualenv
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN python3 -m venv $VIRTUAL_ENV \
+    && pip install --upgrade pip
+
 # install required python packages for edf2bids:
 RUN pip install cython \
         pandas \

@@ -51,6 +51,11 @@ def main():
                              'label corresponds to sub-<participant_label> '
                              'from the BIDS spec (so it does not include '
                              '"sub-").')
+    parser.add_argument('-n', '--session', required=False, default=None,
+                        help='The label of the session for the imaging data.'
+                             'The label corresponds to ses-<session_label> '
+                             'from the BIDS spec (so it does not include '
+                             '"ses-"). Do not include if there are no sessions.')
     parser.add_argument('--overwrite', action='store_true', default=False,
                         help='flag to allow overwriting existing converted '
                              'files')
@@ -76,6 +81,7 @@ def main():
         physio_files,
         bids_dir,
         sub=args.subject,
+        ses=args.session,
         get_physio_data=acq2bidsphysio.acq2bids,
         get_physio_acq_time=_get_physio_acq_time,
         overwrite=args.overwrite,
