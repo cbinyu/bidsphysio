@@ -30,7 +30,7 @@ REQUIRES = [
     'h5py>=2.9.0',
     'Cython>=0.29.13',
     'pandas>=1.1.0',
-    'numpy>= 1.17.1'
+    'numpy>= 1.20.1'
 ]
 
 TESTS_REQUIRES = [
