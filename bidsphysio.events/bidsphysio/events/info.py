@@ -21,6 +21,7 @@ PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
     'numpy >= 1.20.1',
+    'pandas>=1.1.0',
 ]
 
 TESTS_REQUIRES = [
