@@ -20,7 +20,7 @@ CLASSIFIERS = [
 PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
-    'numpy >= 1.17.1',
+    'numpy >= 1.20.1',
 ]
 
 TESTS_REQUIRES = [
