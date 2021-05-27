@@ -10,13 +10,13 @@ from os.path import join as pjoin
 
 import numpy as np
 import pytest
-
+from .utils import TESTS_DATA_PATH
 from bidsphysio.events.eventsbase import (EventSignal,
                                           EventData)
 
 ###  Globals   ###
 EVENT_SAMPLES_COUNT = 1000
-LABELS = ['signal1', 'signal2'] # signal1 contains numbers, signal2 contains strings
+LABELS = ['onset', 'duration', 'signal2'] # onset and duration contain numbers, signal2 contains strings
 LENGTH = 8
 
 def get_random_string(length):
@@ -53,10 +53,10 @@ def myeventdata(scope="module"):
         ) for l in LABELS]
     )
     
-    myeventdata.events[1].type = 'str'
-    myeventdata.events[1].event = [get_random_string(LENGTH) for i in range(EVENT_SAMPLES_COUNT)]
-    myeventdata.events[1].event = np.array(myeventdata.events[1].event)
-    myeventdata.events[1].event = myeventdata.events[1].event.astype('O')
+    myeventdata.events[2].type = 'str'
+    myeventdata.events[2].event = [get_random_string(LENGTH) for i in range(EVENT_SAMPLES_COUNT)]
+    myeventdata.events[2].event = np.array(myeventdata.events[2].event)
+    myeventdata.events[2].event = myeventdata.events[2].event.astype('O')
     
     return myeventdata
 
@@ -131,6 +131,26 @@ def test_save_events_bids_data(
     with open(data_file, 'rt') as f:
         first_line = f.readline()
         assert [s for s in first_line.strip().split('\t')] == LABELS
+
+def test_append_events_bids_data(
+        myeventdata
+):
+    """
+    Tests  "append_events_bids_data"
+    """
+    data_file_name = str(TESTS_DATA_PATH / 'existing_events.tsv')
+    
+    # make sure the filename ends with "_events.tsv"
+    myeventdata.append_events_bids_data(data_file_name)
+    data_files = glob(pjoin(TESTS_DATA_PATH, '*.tsv*'))
+    assert len(data_files) == 1
+    data_file = data_files[0]
+    assert data_file.endswith('_events.tsv')
+    
+    # read the data file and check the content vs. the EventData:
+    with open(data_file, 'rt') as f:
+        first_line = f.readline()
+        assert [s for s in first_line.strip().split('\t')] == ['onset', 'duration','frequency', 'pulse_width', 'amplitude','signal2']
 
 def test_save_events_to_bids(
         tmpdir,
