@@ -1,7 +1,7 @@
 import os.path as op
 from os import scandir
 
-__version__ = "21.05.18"
+__version__ = "21.05.27"
 __author__ = "Pablo Velasco"
 __author_email__ = "pablo.velasco@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"
