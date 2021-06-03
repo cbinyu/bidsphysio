@@ -10,21 +10,21 @@ The task events file includes the messages sent by the experimental code to the 
 
 ## Usage - Single file
 ```
-edf2bidsphysio --infile <physiofile> --bidsprefix  <Prefix> [--verbose]
+edf2bidsphysio --infile <physiofile> --bidsprefix  <Prefix> --skip_eye_events (optional)
 ```
 
 Example:
 ```
 edf2bidsphysio --infile myEDFFile.edf      \
                 --bidsprefix BIDSfolder/sub-01/func/sub-01_task-rest_acq-normal_run-01
-                --skip_eye_events (optional)
+                --skip_eye_events
 ```
 
 ### Arguments
  * `<physiofile> EDF file (<.edf>) with the eye-tracker recordings.
  * `<Prefix>` is the prefix that will be used for the BIDS physiology files. The script will save the files: <Prefix>-eyetracker_physio.json, <Prefix>-eyetracker_physio.tsv.gz, <Prefix>-eyetracker_events.json and <Prefix>-eyetracker_events.tsv.gz
- * `--verbose` will print out some warning messages.
-
+ * `--skip_eye_events`: if used, then the <Prefix>-eyetracker_physio.tsv.gz file will not contain columns for fixation, saccades and blinks.
+  
 Note: If desired, you can use the corresponding `_bold.nii.gz` BIDS file as `--bidsprefix`. The script will strip the `_bold.nii.gz` part from the filename and use what is left as `<Prefix>`. This way, you can assure that the output physiology files match the `_bold.nii.gz` file for which they are intended.
 
 ## Usage - Full session
@@ -50,7 +50,7 @@ You can install the bidsphysio.edf2bids subpackage from PyPI with `pip`:
 ```
 pip install bidsphysio.edf2bids
 ```
-
+  
 Alternatively, you can download the package and install the sub-package with `pip`:
 ```
 mkdir /tmp/bidsphysio && \
@@ -61,6 +61,19 @@ mkdir /tmp/bidsphysio && \
     cd / && \
     rm -rf /tmp/bidsphysio
 ```
+## Requirements
+Most of the requirements are installed when installing the sub-package with `pip`. However, you still need to install 
+  1. `pyedfread` as described in the library's github page (https://github.com/nwilming/pyedfread/),
+  2.  EyeLink Developers Kit. Download from SR-Research support forum (forum registration is required).
+  
+## Docker usage
+You can avoid installing the above dependencies by using the Docker image from Docker Hub. To do that, pull the latest version and start a Docker container:
+  
+```
+docker pull cbinyu/bidsphysio
+docker run [docker options] cbinyu/bidsphysio  
+```
+Then you can use the `edf2bidsphysio` and `edfsession2bids` commands.
 
 ## How to use in your own Python program
 After installing the module using `pip` (see [above](#installation "Installation") ), you can use it in your own Python program this way:
