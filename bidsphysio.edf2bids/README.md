@@ -76,7 +76,7 @@ docker run [docker options] cbinyu/bidsphysio
 Then you can use the `edf2bidsphysio` and `edfsession2bids` commands.
 
 ## How to use in your own Python program
-After installing the module using `pip` (see [above](#installation "Installation") ), you can use it in your own Python program this way:
+After installing the module (see [above](#installation "Installation") ), you can use it in your own Python program this way:
 ```
 from bidsphysio.edf2bids import edf2bidsphysio
 edf2bidsphysio.edf2bids( edf_file, prefix )
