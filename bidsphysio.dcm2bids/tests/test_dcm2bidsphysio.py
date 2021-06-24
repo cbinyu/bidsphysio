@@ -2,6 +2,7 @@
 
 import sys
 import re
+import math
 
 import pytest
 
@@ -222,8 +223,16 @@ def test_dcm2bids(
                              ['cardiac', 'respiratory'],
                              None)
 
-
+# Test with two different files.
+# This will also assure that `dcm2bids` runs without an error
+@pytest.mark.parametrize(
+    "dcm_filename", [
+        'samplePhysioCMRR.dcm',
+        'samplePhysioCMRR_ecg.dcm',
+    ]
+)
 def test_timing(
+        dcm_filename,
         monkeypatch,
         tmpdir,
         capfd
@@ -236,7 +245,7 @@ def test_timing(
     """
     outbids = str(tmpdir / 'mydir' / 'bids')
 
-    infile = str(TESTS_DATA_PATH / 'samplePhysioCMRR.dcm')
+    infile = str(TESTS_DATA_PATH / dcm_filename)
     args = (
         'dcm2bidsphysio -i {infile} -b {bp} -v'.format(
             infile=str(infile),
@@ -255,4 +264,5 @@ def test_timing(
     expected_TR = int(re.findall(r'alTR\[0\]\s+=\s+(\d+)', header)[0])/1000000
 
     TRs = get_physio_TRs(outbids)
+    TRs = [tr for tr in TRs if math.isfinite(tr)]
     assert TRs == [expected_TR]*len(TRs)

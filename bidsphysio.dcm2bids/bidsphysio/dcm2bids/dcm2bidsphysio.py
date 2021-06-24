@@ -215,7 +215,7 @@ def parse_log(physio_log, verbose=False):
 
             p1, p2, p3 = parts[:3]
 
-            if 'PULS' in p2 or 'RESP' in p2 or 'EXT' in p2:
+            if any([s in p2 for s in ('PULS', 'RESP', 'EXT', 'ECG')]):
                 # The times are in multiples of 2.5 ms
                 t_list.append(2.5 * int(p1))
                 # in principle, these will also be int, but let's make them
@@ -303,6 +303,9 @@ def to_physiosignal(uuid, waveform_name, t, s, dt):
 
     elif 'EXT' in waveform_name:
         physio_label = 'external_trigger'
+
+    elif 'ECG' in waveform_name:
+        physio_label = 'ecg'
 
     elif "ACQUISITION_INFO" in waveform_name:
         physio_label = 'trigger'
