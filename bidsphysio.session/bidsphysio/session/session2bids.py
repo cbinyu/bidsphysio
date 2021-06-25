@@ -29,8 +29,6 @@ import nibabel as nib
 import matplotlib.pyplot as plt
 
 from bidsphysio.base.bidsphysio import PhysioData
-from bidsphysio.events.eventsbase import EventData
-
 
 
 def compress_physio(physio_file, out_prefix, get_physio_acq_time, overwrite):
