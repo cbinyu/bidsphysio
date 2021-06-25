@@ -2,7 +2,7 @@
 need to also bump up the version of the dependencies
 """
 
-__version__ = "21.05.27"
+__version__ ="21.06.24"
 __author__ = "Pablo Velasco"
 __author_email__ = "pablo.velasco@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"
@@ -24,8 +24,8 @@ CLASSIFIERS = [
 PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
-    'bidsphysio.base>=1.4.0',
-    'bidsphysio.session>=1.4.0',
+    'bidsphysio.base>=21.5.27',
+    'bidsphysio.session>=21.06.24',
     'bioread[mat]>=2.0.0',
 ]
 
