@@ -24,9 +24,9 @@ CLASSIFIERS = [
 PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
-    'bidsphysio.base==21.5.18',
-    'bidsphysio.session==21.5.18',
-    'bidsphysio.events==21.5.27',
+    'bidsphysio.base>=21.5.18',
+    'bidsphysio.session>=21.5.18',
+    'bidsphysio.events>=21.5.27',
     'pyedfread',
     'h5py>=2.9.0',
     'Cython>=0.29.13',
