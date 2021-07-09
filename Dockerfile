@@ -29,11 +29,16 @@ RUN apt-get update && apt-get upgrade -y \
         gcc \
     && apt-get clean -y && apt-get autoclean -y && apt-get autoremove -y
 
+# Workaround to get libjpeg8 as Debian buster has deprecated it
+RUN apt-get install -y multiarch-support \
+    && curl "http://archive.debian.org/debian/pool/main/libj/libjpeg8/libjpeg8_8d-1+deb7u1_amd64.deb" -o "/tmp/libjpeg8_8d-1+deb7u1_amd64.deb" \
+    && dpkg -i "/tmp/libjpeg8_8d-1+deb7u1_amd64.deb"
+
 # Install SR Research for Eyelink
 # https://www.sr-support.com/forum/downloads/eyelink-display-software/46-eyelink-developers-kit-for-linux-linux-display-software
-RUN curl -L "http://download.sr-support.com/software/dists/SRResearch/SRResearch_key" \
+RUN curl -L "https://download.sr-support.com/SRResearch_key" \
         | apt-key add - \
-    && add-apt-repository "deb http://download.sr-support.com/software SRResearch main" \
+    && add-apt-repository "deb [arch=amd64] http://download.sr-support.com/software SRResearch main" \
     && apt-get update \
     && apt-get install -y eyelink-display-software \
     && apt-get clean -y && apt-get autoclean -y && apt-get autoremove -y
@@ -60,6 +65,9 @@ RUN mkdir -p ${INSTALL_FOLDER} \
             --exclude='SUB001.*' \
     && cd ${INSTALL_FOLDER} \
     && sed -i -e "s/cython: profile=True/cython: profile=True, language_level=2/" pyedfread/edfread.pyx \
+    && sed -i "2i# cython: language_level=2" pyedfread/edf_data.pyx \
+    && sed -i -e "17iimport os" \
+        -e "s#numpy.get_include(),#numpy.get_include(), os.path.join(os.path.sep, 'usr', 'include', 'EyeLink'),#" $INSTALL_FOLDER/setup.py \
     && python setup.py install
 
 ###
