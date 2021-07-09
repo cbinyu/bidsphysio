@@ -40,7 +40,7 @@ RUN curl -L "https://download.sr-support.com/SRResearch_key" \
         | apt-key add - \
     && add-apt-repository "deb [arch=amd64] http://download.sr-support.com/software SRResearch main" \
     && apt-get update \
-    && apt-get install -y eyelink-display-software \
+    && apt-get install -y eyelink-edfapi \
     && apt-get clean -y && apt-get autoclean -y && apt-get autoremove -y
 
 # Pip install prefers that you install packages using venv:
