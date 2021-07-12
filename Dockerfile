@@ -42,6 +42,9 @@ RUN curl -L "https://download.sr-support.com/SRResearch_key" \
     && apt-get update \
     && apt-get install -y eyelink-edfapi \
     && apt-get clean -y && apt-get autoclean -y && apt-get autoremove -y
+# Add the EyeLink headers to the C_INCLUDE_PATH so that Cython finds
+# them when building pyedfread:
+ENV C_INCLUDE_PATH="/usr/include/EyeLink:$C_INCLUDE_PATH"
 
 # Pip install prefers that you install packages using venv:
 RUN pip install --upgrade virtualenv
@@ -66,8 +69,6 @@ RUN mkdir -p ${INSTALL_FOLDER} \
     && cd ${INSTALL_FOLDER} \
     && sed -i -e "s/cython: profile=True/cython: profile=True, language_level=2/" pyedfread/edfread.pyx \
     && sed -i "2i# cython: language_level=2" pyedfread/edf_data.pyx \
-    && sed -i -e "17iimport os" \
-        -e "s#numpy.get_include(),#numpy.get_include(), os.path.join(os.path.sep, 'usr', 'include', 'EyeLink'),#" $INSTALL_FOLDER/setup.py \
     && python setup.py install
 
 ###
