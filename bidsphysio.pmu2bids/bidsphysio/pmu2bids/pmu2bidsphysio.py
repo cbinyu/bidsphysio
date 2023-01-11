@@ -373,11 +373,17 @@ def readXA30Cpmu(physio_file, forceRead=False):
             physio_type = "Unknown"
             # (continue reading the file)
 
+    if len(s) <= 5:
+        raise PMUFormatError(
+            'There is a very high chance %r is a VE11C file...',
+            physio_file
+        )
+
     raw_signal = ''
 
     if log_version == '1':
         # The third and following groups give us the physio signal itself.
-        for ii in range(2,len(s),2):
+        for ii in range(2, len(s), 2):
             raw_signal = raw_signal + s[ii][1:]
 
         raw_signal = raw_signal.split(' ')
@@ -385,7 +391,7 @@ def readXA30Cpmu(physio_file, forceRead=False):
 
     elif log_version == '3' and physio_type == 'RESP':
         # we have five signals interleaved, we only need the first
-        for ii in range(10,len(s),2):
+        for ii in range(10, len(s), 2):
             raw_signal = raw_signal + s[ii][1:]
 
         raw_signal = raw_signal.split(' ')
