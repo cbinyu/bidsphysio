@@ -373,7 +373,7 @@ def readXA30Cpmu(physio_file, forceRead=False):
             # (continue reading the file)
 
 
-    # The third and fouth groups we ignore, and the fifth gives us the physio signal itself.
+    # The third and following groups give us the physio signal itself.
     raw_signal = ''
     for ii in range(2,len(s),2):
         raw_signal = raw_signal + s[ii][1:]
