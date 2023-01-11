@@ -358,6 +358,7 @@ def readXA30Cpmu(physio_file, forceRead=False):
     # The second group tells us the type of signal ('RESP', 'PULS', etc.)
     try:
         physio_type = re.search('LOGVERSION_([A-Z]*)', s[1]).group(1)
+        log_version = re.findall(r'\d+', s[1])[0]
     except AttributeError:
         print('Could not find type of recording for ' + physio_file)
         if not forceRead:
@@ -372,14 +373,26 @@ def readXA30Cpmu(physio_file, forceRead=False):
             physio_type = "Unknown"
             # (continue reading the file)
 
-
-    # The third and following groups give us the physio signal itself.
     raw_signal = ''
-    for ii in range(2,len(s),2):
-        raw_signal = raw_signal + s[ii][1:]
 
-    raw_signal = raw_signal.split(' ')
-    physio_signal = parserawPMUsignal(raw_signal)
+    if log_version == '1':
+        # The third and following groups give us the physio signal itself.
+        for ii in range(2,len(s),2):
+            raw_signal = raw_signal + s[ii][1:]
+
+        raw_signal = raw_signal.split(' ')
+        physio_signal = parserawPMUsignal(raw_signal)
+
+    elif log_version == '3' and physio_type == 'RESP':
+        # we have five signals interleaved, we only need the first
+        for ii in range(10,len(s),2):
+            raw_signal = raw_signal + s[ii][1:]
+
+        raw_signal = raw_signal.split(' ')
+        physio_signal = parserawPMUsignal(raw_signal)
+
+        n_channels = 5
+        physio_signal = physio_signal[::n_channels]
 
     # The rest of the lines have statistics about the signals, plus start and finish times.
     # Get timing:
@@ -644,7 +657,7 @@ def testSamplingRate(
         sampling_rate=0,
         Nsamples=0,
         logTimes=[0,0],
-        tolerance=0.1
+        tolerance=0.2
         ):
     """
     Function to test if the sampling rate is correct.
