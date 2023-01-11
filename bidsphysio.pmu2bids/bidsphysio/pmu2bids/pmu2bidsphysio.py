@@ -347,7 +347,7 @@ def readXA30Cpmu(physio_file, forceRead=False):
     if len(s) == 1:
         # we failed to find even one "5002 ... 6002" group.
         raise PMUFormatError(
-                  'File %r does not seem to be a valid VE11C PMU file',
+                  'File %r does not seem to be a valid XA30 PMU file',
                   physio_file,
                   '5002(.*?)6002',
                   s[0]
@@ -362,7 +362,7 @@ def readXA30Cpmu(physio_file, forceRead=False):
         print('Could not find type of recording for ' + physio_file)
         if not forceRead:
             raise PMUFormatError(
-                      'File %r does not seem to be a valid VE11C PMU file',
+                      'File %r does not seem to be a valid XA30 PMU file',
                       physio_file,
                       'LOGVERSION_([A-Z]*)',
                       s[1]
