@@ -182,7 +182,7 @@ def readpmu(physio_file, softwareVersion=None, verbose=False):
     """
 
     # Check for known software versions:
-    knownVersions = ['XA30','VB15A', 'VE11C', 'VBX']
+    knownVersions = ['XA30', 'VB15A', 'VE11C', 'VBX']
 
     if not (
             softwareVersion in knownVersions or
@@ -646,9 +646,14 @@ def parserawPMUsignal(signal):
 
     # Values "5000" and "6000" indicate "trigger on" and "trigger off", respectively, so they
     #   are not a real physio_signal value. So replace them with NaN:
-    for idx, v in enumerate(signal):
-        if v == 5000 or v == 6000:
-            signal[idx] = float('NaN')
+    #for idx, v in enumerate(signal):
+    #    if v == 5000 or v == 6000:
+    #        signal[idx] = float('NaN')
+
+    # Values "5000" and "6000" indicate "trigger on" and "trigger off", respectively, so they
+    #   are not a real physio_signal value. Here we exclude them.
+    signal = [x for x in signal if str(x) != '5000']
+    signal = [x for x in signal if str(x) != '6000']
 
     return signal
 
