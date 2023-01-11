@@ -182,7 +182,7 @@ def readpmu(physio_file, softwareVersion=None, verbose=False):
     """
 
     # Check for known software versions:
-    knownVersions = ['VB15A', 'VE11C', 'VBX']
+    knownVersions = ['XA30','VB15A', 'VE11C', 'VBX']
 
     if not (
             softwareVersion in knownVersions or
@@ -199,7 +199,9 @@ def readpmu(physio_file, softwareVersion=None, verbose=False):
         # try to read all new versions, if successful, return the results.
         # If unsuccessful, it will print a warning and try the next versionToTest
         try:
-            if sv == 'VE11C':
+            if sv == 'XA30':
+                return readXA30Cpmu(physio_file)
+            elif sv == 'VE11C':
                 return readVE11Cpmu(physio_file)
             elif sv == 'VB15A':
                 return readVB15Apmu(physio_file)
@@ -298,6 +300,85 @@ def readVE11Cpmu(physio_file, forceRead=False):
     # The third and fouth groups we ignore, and the fifth gives us the physio signal itself.
     raw_signal = s[4].split(' ')
 
+    physio_signal = parserawPMUsignal(raw_signal)
+
+    # The rest of the lines have statistics about the signals, plus start and finish times.
+    # Get timing:
+    MPCUTime, MDHTime = getPMUtiming(lines[1:])
+
+    return physio_type, MDHTime, sampling_rate, physio_signal
+
+def readXA30Cpmu(physio_file, forceRead=False):
+    """
+    Function to read the physiological signal from a XA30 Siemens PMU physio file
+
+    Parameters
+    ----------
+    physio_file : str
+        path to a file with a Siemens PMU recording
+    forceRead : bool
+        flag indicating to read the file whether the format seems correct or not
+
+    Returns
+    -------
+    physio_type : str
+        type of physiological recording
+    MDHTime : list
+        list of two integers indicating the time in ms since last midnight.
+        MDHTime[0] gives the start of the recording
+        MDHTime[1] gives the end   of the recording
+    sampling_rate : int
+        number of samples per second
+    physio_signal : list of int
+        signal proper. NaN indicate points for which there was no recording
+        (the scanner found a trigger in the signal)
+    """
+
+    # Read the file, splitting by lines and removing the "newline" (and any blank space)
+    #   at the end of the line:
+    lines = [line.rstrip() for line in open(physio_file)]
+
+    # According to Siemens (IDEA documentation), the sampling rate is 2.5ms for all signals:
+    sampling_rate = int(400)    # 1000/2.5
+
+    # For that first line, different information regions are bound by "5002 and "6002".
+    #   Find them:
+    s = re.split('5002(.*?)6002', lines[0])
+    if len(s) == 1:
+        # we failed to find even one "5002 ... 6002" group.
+        raise PMUFormatError(
+                  'File %r does not seem to be a valid VE11C PMU file',
+                  physio_file,
+                  '5002(.*?)6002',
+                  s[0]
+              )
+
+    # The first group contains the triggering method, gate open and close times, etc for
+    #   compatibility with previous versions. Ignore it.
+    # The second group tells us the type of signal ('RESP', 'PULS', etc.)
+    try:
+        physio_type = re.search('LOGVERSION_([A-Z]*)', s[1]).group(1)
+    except AttributeError:
+        print('Could not find type of recording for ' + physio_file)
+        if not forceRead:
+            raise PMUFormatError(
+                      'File %r does not seem to be a valid VE11C PMU file',
+                      physio_file,
+                      'LOGVERSION_([A-Z]*)',
+                      s[1]
+                  )
+        else:
+            print('Setting recording type to "Unknown"')
+            physio_type = "Unknown"
+            # (continue reading the file)
+
+
+    # The third and fouth groups we ignore, and the fifth gives us the physio signal itself.
+    raw_signal = ''
+    for ii in range(2,len(s),2):
+        raw_signal = raw_signal + s[ii][1:]
+
+    raw_signal = raw_signal.split(' ')
     physio_signal = parserawPMUsignal(raw_signal)
 
     # The rest of the lines have statistics about the signals, plus start and finish times.
