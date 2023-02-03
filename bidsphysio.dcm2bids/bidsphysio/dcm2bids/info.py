@@ -2,7 +2,7 @@
 need to also bump up the version of the dependencies
 """
 
-__version__ = "22"
+__version__ = "22.0.0"
 __author__ = "Pablo Velasco"
 __author_email__ = "pablo.velasco@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"
@@ -24,8 +24,8 @@ CLASSIFIERS = [
 PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
-    'bidsphysio.base >= 22',
-    'bidsphysio.session >= 22',
+    'bidsphysio.base >= 22.0.0',
+    'bidsphysio.session >= 22.0.0',
     'numpy >= 1.17.1',
     'pydicom >= 1.4.1',
 ]

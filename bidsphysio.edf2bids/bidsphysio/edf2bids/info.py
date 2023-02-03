@@ -2,7 +2,7 @@
 need to also bump up the version of the dependencies
 """
 
-__version__ ="22"
+__version__ ="22.0.0"
 __author__ = "Chrysa Papadaniil"
 __author_email__ = "chrysa@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"
@@ -24,9 +24,9 @@ CLASSIFIERS = [
 PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
-    'bidsphysio.base>=22',
-    'bidsphysio.session>=22',
-    'bidsphysio.events>=22',
+    'bidsphysio.base>=22.0.0',
+    'bidsphysio.session>=22.0.0',
+    'bidsphysio.events>=22.0.0',
     'pyedfread',
     'h5py>=2.9.0',
     'Cython>=0.29.13',
