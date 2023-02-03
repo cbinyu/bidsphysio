@@ -706,7 +706,7 @@ def testSamplingRate(
 def main():
 
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description='Convert Siemens physiology files to BIDS-compliant physiology recording')
+    parser = argparse.ArgumentParser(description='Convert Siemens physiology files to BIDS-compliant physiology recording.')
     parser.add_argument('-i', '--infiles', nargs='+', required=True, help='.puls or .resp physio file(s)')
     parser.add_argument('-b', '--bidsprefix', required=True, help='Prefix of the BIDS file. It should match the _bold.nii.gz')
     parser.add_argument('-v', '--verbose', action="store_true", default=False, help='verbose screen output')
