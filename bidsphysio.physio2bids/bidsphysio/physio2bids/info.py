@@ -2,7 +2,7 @@
 need to also bump up the version of the dependencies
 """
 
-__version__ ="22"
+__version__ ="21.07.01"
 __author__ = "Pablo Velasco"
 __author_email__ = "pablo.velasco@nyu.edu"
 __url__ = "https://github.com/cbinyu/bidsphysio"
@@ -24,7 +24,7 @@ CLASSIFIERS = [
 PYTHON_REQUIRES = ">=3.6"
 
 REQUIRES = [
-    'bidsphysio >= 22',
+    'bidsphysio >= 21.07.01',
 ]
 
 TESTS_REQUIRES = [
