@@ -68,7 +68,7 @@ def test_calculate_timing(
     """
     Test for calculate_timing
     It checks that it gives an error when it is supposed to, and it returns the
-    correct timing when the neccessary parameters are present
+    correct timing when the necessary parameters are present
     """
 
     # 1) Try with a PhysioSignal without sampling rate:

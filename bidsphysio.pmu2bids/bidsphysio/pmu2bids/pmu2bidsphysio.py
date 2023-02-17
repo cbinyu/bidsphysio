@@ -295,7 +295,7 @@ def readVE11Cpmu(physio_file, forceRead=False):
             # (continue reading the file)
 
 
-    # The third and fouth groups we ignore, and the fifth gives us the physio signal itself.
+    # The third and fourth groups we ignore, and the fifth gives us the physio signal itself.
     raw_signal = s[4].split(' ')
 
     physio_signal = parserawPMUsignal(raw_signal)
