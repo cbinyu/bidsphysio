@@ -89,7 +89,7 @@ docker run [docker options] -v <datapath_host>:/data -v <outpath_host>:/output -
 
 For example, using the test dataset in this repository:
 ```
-docker run --rm -it -v $PWD/bidsphysio.edf2bids/tests/data/:/data:/data -v $PWD/output:/output --entrypoint=/opt/venv/bin/python cbinyu/bidsphysio /opt/venv/bin/edf2bidsphysio --infile /data/sample.edf --bidsprefix /output/sub-01/func/sub-01
+docker run --rm -it -v $PWD/bidsphysio.edf2bids/tests/data/:/data -v $PWD/output:/output --entrypoint=/opt/venv/bin/python cbinyu/bidsphysio /opt/venv/bin/edf2bidsphysio --infile /data/sample.edf --bidsprefix /output/sub-01/func/sub-01
 ```
 
 Then, you can run any `bidsphysio` command (see `Usage` above)
