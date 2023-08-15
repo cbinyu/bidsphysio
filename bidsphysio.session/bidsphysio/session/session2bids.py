@@ -194,7 +194,7 @@ def synchronize_onsets(phys_df, scan_df):
 
 def plot_sync(scan_df, physio_df):
     """
-    Plot unsynchronized and synchonized scan and physio onsets and durations.
+    Plot unsynchronized and synchronized scan and physio onsets and durations.
     """
 
     # You need a scan_df already synchronized (so it has the 'phys_onset':

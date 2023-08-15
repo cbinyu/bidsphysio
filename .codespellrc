@@ -1,0 +1,4 @@
+[codespell]
+skip = .git
+# puls - used all around
+ignore-words-list = puls
