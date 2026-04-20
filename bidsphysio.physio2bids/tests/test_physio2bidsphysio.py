@@ -61,7 +61,7 @@ def test_main(
 ):
     """
     Tests for "main"
-    Just check the arguments, etc. We test the call to the differnt XXX2bids functions in a
+    Just check the arguments, etc. We test the call to the different XXX2bids functions in a
     separated test module
     """
 

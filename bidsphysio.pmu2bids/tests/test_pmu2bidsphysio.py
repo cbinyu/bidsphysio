@@ -125,7 +125,7 @@ def test_parserawPMUsignal(capfd):
 def test_getPMUtiming():
     """
     Tests for getPMUtiming
-    We only care about the lines that contain te MPCUTime and MDHTime
+    We only care about the lines that contain MPCUTime and MDHTime
     """
 
     # 1) If the keywords are missing, the outputs should be 0

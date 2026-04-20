@@ -1,7 +1,7 @@
 """
 Purpose
 ----
-Read eye tracking data from an SR Reasearch .edf file and return a
+Read eye tracking data from an SR Research .edf file and return a
 BIDS physiology recording object and as BIDS events object.
 It uses "pyedfread" to read the EDF file.
     
@@ -208,7 +208,7 @@ def edfevents2bids(physio_edf):
         EventIdentifiers.append(sm)
     
     # Read the EDF data into three pandas dataframes including the messages
-    # TODO: delete the unecessary columns?
+    # TODO: delete the unnecessary columns?
     all_messages = pd.DataFrame()
     for tm in EventIdentifiers:
         samples, events, messages = edf.pread(physio_edf, trial_marker = tm)
