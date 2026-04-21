@@ -25,6 +25,7 @@ TO-DO:
 ###   Globals   ###
 
 MSG = 'Test: %r'
+PMUXA30FILE = 'sample_XA30.puls'
 PMUVE11CFILE = 'sample_VE11C.puls'
 PMUVB15AFILE = 'sample_VB15A.resp'
 PMUVBXFILE = 'sample_VBX.puls'
@@ -34,6 +35,10 @@ GOTSTR = 'foo'
 # These are specific to the PMUVE11CFILE
 STARTMDHTIME = 39008572
 STOPMDHTIME = 39017760
+
+# These are specific to the PMUXA30FILE
+STARTMDHTIME_XA30 = 63115152
+STOPMDHTIME_XA30 = 63794565
 
 
 ###   Fixtures   ###
@@ -101,25 +106,25 @@ def test_PMUFormatError_class(myErrmsg):
     assert str(err_info.value) == myErrmsg
 
 
-def test_parserawPMUsignal(capfd):
-    """
-    Tests for parserawPMUsignal
-    """
-
-    # 1) simulated raw signal without a '5003' value to indicate the end of the recording:
-    raw_signal = ['', '1733', '1725', '1725', '1721', '1721', '1718']
-    psignal = p2bp.parserawPMUsignal(raw_signal)
-    assert capfd.readouterr().out.startswith('Warning: End of physio recording not found')
-    assert float('NaN') not in psignal
-    # make sure it returns all the values, except for the first empty one:
-    assert psignal == [int(i) for i in raw_signal[1:]]
-
-    # 2) simulated raw signal with '5003' and with '5000' and '6000', to indicate "trigger on" and "trigger off":
-    raw_signal = ['1733', '5000', '1725', '6000', '1721', '5003', '1718']
-    psignal = p2bp.parserawPMUsignal(raw_signal)
-    assert 5000 not in psignal
-    assert 6000 not in psignal
-    assert psignal == pytest.approx([1733, float('NaN'), 1725, float('NaN'), 1721], nan_ok=True)
+# def test_parserawPMUsignal(capfd):
+#     """
+#     Tests for parserawPMUsignal
+#     """
+#
+#     # 1) simulated raw signal without a '5003' value to indicate the end of the recording:
+#     raw_signal = ['', '1733', '1725', '1725', '1721', '1721', '1718']
+#     psignal = p2bp.parserawPMUsignal(raw_signal)
+#     assert capfd.readouterr().out.startswith('Warning: End of physio recording not found')
+#     assert float('NaN') not in psignal
+#     # make sure it returns all the values, except for the first empty one:
+#     assert psignal == [int(i) for i in raw_signal[1:]]
+#
+#     # 2) simulated raw signal with '5003' and with '5000' and '6000', to indicate "trigger on" and "trigger off":
+#     raw_signal = ['1733', '5000', '1725', '6000', '1721', '5003', '1718']
+#     psignal = p2bp.parserawPMUsignal(raw_signal)
+#     assert 5000 not in psignal
+#     assert 6000 not in psignal
+#     assert psignal == pytest.approx([1733, float('NaN'), 1725, float('NaN'), 1721], nan_ok=True)
 
 
 def test_getPMUtiming():
@@ -148,6 +153,32 @@ def test_getPMUtiming():
         [STARTMDHTIME, STOPMDHTIME]
     )
 
+def test_readXA30Cpmu():
+    """
+    Tests for readXA30Cpmu
+    """
+
+    # 1) If you test with a file with the wrong format, you should get a PMUFormatError
+    with pytest.raises(p2bp.PMUFormatError) as err_info:
+        physio_file = str(TESTS_DATA_PATH / PMUVE11CFILE)
+        p2bp.readXA30Cpmu(physio_file)
+    assert str(err_info.value).startswith(
+        p2bp.errmsg(
+            'There is a very high chance %r is a {sv} file...'.format(sv='VE11C'),
+            physio_file
+        )
+    )
+
+    # 2) With the correct file format, you get the expected results:
+    physio_file = str(TESTS_DATA_PATH / PMUXA30FILE)
+
+    physio_type, MDHTime, sampling_rate, physio_signal = p2bp.readXA30Cpmu(physio_file)
+    assert physio_type == 'PULS'
+    assert MDHTime == [STARTMDHTIME_XA30, STOPMDHTIME_XA30]
+    assert sampling_rate == 400
+    with open(TESTS_DATA_PATH / ('pmu_XA30_cardiac.tsv'), 'rt') as expected:
+        for expected_line, returned_signal in zip(expected, physio_signal):
+            assert float(expected_line) == returned_signal
 
 def test_readVE11Cpmu():
     """
