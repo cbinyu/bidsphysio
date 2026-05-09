@@ -1,5 +1,5 @@
 # bidsphysio
-Converts physio data (CMRR, AcqKnowledge, Siemens PMU) to BIDS physiological recording
+Converts physio data (CMRR, Siemens XA-line [PhysioLogging](https://www.magnetomworld.siemens-healthineers.com/clinical-corner/application-tips/physiologging), AcqKnowledge, Siemens PMU) to BIDS physiological recording
 
 [![Docker image](https://img.shields.io/badge/docker-cbinyu/bidsphysio:latest-brightgreen.svg?logo=docker&style=flat)](https://hub.docker.com/r/cbinyu/bidsphysio/tags/)
 [![TravisCI](https://travis-ci.com/cbinyu/bidsphysio.svg?branch=master)](https://travis-ci.com/cbinyu/bidsphysio)
@@ -24,7 +24,10 @@ physio2bidsphysio --infile 07+epi_MB4_2mm_Physio+00001.dcm      \
  
     Supported file types:
 	 * `<.dcm>` or `<.log>`: DICOM or log file with physiological recording from a CMRR
-     Multi-Band sequence (only a single file for `<.dcm>`).
+     Multi-Band sequence (only a single file for `<.dcm>`). XA-line
+     PhysioLogging DICOMs (Siemens XA30 / XA60, gzip-XML payload) are
+     also supported and detected automatically — see
+     [bidsphysio.dcm2bids/README.md](bidsphysio.dcm2bids/README.md#xa-line-physiologging-notes).
 	 * `<.acq>`: AcqKnowledge file (BioPac).
 	 * `<.puls>` or `<.resp>`: Siemens PMU file (VB15A, VBX, VE11C).
 	 * `<.edf>` SR Research .edf file

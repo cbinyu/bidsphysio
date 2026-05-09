@@ -5,10 +5,30 @@ Purpose
 Read physio data from a CMRR Multiband generated DICOM file and save as
 BIDS physiology recording file
 Current CMRR MB sequence version : VE11C R016a
+Also supports Siemens XA-line scanners (XA30/XA60), where the same DICOM tag
+(7FE1,1010) holds a gzip-compressed XML payload (PhysioLogging feature).
 
 Usage
 ----
 dcm2bidsphysio -i <CMRR DICOM Physio> -b <BIDS file prefix>
+
+
+Timing notes (Siemens MDH clock)
+----
+For both VE11C and XA payloads, every timestamp is expressed in MDH tics
+(2.5 ms each) on the same scanner clock. In the legacy VE11C format these
+appear as the LogStartMDHTime / LogStopMDHTime fields; in XA they appear
+as TIME_TICS attributes on <PMU>, <Volume>, and <PhysioTrigger> elements.
+
+LogStartMDHTime and LogStopMDHTime indicate the start and stop times of
+the recording of each physiological signal, which are NOT synced to the
+MRI acquisition (it is manual) but use the same clock (MDH). The XA TIME_TICS
+on <PMU> samples behave identically: the operator starts/stops PMU
+recording from the console, so the first PMU tic typically precedes the
+first acquired volume by a manual head-start of seconds. Alignment of
+physio to scan must therefore use the offset between the PMU stream and
+the scan-locked <Volume ACQUISITION_TIME_TICS> entries (or the legacy
+ACQUISITION_INFO trigger lines), not the absolute MDH value.
 
 
 Authors
@@ -25,10 +45,12 @@ Dates
 2020-02-13 PJV Save just the signal and the corresponding scanner triggers in the .tsv.gz file
                Save the timing info in the .json sidecar
 2020-02-28 PJV It uses the classes defined in bidsphysio
+2026-05-09 CR  Add Siemens XA (gzip-XML PhysioLogging) parser branch
 
 References
 ----
 Matlab parser: https://github.com/CMRR-C2P/MB/blob/master/extractCMRRPhysio.m
+Siemens XA PhysioExtractor demo (Magnetom World, 2024-10-04)
 BIDS specification for physio signal:
 https://bids-specification.readthedocs.io/en/stable/04-modality-specific-files/06-physiological-and-other-continuous-recordings.html
 
@@ -61,7 +83,10 @@ SOFTWARE.
 import argparse
 import json
 import os
+import re
 import sys
+import xml.etree.ElementTree as ET
+import zlib
 
 import numpy as np
 import pydicom
@@ -123,52 +148,76 @@ def dcm2bids(physio_dcm, verbose=False):
         else:
             raise RuntimeError('Physiological data are not available or cannot be accessed from current input data: Element tag [0x7fe1, 0x1010] is missing.')
 
-        # Extract relevant info from header
-        n_points = len(physio_data)
-        n_rows = d.AcquisitionNumber
-
-        if (n_points % n_rows):
-            print('* Points (%d) is not an integer multiple of rows (%d) - exiting' % (n_points, n_rows))
-            sys.exit(-1)
-
-        n_cols = int(n_points / n_rows)
-
-        if (n_points % 1024):
-            print('* Columns (%d) is not an integer multiple of 1024 (%d) - exiting' % (n_cols, 1024))
-            sys.exit(-1)
-
-        n_waves = int(n_cols / 1024)
-        wave_len = int(n_points / n_waves)
-
-        for wc in range(n_waves):
+        # Detect Siemens XA-line PhysioLogging payload: a gzip stream begins
+        # with magic bytes 0x1f 0x8b. XA wraps the same DICOM tag around an
+        # XML document (PhysioLogging feature) instead of the legacy VE11C
+        # binary blob.
+        if len(physio_data) >= 2 and physio_data[:2] == b'\x1f\x8b':
             if verbose:
-                print('')
-                print('Parsing waveform %d' % wc)
+                print('Detected Siemens XA gzip-compressed XML PhysioLogging payload')
+            # zlib with wbits = 16+MAX_WBITS decodes a single gzip member and
+            # stops cleanly at the end of the stream; this matches the approach
+            # used by the Siemens PhysioExtractor reference scripts and avoids
+            # gzip.decompress() complaining about non-member trailing bytes.
+            # The XA payload commonly has a trailing NUL after </PhysioData>;
+            # strip it so the XML parser doesn't reject the document.
+            xml_text = zlib.decompress(
+                physio_data, 16 + zlib.MAX_WBITS
+            ).decode('utf-8', 'ignore').rstrip('\x00').rstrip()
+            uuid = getattr(d, 'SOPInstanceUID', 'UNKNOWN')
+            for waveform_name, t, s, dt in parse_xa_xml(xml_text, verbose=verbose):
+                physio_label, physio_signal, first_trigger_this_waveform = to_physiosignal(uuid, waveform_name, t, s, dt)
+                t_first_trigger = t_first_trigger or first_trigger_this_waveform
+                if physio_label:
+                    physio.append_signal(physio_signal)
+        else:
+            # Legacy CMRR VE11C path: raw binary blob with one 1024-byte header
+            # per waveform followed by ASCII log lines.
+            n_points = len(physio_data)
+            n_rows = d.AcquisitionNumber
 
-            offset = wc * wave_len
+            if (n_points % n_rows):
+                print('* Points (%d) is not an integer multiple of rows (%d) - exiting' % (n_points, n_rows))
+                sys.exit(-1)
 
-            wave_data = physio_data[slice(offset, offset+wave_len)]
+            n_cols = int(n_points / n_rows)
 
-            data_len = int.from_bytes(wave_data[0:4], byteorder=sys.byteorder)
-            fname_len = int.from_bytes(wave_data[4:8], byteorder=sys.byteorder)
-            fname = wave_data[slice(8, 8+fname_len)]
+            if (n_points % 1024):
+                print('* Columns (%d) is not an integer multiple of 1024 (%d) - exiting' % (n_cols, 1024))
+                sys.exit(-1)
 
-            if verbose:
-                print('Data length     : %d' % data_len)
-                print('Filename length : %d' % fname_len)
-                print('Filename        : %s' % fname)
+            n_waves = int(n_cols / 1024)
+            wave_len = int(n_points / n_waves)
 
-            # Extract waveform log byte data
-            log_bytes = wave_data[slice(1024, 1024+data_len)]
-            # Convert from a bytes literal to a UTF-8 encoded string, ignoring errors; split lines:
-            physio_log_lines = log_bytes.decode('utf-8', 'ignore').splitlines()
+            for wc in range(n_waves):
+                if verbose:
+                    print('')
+                    print('Parsing waveform %d' % wc)
 
-            # Parse physio_log_lines
-            uuid, waveform_name, t, s, dt = parse_log(physio_log_lines, verbose=verbose)
-            physio_label, physio_signal, first_trigger_this_waveform = to_physiosignal(uuid, waveform_name, t, s, dt)
-            t_first_trigger = t_first_trigger or first_trigger_this_waveform
-            if physio_label:
-                physio.append_signal(physio_signal)
+                offset = wc * wave_len
+
+                wave_data = physio_data[slice(offset, offset+wave_len)]
+
+                data_len = int.from_bytes(wave_data[0:4], byteorder=sys.byteorder)
+                fname_len = int.from_bytes(wave_data[4:8], byteorder=sys.byteorder)
+                fname = wave_data[slice(8, 8+fname_len)]
+
+                if verbose:
+                    print('Data length     : %d' % data_len)
+                    print('Filename length : %d' % fname_len)
+                    print('Filename        : %s' % fname)
+
+                # Extract waveform log byte data
+                log_bytes = wave_data[slice(1024, 1024+data_len)]
+                # Convert from a bytes literal to a UTF-8 encoded string, ignoring errors; split lines:
+                physio_log_lines = log_bytes.decode('utf-8', 'ignore').splitlines()
+
+                # Parse physio_log_lines
+                uuid, waveform_name, t, s, dt = parse_log(physio_log_lines, verbose=verbose)
+                physio_label, physio_signal, first_trigger_this_waveform = to_physiosignal(uuid, waveform_name, t, s, dt)
+                t_first_trigger = t_first_trigger or first_trigger_this_waveform
+                if physio_label:
+                    physio.append_signal(physio_signal)
 
     elif dcm_or_logs == 'LOGS':
 
@@ -191,6 +240,171 @@ def dcm2bids(physio_dcm, verbose=False):
         p_signal.plug_missing_data()
 
     return physio
+
+
+# MDH tic length, in milliseconds. The Siemens MDH (Measurement Data Header)
+# clock advances in 2.5 ms tics. All XA TIME_TICS values, as well as the
+# legacy VE11C LogStartMDHTime / LogStopMDHTime fields, are quoted in this unit.
+MDH_TIC_MS = 2.5
+
+
+def _avg_dt(t):
+    """Average inter-sample interval of a 1-D timestamp array, in the same
+    units as t. With N samples spanning (t[-1] - t[0]) there are N-1
+    intervals, so the as-acquired average is span / (N-1) (minding the
+    fencepost). This matches what you'd compute from explicit start/end
+    timestamps and is robust to one-off jitter in any single diff. For
+    N < 2 there is no interval to measure, so we fall back to MDH_TIC_MS
+    (the underlying clock resolution) as a non-zero sentinel.
+    """
+    if len(t) >= 2:
+        return float((t[-1] - t[0]) / (len(t) - 1))
+    return MDH_TIC_MS
+
+
+def parse_xa_xml(xml_text, verbose=False):
+    """Parse a Siemens XA-line PhysioLogging XML payload.
+
+    The XA payload is a single <PhysioData> XML document containing:
+      * <VolumeAcquisitionDescription> with one <Volume ACQUISITION_TIME_TICS=...>
+        per acquired volume. These are scan-locked: each entry marks the
+        instant the scanner began that volume. Spacing reflects the actual
+        acquisition pattern within the PMU recording window, which is
+        not necessarily uniform — for example, an SBRef DICOM contains
+        the calibration / dummy / reference volumes that fall inside its
+        recording window, with non-TR-spaced timestamps. Downstream code
+        consuming the BIDS trigger column should treat each `1` as
+        "scanner volume started here", not as "TR has elapsed".
+      * Zero or more <PhysioStream TYPE="PULS|RESP|ECG|EXT|...">, each
+        carrying <PMU TIME_TICS="..." DATA="..."/> samples. These tics are
+        on the same MDH clock as the Volume entries, BUT the PMU recording
+        is started and stopped manually by the operator from the console,
+        so the first PMU tic is not aligned to scan start. Alignment must
+        use the offset between the streams, not the absolute MDH value.
+        (This matches the legacy VE11C semantics of LogStartMDHTime /
+        LogStopMDHTime: same clock, manual start.)
+      * Optional <PhysioTrigger ACQUISITION_TIME_TICS="..." SIGNAL="..."/>
+        entries for PMU-detected events. These are NOT used here as scan
+        triggers because their SIGNAL bitmask is device-dependent; we use
+        <Volume> entries instead.
+
+    Yields tuples (waveform_name, t_ms, s, dt_ms) compatible with
+    to_physiosignal(). For triggers the waveform_name is "ACQUISITION_INFO"
+    (matching the VE11C convention) so that to_physiosignal() routes it to
+    the trigger branch.
+    """
+    # Strip every inline DOCTYPE before parsing. The XA payload declares a
+    # DTD with element rules but no entities; stdlib ElementTree blocks
+    # external entities since Python 3.7 but still expands internal ones,
+    # so a maliciously crafted DICOM could embed billion-laughs entities in
+    # the DTD. Removing the DOCTYPE eliminates that surface without adding
+    # a defusedxml dependency. The element structure is inferred from the
+    # body, so the DTD is not needed for parsing.
+    # Both the internal-subset form (<!DOCTYPE name [...]>) and the bare /
+    # external-DTD form (<!DOCTYPE name>, <!DOCTYPE name SYSTEM "...">) are
+    # stripped. Removing all matches (no count cap) closes a bypass where a
+    # benign first DOCTYPE shields a malicious second one from a single-shot
+    # strip.
+    xml_text = re.sub(
+        r'<!DOCTYPE[^[>]*(?:\[.*?\])?\s*>\s*',
+        '', xml_text, flags=re.DOTALL,
+    )
+    root = ET.fromstring(xml_text)
+
+    # Scan triggers: one per <Volume>. Use ACQUISITION_TIME_TICS, which is
+    # the scan-locked timestamp for the first slice of each volume.
+    volume_tics = []
+    for vol in root.iter('Volume'):
+        tics = vol.get('ACQUISITION_TIME_TICS')
+        if tics is not None:
+            volume_tics.append(int(tics))
+    volume_tics.sort()
+    if volume_tics:
+        t_trig = np.array(volume_tics, dtype=float) * MDH_TIC_MS
+        # to_physiosignal() filters on s == 1 in the ACQUISITION_INFO branch;
+        # all entries here are real volume triggers, so emit ones.
+        s_trig = np.ones(len(t_trig))
+        # dt for the trigger "waveform" is informational. With N volumes
+        # spanning (last - first) ms there are N-1 intervals, so the
+        # average TR is span / (N-1) (fencepost). Falls back to MDH_TIC_MS
+        # for a single-volume run, which is a sentinel value rather than
+        # a meaningful TR (single shot has no inter-volume interval).
+        dt_trig = _avg_dt(t_trig)
+        if verbose:
+            print('XA: %d volume triggers, avg TR %.1f ms' % (len(t_trig), dt_trig))
+        yield 'ACQUISITION_INFO', t_trig, s_trig, dt_trig
+
+    # Physiology streams. Each <PhysioStream TYPE="PULS"> etc. carries
+    # <PMU> samples. Yield one waveform per stream.
+    for stream in root.iter('PhysioStream'):
+        stream_type = stream.get('TYPE') or 'UNKNOWN'
+        t_list, s_list = [], []
+        for pmu in stream.findall('PMU'):
+            tics = pmu.get('TIME_TICS')
+            data = pmu.get('DATA')
+            if tics is None or data is None:
+                continue
+            # Validate both fields BEFORE appending so that t_list and s_list
+            # stay length-matched even when one PMU element has a malformed
+            # value (e.g. non-numeric DATA). Negative TIME_TICS values are
+            # rejected: the MDH clock is monotonic and unsigned, and a
+            # negative value would propagate as a negative timestamp into
+            # samples_per_second.
+            try:
+                t_val = int(tics)
+                s_val = float(data)
+            except ValueError:
+                continue
+            if t_val < 0:
+                continue
+            t_list.append(t_val)
+            s_list.append(s_val)
+        if not t_list:
+            if verbose:
+                print('XA: stream %s has no TIME_TICS samples; skipping' % stream_type)
+            continue
+        # Sort samples by tic. Document order matches scanner emission order
+        # in practice, but a stream with reordered <PMU> entries would yield
+        # negative diffs, breaking _avg_dt and the modal-tic warning.
+        order = np.argsort(t_list, kind='stable')
+        t_tics = np.asarray(t_list, dtype=int)[order]
+        s = np.asarray(s_list, dtype=float)[order]
+        t = t_tics.astype(float) * MDH_TIC_MS
+        # As-acquired sample interval: total span / (N-1) intervals,
+        # equivalent to deriving the rate from explicit log start / stop
+        # timestamps. PULS is nominally 5 ms (200 Hz); RESP 20 ms (50 Hz);
+        # ECG 2.5 ms (400 Hz). For modern Siemens hardware the inferred
+        # value matches the nominal exactly; a deviation indicates either
+        # a dropped sample or a non-standard recording rate.
+        dt = _avg_dt(t)
+        # Sanity check: compare the span-based dt to the modal inter-sample
+        # tic gap. For clean data these agree to within rounding. A
+        # significant disagreement implies dropped or duplicated samples,
+        # in which case dt (and the resulting samples_per_second) is
+        # biased and downstream NaN-filling against it will be misaligned.
+        # Surface this as a warning rather than silently correcting, so
+        # the user can decide how to handle the recording.
+        # `np.unique` is used instead of `np.bincount` because bincount
+        # allocates O(max(diff)) memory and a single very-large gap (or a
+        # malicious payload) would balloon it to gigabytes.
+        if len(t_tics) >= 2:
+            diffs = np.diff(t_tics)
+            positive_diffs = diffs[diffs > 0]
+            if positive_diffs.size:
+                values, counts = np.unique(positive_diffs, return_counts=True)
+                modal_tic = int(values[counts.argmax()])
+                modal_dt = modal_tic * MDH_TIC_MS
+                if modal_dt > 0 and abs(dt - modal_dt) / modal_dt > 0.01:
+                    print('WARNING: XA stream %s sample rate inferred from '
+                          'span/(N-1) is %.4f ms, but modal inter-sample gap '
+                          'is %.4f ms. This usually means one or more samples '
+                          'were dropped; downstream timing may be off.'
+                          % (stream_type, dt, modal_dt))
+        if verbose:
+            fs = 1000.0 / dt if dt > 0 else float('nan')
+            print('XA: stream %s, %d samples, dt %.4f ms (%.3f Hz)'
+                  % (stream_type, len(t), dt, fs))
+        yield stream_type, t, s, dt
 
 
 def parse_log(physio_log, verbose=False):

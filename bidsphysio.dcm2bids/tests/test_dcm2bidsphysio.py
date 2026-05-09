@@ -3,7 +3,9 @@
 import sys
 import re
 import math
+import xml.etree.ElementTree as ET
 
+import numpy as np
 import pytest
 
 from bidsphysio.dcm2bids import dcm2bidsphysio as d2bp
@@ -266,3 +268,138 @@ def test_timing(
     TRs = get_physio_TRs(outbids)
     TRs = [tr for tr in TRs if math.isfinite(tr)]
     assert TRs == [expected_TR]*len(TRs)
+
+
+def test_xa_dcm():
+    """
+    Tests the Siemens XA-line PhysioLogging branch.
+
+    samplePhysioXA60.dcm holds a gzip-compressed XML payload at (7FE1,1010)
+    instead of the legacy CMRR VE11C binary blob. We expect the parser
+    to find PULS and RESP streams plus per-volume scan triggers, and to
+    set physiostarttime earlier than neuralstarttime to reflect the
+    operator's manual head-start of the PMU recording (same MDH clock,
+    not auto-synced to MRI acquisition).
+    """
+    infile = str(TESTS_DATA_PATH / 'samplePhysioXA60.dcm')
+    physio = d2bp.dcm2bids(infile)
+
+    labels = sorted(physio.labels())
+    assert 'cardiac' in labels
+    assert 'respiratory' in labels
+    assert 'trigger' in labels
+
+    by_label = {sig.label: sig for sig in physio.signals}
+
+    # PULS comes out at 200 Hz, RESP at 50 Hz (XA tic = 2.5 ms).
+    assert by_label['cardiac'].samples_per_second == pytest.approx(200.0)
+    assert by_label['respiratory'].samples_per_second == pytest.approx(50.0)
+
+    # Sample counts match the Siemens reference extractor output for this file.
+    assert len(by_label['cardiac'].signal) == 4480
+    assert len(by_label['respiratory'].signal) == 1120
+
+    # Manual PMU start: physiostarttime precedes the first scan trigger.
+    cardiac = by_label['cardiac']
+    assert cardiac.physiostarttime < cardiac.neuralstarttime
+    head_start = cardiac.neuralstarttime - cardiac.physiostarttime
+    assert head_start == pytest.approx(2.1475, abs=1e-3)
+
+    # Trigger signal contains one entry per acquired volume (10 in this file).
+    trigger = by_label['trigger']
+    assert len(trigger.signal) == 10
+    # Volume timestamps must be strictly monotonic and fall inside the
+    # cardiac recording window (sanity check that triggers are usable as
+    # scan markers; spacing is intentionally NOT asserted to be uniform
+    # because XA <Volume> entries reflect actual acquisition timing,
+    # which is non-uniform for SBRef and similar reference scans).
+    trig_t = np.asarray(trigger.sampling_times, dtype=float)
+    assert np.all(np.diff(trig_t) > 0), 'trigger times must be strictly increasing'
+    cardiac_t = np.asarray(cardiac.sampling_times, dtype=float)
+    assert trig_t[0] >= cardiac_t[0]
+    assert trig_t[-1] <= cardiac_t[-1]
+
+    # Sanity-check signal values: finite (not all NaN) and non-degenerate.
+    cardiac_s = np.asarray(cardiac.signal, dtype=float)
+    finite = cardiac_s[np.isfinite(cardiac_s)]
+    assert len(finite) == len(cardiac_s)
+    assert finite.min() != finite.max()
+
+
+def test_parse_xa_xml_edge_cases(capsys):
+    """Unit tests for the XA XML parser covering edge cases not exercised
+    by the end-to-end fixture test."""
+    # 1) Empty <PhysioData>: no volumes, no streams -> generator yields nothing.
+    empty = '<PhysioData><VolumeAcquisitionDescription/></PhysioData>'
+    assert list(d2bp.parse_xa_xml(empty)) == []
+
+    # 2) Single-sample PMU stream: dt has no diff to compute, so the parser
+    #    falls back to MDH_TIC_MS rather than producing 0.0 (which would
+    #    crash to_physiosignal with a divide-by-zero on samples_per_second).
+    one_sample = (
+        '<PhysioData><PhysioStream TYPE="PULS">'
+        '<PMU TIME_TICS="100" DATA="1.0"/>'
+        '</PhysioStream></PhysioData>'
+    )
+    out = list(d2bp.parse_xa_xml(one_sample))
+    assert len(out) == 1
+    name, t, s, dt = out[0]
+    assert name == 'PULS'
+    assert dt == d2bp.MDH_TIC_MS
+
+    # 3) Non-numeric DATA values are silently skipped (defensive parse).
+    # Both the timestamp and the sample value must be dropped together
+    # so the t and s arrays remain length-matched. (Earlier versions of
+    # parse_xa_xml appended TIME_TICS before validating DATA, which left
+    # the arrays mismatched on the bogus row.)
+    mixed = (
+        '<PhysioData><PhysioStream TYPE="RESP">'
+        '<PMU TIME_TICS="0" DATA="1.0"/>'
+        '<PMU TIME_TICS="8" DATA="bogus"/>'
+        '<PMU TIME_TICS="16" DATA="2.0"/>'
+        '</PhysioStream></PhysioData>'
+    )
+    out = list(d2bp.parse_xa_xml(mixed))
+    assert len(out) == 1
+    name, t, s, dt = out[0]
+    assert name == 'RESP'
+    assert len(t) == len(s) == 2  # the "bogus" sample's timestamp is also dropped
+
+    # 4) Dropped-sample sanity check: when the per-sample tic gap doesn't
+    #    match the span-derived dt (e.g. one sample missing in the middle),
+    #    parse_xa_xml prints a warning so the user is aware the inferred
+    #    samples_per_second may be biased.
+    dropped = (
+        '<PhysioData><PhysioStream TYPE="PULS">'
+        # Nominal 200 Hz (2-tic spacing); one sample dropped between t=8 and t=14.
+        '<PMU TIME_TICS="0" DATA="1.0"/>'
+        '<PMU TIME_TICS="2" DATA="1.0"/>'
+        '<PMU TIME_TICS="4" DATA="1.0"/>'
+        '<PMU TIME_TICS="6" DATA="1.0"/>'
+        '<PMU TIME_TICS="8" DATA="1.0"/>'
+        '<PMU TIME_TICS="14" DATA="1.0"/>'
+        '<PMU TIME_TICS="16" DATA="1.0"/>'
+        '<PMU TIME_TICS="18" DATA="1.0"/>'
+        '<PMU TIME_TICS="20" DATA="1.0"/>'
+        '</PhysioStream></PhysioData>'
+    )
+    list(d2bp.parse_xa_xml(dropped))
+    captured = capsys.readouterr().out
+    assert 'WARNING' in captured
+    assert 'PULS' in captured
+
+    # 5) DOCTYPE with internal entities is stripped before parsing — the
+    #    entity references then become undefined and ElementTree raises
+    #    rather than expanding them (defense against billion-laughs).
+    bomb = (
+        '<?xml version="1.0"?>'
+        '<!DOCTYPE PhysioData ['
+        '<!ENTITY a "x">'
+        '<!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;">'
+        ']>'
+        '<PhysioData><PhysioStream TYPE="PULS">'
+        '<PMU TIME_TICS="&b;" DATA="1.0"/>'
+        '</PhysioStream></PhysioData>'
+    )
+    with pytest.raises(ET.ParseError):
+        list(d2bp.parse_xa_xml(bomb))
